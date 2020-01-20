@@ -1,0 +1,37 @@
+name: Node CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Read .nvmrc
+      run: echo ::set-output name=NVMRC::$(cat .nvmrc)
+      id: nvm
+    - name: Setup node ${{ steps.nvm.outputs.NVMRC }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: '${{ steps.nvm.outputs.NVMRC }}'
+    - name: npm install
+      run: |
+        npm install
+      env:
+        CI: true
+    - name: lint
+      run: |
+        npm run lint
+      env:
+        CI: true
+    - name: test
+      run: |
+        npm run test
+      env:
+        CI: true

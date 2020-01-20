@@ -1,0 +1,62 @@
+{
+  "name": "ziwo-lib",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "Mathieu D. <mathieu.delacroix.fr@gmail.com>",
+  "main": "dist/ziwo-core-front.umd.js",
+  "module": "dist/ziwo-core-front.es5.js",
+  "typings": "dist/types/ziwo-core-front.d.ts",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "scripts": {
+    "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts",
+    "start": "rollup -c rollup.config.ts -w",
+    "test": "jest --coverage",
+    "test:coverage": "jest --coverage --watch"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "testRegex": "^.+\\.spec\\.ts$"
+  },
+  "devDependencies": {
+    "@types/jest": "24.0.25",
+    "@types/node": "13.1.6",
+    "colors": "1.4.0",
+    "husky": "4.0.7",
+    "jest": "24.9.0",
+    "jest-config": "24.9.0",
+    "lodash.camelcase": "4.3.0",
+    "prettier": "1.19.1",
+    "prompt": "1.0.0",
+    "replace-in-file": "5.0.2",
+    "rollup": "1.29.0",
+    "rollup-plugin-commonjs": "10.1.0",
+    "rollup-plugin-json": "4.0.0",
+    "rollup-plugin-node-resolve": "5.2.0",
+    "rollup-plugin-sourcemaps": "0.5.0",
+    "rollup-plugin-typescript2": "0.25.3",
+    "semantic-release": "16.0.1",
+    "shelljs": "0.8.3",
+    "ts-jest": "24.3.0",
+    "ts-node": "8.6.2",
+    "tslint": "5.20.1",
+    "typescript": "3.7.4"
+  }
+}
