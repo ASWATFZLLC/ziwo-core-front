@@ -23,7 +23,9 @@
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
-    "test:coverage": "jest --coverage --watch"
+    "test:coverage": "jest --coverage --watch",
+    "doc": "./node_modules/.bin/typedoc --out docs --target es6 --readme none --theme minimal --mode file src",
+    "open:doc": "firefox docs/index.html"
   },
   "jest": {
     "transform": {
@@ -57,6 +59,7 @@
     "ts-jest": "24.3.0",
     "ts-node": "8.6.2",
     "tslint": "5.20.1",
+    "typedoc": "^0.16.7",
     "typescript": "3.7.4"
   }
 }
