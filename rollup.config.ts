@@ -4,6 +4,7 @@ import sourceMaps from 'rollup-plugin-sourcemaps';
 import camelCase from 'lodash.camelcase';
 import typescript from 'rollup-plugin-typescript2';
 import json from 'rollup-plugin-json';
+import execute from 'rollup-plugin-execute';
 
 const pkg = require('./package.json');
 
@@ -37,5 +38,7 @@ export default {
 
     // Resolve source maps to the original source
     sourceMaps(),
+
+    execute('cp dist/ziwo-core-front.umd.js dist/ziwo-core-front.umd.js.map app/'),
   ],
-}
+};

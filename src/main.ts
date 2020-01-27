@@ -16,17 +16,12 @@ export interface ZiwoClientOptions {
    * see `authentication.ts#Credentials` for complete definition
    * If `credentials` is not provided, please provide an Authentication Token
    */
-  credentials?:Credentials;
-
-  /**
-   * @authenticationToken is the token provided by the /login API
-   * If not provided, please provide credentials
-   */
-  authenticationToken?:string;
+  credentials:Credentials;
 
   /**
    * @autoConnect let you choose to connect the agent automatically or not.
    * Default = true
+   * Error is raised if authentication fails. In case you want to handle failed authentication, run `connect` manually
    */
   autoConnect:boolean;
 
@@ -34,20 +29,23 @@ export interface ZiwoClientOptions {
 
 export class ZiwoClient {
 
+  public readonly options:ZiwoClientOptions;
+
   private apiService:ApiService;
   private rtcClient:RtcClient;
 
-  constructor(params:ZiwoClientOptions) {
-    this.apiService = new ApiService(params.contactCenterName);
+  constructor(options:ZiwoClientOptions) {
+    this.options = options;
+    this.apiService = new ApiService(options.contactCenterName);
     this.rtcClient = new RtcClient();
+
+    if (options.autoConnect) {
+      this.connect().then().catch(err => {throw err;});
+    }
   }
 
   public connect():Promise<any> {
-    return AuthenticationService.authenticate(this.apiService);
-  }
-
-  public StartConnect():void {
-    console.log('Start co');
+    return AuthenticationService.authenticate(this.apiService, this.options.credentials);
   }
 
 }

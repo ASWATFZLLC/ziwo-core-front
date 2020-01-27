@@ -11,22 +11,18 @@ export interface ZiwoClientOptions {
      * see `authentication.ts#Credentials` for complete definition
      * If `credentials` is not provided, please provide an Authentication Token
      */
-    credentials?: Credentials;
-    /**
-     * @authenticationToken is the token provided by the /login API
-     * If not provided, please provide credentials
-     */
-    authenticationToken?: string;
+    credentials: Credentials;
     /**
      * @autoConnect let you choose to connect the agent automatically or not.
      * Default = true
+     * Error is raised if authentication fails. In case you want to handle failed authentication, run `connect` manually
      */
     autoConnect: boolean;
 }
 export declare class ZiwoClient {
+    readonly options: ZiwoClientOptions;
     private apiService;
     private rtcClient;
-    constructor(params: ZiwoClientOptions);
+    constructor(options: ZiwoClientOptions);
     connect(): Promise<any>;
-    StartConnect(): void;
 }

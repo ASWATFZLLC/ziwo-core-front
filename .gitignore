@@ -3,7 +3,7 @@
 /out-tsc
 /bazel-out
 /coverage
-/demo
+/dist
 
 # dependencies
 /node_modules
