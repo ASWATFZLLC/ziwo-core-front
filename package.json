@@ -1,41 +1,23 @@
 {
-  "name": "ziwo-lib",
+  "name": "ziwo-core-front",
   "version": "0.0.0",
   "description": "",
   "keywords": [],
-  "author": "Mathieu D. <mathieu.delacroix.fr@gmail.com>",
+  "author": "Mathieu Delacroix <mathieu@kalvad.com>",
   "main": "dist/ziwo-core-front.umd.js",
   "module": "dist/ziwo-core-front.es5.js",
   "typings": "dist/types/ziwo-core-front.d.ts",
   "files": [
     "dist"
   ],
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "license": "MIT",
-  "engines": {
-    "node": ">=6.0.0"
-  },
   "scripts": {
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
-    "start": "rollup -c rollup.config.ts -w",
+    "start": "rollup -c rollup.config.ts -w && firefox app/index.html",
     "test": "jest --coverage",
     "test:coverage": "jest --coverage --watch",
     "doc": "./node_modules/.bin/typedoc --out docs --target es6 --readme none --theme minimal --mode file src",
     "open:doc": "firefox docs/index.html"
-  },
-  "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "moduleFileExtensions": [
-      "ts",
-      "js"
-    ],
-    "testRegex": "^.+\\.spec\\.ts$"
   },
   "devDependencies": {
     "@types/jest": "24.0.25",
@@ -61,5 +43,18 @@
     "tslint": "5.20.1",
     "typedoc": "^0.16.7",
     "typescript": "3.7.4"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "testRegex": "^.+\\.spec\\.ts$"
+  },
+  "dependencies": {
+    "typed-rest-client": "^1.7.1"
   }
 }

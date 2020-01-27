@@ -1,4 +1,4 @@
-import {HelloWorld} from '../src/library';
+import {HelloWorld} from '../src/main';
 
 describe('Hello World', () => {
   it ('displays hello world', () => {
