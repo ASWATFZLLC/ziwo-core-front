@@ -1,6 +1,7 @@
 import {Credentials, AuthenticationService} from './authentication.service';
 import {RtcClient} from './rtc/rtc-client';
 import {ApiService} from './api.service';
+import {ZiwoEvent, ZiwoEventType} from './events';
 
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
@@ -41,13 +42,22 @@ export class ZiwoClient {
 
     if (options.autoConnect) {
       this.connect().then(r => {
-        console.log(r);
-      }).catch(err => {throw err;});
+      }).catch(err => { throw err; });
     }
   }
 
   public connect():Promise<any> {
     return AuthenticationService.authenticate(this.apiService, this.options.credentials);
+  }
+
+  public addListener(func:Function):void {
+    return ZiwoEvent.subscribe(func);
+  }
+
+  public startCall(phoneNumber:string):void {
+    ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
+      peer: phoneNumber,
+    });
   }
 
 }

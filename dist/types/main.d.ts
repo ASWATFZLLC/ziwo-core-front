@@ -25,4 +25,6 @@ export declare class ZiwoClient {
     private rtcClient;
     constructor(options: ZiwoClientOptions);
     connect(): Promise<any>;
+    addListener(func: Function): void;
+    startCall(phoneNumber: string): void;
 }

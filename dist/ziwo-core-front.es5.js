@@ -94,6 +94,7 @@ class AuthenticationService {
         });
     }
 }
+//# sourceMappingURL=authentication.service.js.map
 
 /**
  * RtcClient wraps all interaction with WebRTC
@@ -183,6 +184,29 @@ class ApiService {
 }
 //# sourceMappingURL=api.service.js.map
 
+/**
+ * TODO : documentation
+ * TODO : define interface for each available type?
+ * TODO : define all event type
+ */
+var ZiwoEventType;
+(function (ZiwoEventType) {
+    ZiwoEventType["IncomingCall"] = "IncomingCall";
+    ZiwoEventType["OutgoingCall"] = "OutgoingCall";
+    ZiwoEventType["CallStarted"] = "CallStarted";
+    ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
+    ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
+})(ZiwoEventType || (ZiwoEventType = {}));
+class ZiwoEvent {
+    static subscribe(func) {
+        this.listeners.push(func);
+    }
+    static emit(type, data) {
+        this.listeners.forEach(x => x(type, data));
+    }
+}
+ZiwoEvent.listeners = [];
+
 class ZiwoClient {
     constructor(options) {
         this.options = options;
@@ -190,12 +214,19 @@ class ZiwoClient {
         this.rtcClient = new RtcClient();
         if (options.autoConnect) {
             this.connect().then(r => {
-                console.log(r);
             }).catch(err => { throw err; });
         }
     }
     connect() {
         return AuthenticationService.authenticate(this.apiService, this.options.credentials);
+    }
+    addListener(func) {
+        return ZiwoEvent.subscribe(func);
+    }
+    startCall(phoneNumber) {
+        ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
+            peer: phoneNumber,
+        });
     }
 }
 

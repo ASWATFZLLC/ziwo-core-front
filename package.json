@@ -14,7 +14,7 @@
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "start": "rollup -c rollup.config.ts --watch",
-    "start:demo": "./node_modules/.bin/http-server app/ -c-1",
+    "start:app": "./node_modules/.bin/http-server app/ -c-1",
     "test": "jest --coverage",
     "test:coverage": "jest --coverage --watch",
     "doc": "./node_modules/.bin/typedoc --out docs --target es6 --readme none --theme minimal --mode file src",

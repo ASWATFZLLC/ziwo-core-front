@@ -8,6 +8,7 @@
 | ------------- | ------------------------------- |
 | build         | Build the library into `/dist`  |
 | start         | Start the library in watch mode |
+| start:app     | Start the demo application      |
 | lint          | Run tslint                      |
 | test          | Run the unit tests              |
 | test:coverage | Display a test coverage report  |

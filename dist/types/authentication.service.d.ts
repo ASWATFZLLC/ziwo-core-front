@@ -61,11 +61,11 @@ interface UserInfo extends User {
 }
 interface Queue {
     announcementType: string;
-    callerIDNumber: null;
+    callerIDNumber: any | null;
     createdAt: string;
     deletedAt: string | null;
     id: number;
-    image: null;
+    image: string | null;
     language: string;
     maxWaitTime: number;
     moh: string;

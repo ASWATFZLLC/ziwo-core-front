@@ -9,6 +9,12 @@ function start() {
       }
   });
 
+  ziwoClient.addListener((type, data) => {
+    console.log(`[Ziwo Event] ${type}`, data);
+  })
+
+  ziwoClient.startCall('64308503');
+
 }
 
 ////
