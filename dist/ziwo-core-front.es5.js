@@ -21,21 +21,16 @@ class AuthenticationService {
     static authenticate(api, credentials) {
         if (credentials.authenticationToken) {
             api.setToken(credentials.authenticationToken);
-            return this.loginCallCenter(api);
+            return new Promise((onRes, onErr) => {
+                this.initAgent(api).then(res => onRes(res)).catch(err => onErr(err));
+            });
         }
         if (!credentials.email || !credentials.password) {
             throw new Error(MESSAGES.EMAIL_PASSWORD_AUTHTOKEN_MISSING);
         }
         return new Promise((onRes, onErr) => {
             this.loginZiwo(api, credentials.email, credentials.password).then(() => {
-                this.loginCallCenter(api).then(res => onRes(res)).catch(err => onErr(err));
-            }).catch(err => onErr(err));
-        });
-    }
-    static loginCallCenter(api) {
-        return new Promise((onRes, onErr) => {
-            api.get(api.endpoints.profile).then(res => {
-                console.log('Agent profile', res);
+                this.initAgent(api).then(res => onRes(res)).catch(err => onErr(err));
             }).catch(err => onErr(err));
         });
     }
@@ -50,6 +45,52 @@ class AuthenticationService {
             }).catch(e => {
                 onErr(e);
             });
+        });
+    }
+    static initAgent(api) {
+        return new Promise((onRes, onErr) => {
+            Promise.all([
+                this.fetchAgentProfile(api),
+                this.fetchListQueues(api),
+                this.fetchListNumbers(api),
+                this.fetchWebRTCConfig(api),
+            ]).then(res => {
+                onRes({
+                    userInfo: res[0],
+                    queues: res[1] || [],
+                    numbers: res[2] || [],
+                    webRtc: res[3],
+                });
+            })
+                .catch(err => onErr(err));
+        });
+    }
+    static fetchAgentProfile(api) {
+        return new Promise((onRes, onErr) => {
+            api.get(api.endpoints.profile).then(res => {
+                onRes(res.content);
+            }).catch(err => onErr(err));
+        });
+    }
+    static fetchListQueues(api) {
+        return new Promise((onRes, onErr) => {
+            api.get('/agents/channels/calls/listQueues').then(res => {
+                onRes(res.content);
+            }).catch(err => onErr(err));
+        });
+    }
+    static fetchListNumbers(api) {
+        return new Promise((onRes, onErr) => {
+            api.get('/agents/channels/calls/listNumbers').then(res => {
+                onRes(res.content);
+            }).catch(err => onErr(err));
+        });
+    }
+    static fetchWebRTCConfig(api) {
+        return new Promise((onRes, onErr) => {
+            api.get('/fs/webrtc/config').then(res => {
+                onRes(res.content);
+            }).catch(err => onErr(err));
         });
     }
 }
@@ -140,6 +181,7 @@ class ApiService {
         });
     }
 }
+//# sourceMappingURL=api.service.js.map
 
 class ZiwoClient {
     constructor(options) {
@@ -147,7 +189,9 @@ class ZiwoClient {
         this.apiService = new ApiService(options.contactCenterName);
         this.rtcClient = new RtcClient();
         if (options.autoConnect) {
-            this.connect().then().catch(err => { throw err; });
+            this.connect().then(r => {
+                console.log(r);
+            }).catch(err => { throw err; });
         }
     }
     connect() {

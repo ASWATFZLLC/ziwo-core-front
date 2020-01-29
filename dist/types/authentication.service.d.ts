@@ -1,4 +1,4 @@
-import { ApiService } from './api/api.service';
+import { ApiService } from './api.service';
 /**
  * Credential provided by Ziwo
  * @email is the agent's email
@@ -48,10 +48,73 @@ export interface User {
     role: any;
     roles: any;
 }
+interface UserInfo extends User {
+    ccLogin: number;
+    ccPassword: number;
+    liveInfo: any;
+    liveCalls: any[];
+    wrapUpTime: number;
+    noAnswerDelayTime: any;
+    noAnswerTimeout: any;
+    roamingContactNumber: string;
+    roamingTimeout: number;
+}
+interface Queue {
+    announcementType: string;
+    callerIDNumber: null;
+    createdAt: string;
+    deletedAt: string | null;
+    id: number;
+    image: null;
+    language: string;
+    maxWaitTime: number;
+    moh: string;
+    name: string;
+    nonWorkingHoursDID: string;
+    priority: number;
+    status: string;
+    strategyType: string;
+    surveyRequired: boolean;
+    timeslots: string;
+    updatedAt: string;
+    urgentMessage: any | null;
+    waitTimeoutDID: string;
+}
+interface Number {
+    beyondTimeslotsLinkData: any | null;
+    beyondTimeslotsLinkType: any | null;
+    createdAt: string;
+    deletedAt: any | null;
+    did: string;
+    didCalled: string;
+    didDisplay: string;
+    id: number;
+    linkData: string;
+    linkType: string;
+    status: string;
+    length: number;
+    timeslots: any[];
+    updatedAt: string;
+    urgentMessage: any | null;
+}
+interface WebRtcInfo {
+    port: string;
+    protocol: string;
+}
+export interface AgentInfo {
+    userInfo: UserInfo;
+    queues: Queue[];
+    numbers: Number[];
+    webRtc: WebRtcInfo;
+}
 export declare class AuthenticationService {
     constructor();
-    static authenticate(api: ApiService, credentials: Credentials): Promise<any>;
-    private static loginCallCenter;
+    static authenticate(api: ApiService, credentials: Credentials): Promise<AgentInfo>;
     private static loginZiwo;
+    private static initAgent;
+    private static fetchAgentProfile;
+    private static fetchListQueues;
+    private static fetchListNumbers;
+    private static fetchWebRTCConfig;
 }
 export {};

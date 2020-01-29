@@ -1,6 +1,6 @@
 import {Credentials, AuthenticationService} from './authentication.service';
 import {RtcClient} from './rtc/rtc-client';
-import {ApiService} from './api/api.service';
+import {ApiService} from './api.service';
 
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
@@ -40,7 +40,9 @@ export class ZiwoClient {
     this.rtcClient = new RtcClient();
 
     if (options.autoConnect) {
-      this.connect().then().catch(err => {throw err;});
+      this.connect().then(r => {
+        console.log(r);
+      }).catch(err => {throw err;});
     }
   }
 
