@@ -5,7 +5,7 @@ function start() {
       contactCenterName: 'kalvad-poc',
       credentials: {
         email: 'mathieu@kalvad.com',
-        password: 'toto4242'
+        password: 'T0t0#4242'
       }
   });
 
