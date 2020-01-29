@@ -1,15 +1,14 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('whatwg-fetch')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'whatwg-fetch'], factory) :
-  (global = global || self, factory(global.ziwoCoreFront = {}, global.whatwgFetch));
-}(this, (function (exports, whatwgFetch) { 'use strict';
-
-  whatwgFetch = whatwgFetch && whatwgFetch.hasOwnProperty('default') ? whatwgFetch['default'] : whatwgFetch;
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = global || self, factory(global.ziwoCoreFront = {}));
+}(this, (function (exports) { 'use strict';
 
   const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
   const MESSAGES = {
       EMAIL_PASSWORD_AUTHTOKEN_MISSING: `${MESSAGE_PREFIX}Email or password are missing and no authentication token were provided.`
   };
+  //# sourceMappingURL=messages.js.map
 
   var UserStatus;
   (function (UserStatus) {
@@ -67,162 +66,7 @@
   class RtcClient {
       constuctor() { }
   }
-
-  var node =
-  /******/ (function(modules) { // webpackBootstrap
-  /******/ 	// The module cache
-  /******/ 	var installedModules = {};
-  /******/
-  /******/ 	// The require function
-  /******/ 	function __webpack_require__(moduleId) {
-  /******/
-  /******/ 		// Check if module is in cache
-  /******/ 		if(installedModules[moduleId])
-  /******/ 			return installedModules[moduleId].exports;
-  /******/
-  /******/ 		// Create a new module (and put it into the cache)
-  /******/ 		var module = installedModules[moduleId] = {
-  /******/ 			exports: {},
-  /******/ 			id: moduleId,
-  /******/ 			loaded: false
-  /******/ 		};
-  /******/
-  /******/ 		// Execute the module function
-  /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-  /******/
-  /******/ 		// Flag the module as loaded
-  /******/ 		module.loaded = true;
-  /******/
-  /******/ 		// Return the exports of the module
-  /******/ 		return module.exports;
-  /******/ 	}
-  /******/
-  /******/
-  /******/ 	// expose the modules object (__webpack_modules__)
-  /******/ 	__webpack_require__.m = modules;
-  /******/
-  /******/ 	// expose the module cache
-  /******/ 	__webpack_require__.c = installedModules;
-  /******/
-  /******/ 	// __webpack_public_path__
-  /******/ 	__webpack_require__.p = "";
-  /******/
-  /******/ 	// Load entry module and return exports
-  /******/ 	return __webpack_require__(0);
-  /******/ })
-  /************************************************************************/
-  /******/ ([
-  /* 0 */
-  /***/ (function(module, exports, __webpack_require__) {
-
-  	/* WEBPACK VAR INJECTION */(function(global) {	
-  	var attach = __webpack_require__(1);
-  	
-  	module.exports = attach(global);
-  	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())));
-
-  /***/ }),
-  /* 1 */
-  /***/ (function(module, exports, __webpack_require__) {
-  	
-  	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-  	
-  	/*
-  	* Configuration for React-Native's package system
-  	* @providesModule whatwg-fetch
-  	*/
-  	
-  	var interceptors = [];
-  	
-  	function interceptor(fetch) {
-  	  for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-  	    args[_key - 1] = arguments[_key];
-  	  }
-  	
-  	  var reversedInterceptors = interceptors.reduce(function (array, interceptor) {
-  	    return [interceptor].concat(array);
-  	  }, []);
-  	  var promise = Promise.resolve(args);
-  	
-  	  // Register request interceptors
-  	  reversedInterceptors.forEach(function (_ref) {
-  	    var request = _ref.request,
-  	        requestError = _ref.requestError;
-  	
-  	    if (request || requestError) {
-  	      promise = promise.then(function (args) {
-  	        return request.apply(undefined, _toConsumableArray(args));
-  	      }, requestError);
-  	    }
-  	  });
-  	
-  	  // Register fetch call
-  	  promise = promise.then(function (args) {
-  	    return fetch.apply(undefined, _toConsumableArray(args));
-  	  });
-  	
-  	  // Register response interceptors
-  	  reversedInterceptors.forEach(function (_ref2) {
-  	    var response = _ref2.response,
-  	        responseError = _ref2.responseError;
-  	
-  	    if (response || responseError) {
-  	      promise = promise.then(response, responseError);
-  	    }
-  	  });
-  	
-  	  return promise;
-  	}
-  	
-  	module.exports = function attach(env) {
-  	  // Make sure fetch is avaibale in the given environment
-  	  if (!env.fetch) {
-  	    try {
-  	      __webpack_require__(2);
-  	    } catch (err) {
-  	      throw Error('No fetch avaibale. Unable to register fetch-intercept');
-  	    }
-  	  }
-  	  env.fetch = function (fetch) {
-  	    return function () {
-  	      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-  	        args[_key2] = arguments[_key2];
-  	      }
-  	
-  	      return interceptor.apply(undefined, [fetch].concat(args));
-  	    };
-  	  }(env.fetch);
-  	
-  	  return {
-  	    register: function register(interceptor) {
-  	      interceptors.push(interceptor);
-  	      return function () {
-  	        var index = interceptors.indexOf(interceptor);
-  	        if (index >= 0) {
-  	          interceptors.splice(index, 1);
-  	        }
-  	      };
-  	    },
-  	    clear: function clear() {
-  	      interceptors = [];
-  	    }
-  	  };
-  	};
-
-  /***/ }),
-  /* 2 */
-  /***/ (function(module, exports) {
-
-  	module.exports = whatwgFetch;
-
-  /***/ })
-  /******/ ]);
-
-  var fetchIntercept = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    'default': node,
-    __moduleExports: node
-  });
+  //# sourceMappingURL=rtc-client.js.map
 
   /**
    * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE
@@ -248,24 +92,12 @@
        */
       setToken(token) {
           this.token = token;
-          undefined({
-              request: (url, config) => {
-                  if (config.headers['Authorization']) {
-                      config.headers['Authorization'] = `Bearer ${this.token}`;
-                  }
-                  else {
-                      config.headers = Object.assign({ 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' }, config.headers);
-                  }
-                  return [url, config];
-              }
-          });
       }
       /**
        * Execute a GET query
        * @endpoint url endpoint. Base url should not be included
        */
       get(endpoint) {
-          // return ky.default.get(`${this.baseUrl}${endpoint}`, this.getKyOptions()).json<ApiResult<T>>();
           return this.query(endpoint, 'GET');
       }
       /**
@@ -273,23 +105,22 @@
        * @endpoint url endpoint. Base url should not be included
        */
       post(endpoint, payload) {
-          // return ky.default.post(`${this.baseUrl}${endpoint}`, this.getKyOptions(payload)).json<ApiResult<T>>();
           return this.query(endpoint, 'POST', payload);
       }
       /**
        * Execute a PUT query
        * @endpoint url endpoint. Base url should not be included
        */
-      // public put<T>(endpoint:string, payload:any):AsyncApiResult<T> {
-      //   return ky.default.put(`${this.baseUrl}${endpoint}`, this.getKyOptions(payload)).json<ApiResult<T>>();
-      // }
+      put(endpoint, payload) {
+          return this.query(endpoint, 'PUT', payload);
+      }
       /**
        * Execute a DELETE query
        * @endpoint url endpoint. Base url should not be included
        */
-      // public delete<T>(endpoint:string):AsyncApiResult<T> {
-      //   return ky.default.delete(`${this.baseUrl}${endpoint}`, this.getKyOptions()).json<ApiResult<T>>();
-      // }
+      delete(endpoint) {
+          return this.query(endpoint, 'DELETE');
+      }
       query(endpoint, method, payload) {
           return new Promise((onRes, onErr) => {
               const fetchOptions = {
@@ -301,6 +132,10 @@
               window.fetch(`${this.baseUrl}${endpoint}`, {
                   method: method,
                   body: payload ? JSON.stringify(payload) : undefined,
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'access_token': `${this.token}`,
+                  }
               }).then(res => {
                   if (!res.ok) {
                       onErr(`Fetch error: ${res.statusText}`);

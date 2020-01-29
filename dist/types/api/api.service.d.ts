@@ -39,9 +39,11 @@ export declare class ApiService {
      * Execute a PUT query
      * @endpoint url endpoint. Base url should not be included
      */
+    put<T>(endpoint: string, payload: any): AsyncApiResult<T>;
     /**
      * Execute a DELETE query
      * @endpoint url endpoint. Base url should not be included
      */
+    delete<T>(endpoint: string): AsyncApiResult<T>;
     private query;
 }

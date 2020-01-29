@@ -1,6 +1,3 @@
-import * as ky from 'ky';
-// import * as fetchIntercept from 'fetch-intercept';
-import * as fetchInterceptor from 'fetch-interceptor';
 
 export interface ApiResult<T> {
   result:boolean;
@@ -25,13 +22,11 @@ export class ApiService {
 
   private token?:string;
   private readonly baseUrl:string;
-
   private readonly API_PROTOCOL = 'https://';
   private readonly API_PREFIX = '-api.aswat.co';
 
   constructor(contactCenterName:string) {
     this.baseUrl = `${this.API_PROTOCOL}${contactCenterName}${this.API_PREFIX}`;
-
     this.endpoints = {
       authenticate: `/auth/login`,
       profile: '/profile',
@@ -43,21 +38,6 @@ export class ApiService {
    */
   public setToken(token:string):void {
     this.token = token;
-    fetchInterceptor.register({});
-    // fetchIntercept.register({
-    //   request: (url, config) => {
-    //     if (config.headers['Authorization']) {
-    //       config.headers['Authorization'] = `Bearer ${this.token}`;
-    //     } else {
-    //       config.headers = {
-    //         'Authorization': `Bearer ${this.token}`,
-    //         'Content-Type': 'application/json',
-    //         ...config.headers
-    //       };
-    //     }
-    //     return [url, config];
-    //   }
-    // });
   }
 
   /**
@@ -65,7 +45,6 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public get<T>(endpoint:string):AsyncApiResult<T> {
-    // return ky.default.get(`${this.baseUrl}${endpoint}`, this.getKyOptions()).json<ApiResult<T>>();
     return this.query<T>(endpoint, 'GET');
   }
 
@@ -74,7 +53,6 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public post<T>(endpoint:string, payload:any):AsyncApiResult<T> {
-    // return ky.default.post(`${this.baseUrl}${endpoint}`, this.getKyOptions(payload)).json<ApiResult<T>>();
     return this.query<T>(endpoint, 'POST', payload);
   }
 
@@ -82,17 +60,17 @@ export class ApiService {
    * Execute a PUT query
    * @endpoint url endpoint. Base url should not be included
    */
-  // public put<T>(endpoint:string, payload:any):AsyncApiResult<T> {
-  //   return ky.default.put(`${this.baseUrl}${endpoint}`, this.getKyOptions(payload)).json<ApiResult<T>>();
-  // }
+  public put<T>(endpoint:string, payload:any):AsyncApiResult<T> {
+    return this.query<T>(endpoint, 'PUT', payload);
+  }
 
   /**
    * Execute a DELETE query
    * @endpoint url endpoint. Base url should not be included
    */
-  // public delete<T>(endpoint:string):AsyncApiResult<T> {
-  //   return ky.default.delete(`${this.baseUrl}${endpoint}`, this.getKyOptions()).json<ApiResult<T>>();
-  // }
+  public delete<T>(endpoint:string):AsyncApiResult<T> {
+    return this.query<T>(endpoint, 'DELETE');
+  }
 
   private query<T>(endpoint:string, method:'GET'|'POST'|'PUT'|'DELETE', payload?:any):Promise<ApiResult<T>> {
     return new Promise<ApiResult<T>>((onRes, onErr) => {
@@ -105,6 +83,10 @@ export class ApiService {
       window.fetch(`${this.baseUrl}${endpoint}`, {
         method: method,
         body: payload ? JSON.stringify(payload) : undefined,
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': `${this.token}`,
+        }
       }).then(res => {
         if (!res.ok) {
           onErr(`Fetch error: ${res.statusText}`);
@@ -114,28 +96,5 @@ export class ApiService {
       }).catch(err => onErr(err));
     });
   }
-
-  // private getKyOptions(payload?:any):ky.Options {
-  //   const opt:ky.Options = {
-  //     headers: this.getHttpHeaders()
-  //   };
-  //   if (payload) {
-  //     opt.json = payload;
-  //   }
-  //   console.log(opt);
-  //   return opt;
-  // }
-
-  // private getHttpHeaders():any {
-  //   if (this.token) {
-  //     return {
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${this.token}`
-  //     };
-  //   }
-  //   return {
-  //     'content-type': 'application/json'
-  //   };
-  // }
 
 }

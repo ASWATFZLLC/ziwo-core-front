@@ -5,6 +5,8 @@ import camelCase from 'lodash.camelcase';
 import typescript from 'rollup-plugin-typescript2';
 import json from 'rollup-plugin-json';
 import execute from 'rollup-plugin-execute';
+import builtins from 'rollup-plugin-node-builtins';
+import globals from 'rollup-plugin-node-globals';
 
 const pkg = require('./package.json');
 
@@ -12,12 +14,15 @@ const libraryName = 'ziwo-core-front';
 
 export default {
   input: `src/main.ts`,
+  browser: true,
   output: [
     { file: pkg.main, name: camelCase(libraryName), format: 'umd', sourcemap: true },
     { file: pkg.module, format: 'es', sourcemap: true },
   ],
   // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
-  external: [],
+  external: [
+    'url', 'http', 'https', 'fs', 'path', 'zlib', 'crypto', 'net', 'events', 'tls', 'util', 'assert',
+  ],
   watch: {
     include: 'src/**',
   },
@@ -29,6 +34,8 @@ export default {
       useTsconfigDeclarationDir: true ,
       objectHashIgnoreUnknownHack: true,
     }),
+    globals(),
+    builtins(),
     // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
     commonjs(),
     // Allow node_modules resolution, so you can use 'external' to control

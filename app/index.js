@@ -2,10 +2,10 @@
 function start() {
   var ziwoClient = new ziwoCoreFront.ZiwoClient({
       autoConnect: true,
-      contactCenterName: 'aldebaran',
+      contactCenterName: 'kalvad-poc',
       credentials: {
-        email: 'ziwo@aswat-telecom.com',
-        password: '872ad8cf-0db8-425e-b0db-f91d5da3349e'
+        email: 'mathieu@kalvad.com',
+        password: 'P]o9r*Sk'
       }
   });
 
