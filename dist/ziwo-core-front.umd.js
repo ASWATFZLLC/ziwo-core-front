@@ -6,7 +6,9 @@
 
   const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
   const MESSAGES = {
-      EMAIL_PASSWORD_AUTHTOKEN_MISSING: `${MESSAGE_PREFIX}Email or password are missing and no authentication token were provided.`
+      EMAIL_PASSWORD_AUTHTOKEN_MISSING: `${MESSAGE_PREFIX}Email or password are missing and no authentication token were provided.`,
+      INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
+      AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
   };
   //# sourceMappingURL=messages.js.map
 
@@ -102,11 +104,171 @@
   }
   //# sourceMappingURL=authentication.service.js.map
 
+  class Channel {
+      constructor(stream) {
+          this.stream = stream;
+          this.audioContext = this.getAudioContext();
+      }
+      startMicrophone() {
+          // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
+          const filterNode = this.audioContext.createBiquadFilter();
+          filterNode.type = 'highpass';
+          // cutoff frequency: for highpass, audio is attenuated below this frequency
+          filterNode.frequency.value = 10000;
+          // create a gain node (to change audio volume)
+          const gainNode = this.audioContext.createGain();
+          // default is 1 (no change); less than 1 means audio is attenuated and vice versa
+          gainNode.gain.value = 0.5;
+          const source = this.audioContext.createMediaStreamSource(this.stream);
+          this.microphone = {
+              filterNode,
+              gainNode,
+              source,
+          };
+      }
+      bindVideo(el) {
+          if (!el.srcObject) {
+              // TODO : emit appropriate error message
+              return;
+          }
+          el.srcObject = this.stream;
+      }
+      getAudioContext() {
+          let audioContext;
+          if (typeof AudioContext === 'function') {
+              audioContext = new AudioContext();
+          }
+          else {
+              throw new Error('Web audio not supported');
+          }
+          return audioContext;
+      }
+  }
+  //# sourceMappingURL=channel.js.map
+
+  class UserMedia {
+      static getUserMedia(mediaRequested) {
+          return new Promise((onRes, onErr) => {
+              try {
+                  navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+                      onRes(new Channel(stream));
+                  });
+              }
+              catch (e) {
+                  onErr(e);
+              }
+          });
+      }
+  }
+  //# sourceMappingURL=userMedia.js.map
+
+  const PATTERNS = {
+      phoneNumber: /^\+?\d+$/,
+  };
+  //# sourceMappingURL=regex.js.map
+
+  /**
+   * TODO : documentation
+   * TODO : define interface for each available type?
+   * TODO : define all event type
+   */
+  var ErrorCode;
+  (function (ErrorCode) {
+      ErrorCode[ErrorCode["InvalidPhoneNumber"] = 0] = "InvalidPhoneNumber";
+      ErrorCode[ErrorCode["UserMediaError"] = 1] = "UserMediaError";
+      ErrorCode[ErrorCode["AgentNotConnected"] = 2] = "AgentNotConnected";
+  })(ErrorCode || (ErrorCode = {}));
+  var ZiwoEventType;
+  (function (ZiwoEventType) {
+      ZiwoEventType["Error"] = "Error";
+      ZiwoEventType["AgentConnected"] = "AgentConnected";
+      ZiwoEventType["IncomingCall"] = "IncomingCall";
+      ZiwoEventType["OutgoingCall"] = "OutgoingCall";
+      ZiwoEventType["CallStarted"] = "CallStarted";
+      ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
+      ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
+  })(ZiwoEventType || (ZiwoEventType = {}));
+  class ZiwoEvent {
+      static subscribe(func) {
+          this.listeners.push(func);
+      }
+      static emit(type, data) {
+          this.listeners.forEach(x => x(type, data));
+      }
+  }
+  ZiwoEvent.listeners = [];
+  //# sourceMappingURL=events.js.map
+
+  var RtcAction;
+  (function (RtcAction) {
+      RtcAction["StartCall"] = "Start call";
+  })(RtcAction || (RtcAction = {}));
   /**
    * RtcClient wraps all interaction with WebRTC
    */
   class RtcClient {
-      constuctor() { }
+      constructor(video) {
+          if (video) {
+              this.videoInfo = video;
+          }
+      }
+      /**
+       * Connect an agent using its Info
+       */
+      connectAgent(agent) {
+          console.log('Init RTC with > ', agent);
+          this.connectedAgent = agent;
+          UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false })
+              .then(c => {
+              this.channel = c;
+              window.setTimeout(() => {
+                  ZiwoEvent.emit(ZiwoEventType.AgentConnected);
+              }, 100);
+          }).catch(e => {
+              ZiwoEvent.emit(ZiwoEventType.Error, {
+                  code: ErrorCode.UserMediaError,
+                  message: e,
+              });
+          });
+      }
+      /**
+       * Get connected Agent returns the Info of the current agent
+       */
+      getConnectedAgent() {
+          return this.connectedAgent;
+      }
+      /**
+       * Return true if an agent is connected
+       */
+      isAgentConnected() {
+          return !!this.connectedAgent && !!this.channel;
+      }
+      startCall(phoneNumber) {
+          var _a;
+          if (!this.isAgentConnected() || !this.channel) {
+              this.sendNotConnectedEvent('start call');
+              return;
+          }
+          if (!PATTERNS.phoneNumber.test(phoneNumber)) {
+              return ZiwoEvent.emit(ZiwoEventType.Error, {
+                  code: ErrorCode.InvalidPhoneNumber,
+                  message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
+                  data: {
+                      phoneNumber: phoneNumber,
+                  }
+              });
+          }
+          (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
+          if (this.videoInfo && this.videoInfo.selfTag) {
+              this.channel.bindVideo(this.videoInfo.selfTag);
+          }
+      }
+      sendNotConnectedEvent(action) {
+          return ZiwoEvent.emit(ZiwoEventType.Error, {
+              code: ErrorCode.InvalidPhoneNumber,
+              message: MESSAGES.AGENT_NOT_CONNECTED(action),
+          });
+      }
   }
   //# sourceMappingURL=rtc-client.js.map
 
@@ -190,49 +352,30 @@
   }
   //# sourceMappingURL=api.service.js.map
 
-  /**
-   * TODO : documentation
-   * TODO : define interface for each available type?
-   * TODO : define all event type
-   */
-  var ZiwoEventType;
-  (function (ZiwoEventType) {
-      ZiwoEventType["IncomingCall"] = "IncomingCall";
-      ZiwoEventType["OutgoingCall"] = "OutgoingCall";
-      ZiwoEventType["CallStarted"] = "CallStarted";
-      ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
-      ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
-  })(ZiwoEventType || (ZiwoEventType = {}));
-  class ZiwoEvent {
-      static subscribe(func) {
-          this.listeners.push(func);
-      }
-      static emit(type, data) {
-          this.listeners.forEach(x => x(type, data));
-      }
-  }
-  ZiwoEvent.listeners = [];
-
   class ZiwoClient {
       constructor(options) {
           this.options = options;
           this.apiService = new ApiService(options.contactCenterName);
-          this.rtcClient = new RtcClient();
+          this.rtcClient = new RtcClient(options.video);
           if (options.autoConnect) {
               this.connect().then(r => {
               }).catch(err => { throw err; });
           }
       }
       connect() {
-          return AuthenticationService.authenticate(this.apiService, this.options.credentials);
+          return new Promise((onRes, onErr) => {
+              AuthenticationService.authenticate(this.apiService, this.options.credentials)
+                  .then(res => {
+                  this.rtcClient.connectAgent(res);
+                  onRes(res);
+              }).catch(err => onErr(err));
+          });
       }
       addListener(func) {
           return ZiwoEvent.subscribe(func);
       }
       startCall(phoneNumber) {
-          ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
-              peer: phoneNumber,
-          });
+          this.rtcClient.startCall(phoneNumber);
       }
   }
 

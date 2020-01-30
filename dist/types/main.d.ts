@@ -1,4 +1,5 @@
-import { Credentials } from './authentication.service';
+import { Credentials, AgentInfo } from './authentication.service';
+import { VideoInfo } from './rtc/channel';
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
  */
@@ -18,13 +19,17 @@ export interface ZiwoClientOptions {
      * Error is raised if authentication fails. In case you want to handle failed authentication, run `connect` manually
      */
     autoConnect: boolean;
+    /**
+     *
+     */
+    video?: VideoInfo;
 }
 export declare class ZiwoClient {
     readonly options: ZiwoClientOptions;
     private apiService;
     private rtcClient;
     constructor(options: ZiwoClientOptions);
-    connect(): Promise<any>;
+    connect(): Promise<AgentInfo>;
     addListener(func: Function): void;
     startCall(phoneNumber: string): void;
 }

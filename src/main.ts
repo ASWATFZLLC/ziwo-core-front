@@ -1,7 +1,8 @@
-import {Credentials, AuthenticationService} from './authentication.service';
+import {Credentials, AuthenticationService, AgentInfo} from './authentication.service';
 import {RtcClient} from './rtc/rtc-client';
 import {ApiService} from './api.service';
 import {ZiwoEvent, ZiwoEventType} from './events';
+import {VideoInfo} from './rtc/channel';
 
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
@@ -26,6 +27,10 @@ export interface ZiwoClientOptions {
    */
   autoConnect:boolean;
 
+  /**
+   *
+   */
+  video?:VideoInfo;
 }
 
 export class ZiwoClient {
@@ -38,16 +43,21 @@ export class ZiwoClient {
   constructor(options:ZiwoClientOptions) {
     this.options = options;
     this.apiService = new ApiService(options.contactCenterName);
-    this.rtcClient = new RtcClient();
-
+    this.rtcClient = new RtcClient(options.video);
     if (options.autoConnect) {
       this.connect().then(r => {
       }).catch(err => { throw err; });
     }
   }
 
-  public connect():Promise<any> {
-    return AuthenticationService.authenticate(this.apiService, this.options.credentials);
+  public connect():Promise<AgentInfo> {
+    return new Promise<any>((onRes, onErr) => {
+      AuthenticationService.authenticate(this.apiService, this.options.credentials)
+        .then(res => {
+          this.rtcClient.connectAgent(res);
+          onRes(res);
+        }).catch(err => onErr(err));
+    });
   }
 
   public addListener(func:Function):void {
@@ -55,9 +65,7 @@ export class ZiwoClient {
   }
 
   public startCall(phoneNumber:string):void {
-    ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
-      peer: phoneNumber,
-    });
+    this.rtcClient.startCall(phoneNumber);
   }
 
 }

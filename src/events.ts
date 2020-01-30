@@ -5,7 +5,21 @@
  * TODO : define all event type
  */
 
+export enum ErrorCode {
+  InvalidPhoneNumber,
+  UserMediaError,
+  AgentNotConnected,
+}
+
+export interface ErrorData {
+  code:ErrorCode;
+  message:string;
+  data?:any;
+}
+
 export enum ZiwoEventType {
+  Error = 'Error',
+  AgentConnected = 'AgentConnected',
   IncomingCall = 'IncomingCall',
   OutgoingCall = 'OutgoingCall',
   CallStarted = 'CallStarted',
@@ -21,7 +35,7 @@ export class ZiwoEvent {
     this.listeners.push(func);
   }
 
-  public static emit(type:ZiwoEventType, data:any):void {
+  public static emit(type:ZiwoEventType, data?:any):void {
     this.listeners.forEach(x => x(type, data));
   }
 }
