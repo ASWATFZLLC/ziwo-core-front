@@ -68,4 +68,8 @@ export class ZiwoClient {
     this.rtcClient.startCall(phoneNumber);
   }
 
+  public startVideoCall(phoneNumber:string):void {
+    this.rtcClient.startVideoCall(phoneNumber);
+  }
+
 }

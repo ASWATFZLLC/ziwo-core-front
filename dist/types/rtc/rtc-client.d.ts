@@ -1,5 +1,6 @@
 import { AgentInfo } from '../authentication.service';
 import { Channel, VideoInfo } from './channel';
+import { JsonRpcClient } from './json-rpc';
 export interface MediaConstraint {
     audio: boolean;
     video: boolean;
@@ -11,6 +12,7 @@ export declare class RtcClient {
     connectedAgent?: AgentInfo;
     channel?: Channel;
     videoInfo?: VideoInfo;
+    jsonRpcClient?: JsonRpcClient;
     constructor(video?: VideoInfo);
     /**
      * Connect an agent using its Info
@@ -25,5 +27,6 @@ export declare class RtcClient {
      */
     isAgentConnected(): boolean;
     startCall(phoneNumber: string): void;
+    startVideoCall(phoneNumber: string): void;
     private sendNotConnectedEvent;
 }

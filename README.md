@@ -4,14 +4,15 @@
 
 ## Commands
 
-| Command       | Description                     |
-| ------------- | ------------------------------- |
-| build         | Build the library into `/dist`  |
-| start         | Start the library in watch mode |
-| start:app     | Start the demo application      |
-| lint          | Run tslint                      |
-| test          | Run the unit tests              |
-| test:coverage | Display a test coverage report  |
+| Command        | Description                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| build          | Build the library into `/dist`                                                             |
+| start          | Start the library in watch mode                                                            |
+| start:app      | Start the demo application                                                                 |
+| start:app:port | Start the demo application on a specific port. Usage: `$ PORT=1818 npm run start:app:port` |
+| lint           | Run tslint                                                                                 |
+| test           | Run the unit tests                                                                         |
+| test:coverage  | Display a test coverage report                                                             |
 
 ## Coding standards
 

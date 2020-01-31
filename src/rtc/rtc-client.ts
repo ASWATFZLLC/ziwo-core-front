@@ -4,10 +4,7 @@ import {PATTERNS} from '../regex';
 import {MESSAGES} from '../messages';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {Channel, VideoInfo} from './channel';
-
-enum RtcAction {
-  StartCall = 'Start call',
-}
+import {JsonRpcClient} from './json-rpc';
 
 export interface MediaConstraint {
   audio:boolean;
@@ -22,6 +19,7 @@ export class RtcClient {
   public connectedAgent?:AgentInfo;
   public channel?:Channel;
   public videoInfo?:VideoInfo;
+  public jsonRpcClient?:JsonRpcClient;
 
   constructor(video?:VideoInfo) {
     if (video) {
@@ -38,15 +36,18 @@ export class RtcClient {
     UserMedia.getUserMedia({audio: true, video: this.videoInfo ? true : false})
       .then(c => {
         this.channel = c;
-        window.setTimeout(() => {
-          ZiwoEvent.emit(ZiwoEventType.AgentConnected);
-        }, 100);
+        ZiwoEvent.emit(ZiwoEventType.AgentConnected);
       }).catch(e => {
         ZiwoEvent.emit(ZiwoEventType.Error, {
           code: ErrorCode.UserMediaError,
           message: e,
         });
       });
+    this.jsonRpcClient = new JsonRpcClient(
+      this.connectedAgent.webRtc.socket,
+      this.connectedAgent.position.name,
+      this.connectedAgent.position.password
+    );
   }
 
   /**
@@ -78,9 +79,35 @@ export class RtcClient {
       });
     }
     this.channel?.startMicrophone();
+    this.jsonRpcClient.startCall();
+    ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
+      audio: true,
+      video: false,
+    });
+  }
+
+  public startVideoCall(phoneNumber:string):void {
+    if (!this.isAgentConnected() || !this.channel) {
+      this.sendNotConnectedEvent('start call');
+      return;
+    }
+    if (!PATTERNS.phoneNumber.test(phoneNumber)) {
+      return ZiwoEvent.emit(ZiwoEventType.Error, {
+        code: ErrorCode.InvalidPhoneNumber,
+        message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
+        data: {
+          phoneNumber: phoneNumber,
+        }
+      });
+    }
+    this.channel?.startMicrophone();
     if (this.videoInfo && this.videoInfo.selfTag) {
       this.channel.bindVideo(this.videoInfo.selfTag);
     }
+    ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
+      audio: true,
+      video: true,
+    });
   }
 
   private sendNotConnectedEvent(action:string):void {

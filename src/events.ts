@@ -6,9 +6,9 @@
  */
 
 export enum ErrorCode {
-  InvalidPhoneNumber,
-  UserMediaError,
-  AgentNotConnected,
+  InvalidPhoneNumber = 2,
+  UserMediaError = 3,
+  AgentNotConnected = 1,
 }
 
 export interface ErrorData {

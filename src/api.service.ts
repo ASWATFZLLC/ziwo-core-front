@@ -22,15 +22,24 @@ export class ApiService {
 
   private token?:string;
   private readonly baseUrl:string;
+  private readonly contactCenterName:string;
   private readonly API_PROTOCOL = 'https://';
   private readonly API_PREFIX = '-api.aswat.co';
 
   constructor(contactCenterName:string) {
+    this.contactCenterName = contactCenterName;
     this.baseUrl = `${this.API_PROTOCOL}${contactCenterName}${this.API_PREFIX}`;
     this.endpoints = {
       authenticate: `/auth/login`,
       profile: '/profile',
     };
+  }
+
+  /**
+   * Return the hostname of current user
+   */
+  public getHostname():string {
+    return `${this.contactCenterName}${this.API_PREFIX}`;
   }
 
   /**

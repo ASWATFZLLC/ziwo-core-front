@@ -1,3 +1,4 @@
+import {Md5} from "md5-typescript";
 import {ApiService} from './api.service';
 import {MESSAGES} from './messages';
 
@@ -110,8 +111,13 @@ interface Number {
 }
 
 interface WebRtcInfo {
-  port:string;
-  protocol:string;
+  hostname:string;
+  socket:string;
+}
+
+export interface AgentPosition {
+  name:string;
+  password:string;
 }
 
 export interface AgentInfo {
@@ -119,6 +125,7 @@ export interface AgentInfo {
   queues:Queue[];
   numbers:Number[];
   webRtc:WebRtcInfo;
+  position:AgentPosition;
 }
 
 
@@ -169,7 +176,14 @@ export class AuthenticationService {
           userInfo: res[0],
           queues: res[1] || [],
           numbers: res[2] || [],
-          webRtc: res[3],
+          webRtc: {
+            hostname: api.getHostname(),
+            socket: `${res[3].webSocket.protocol}://${api.getHostname()}:${res[3].webSocket.port}`,
+          },
+          position: {
+            name: `agent-${res[0].ccLogin}`,
+            password: Md5.init(`${res[0].ccLogin}${res[0].ccPassword}`).toString(),
+          }
         });
       })
       .catch(err => onErr(err));

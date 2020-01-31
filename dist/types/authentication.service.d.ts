@@ -98,14 +98,19 @@ interface Number {
     urgentMessage: any | null;
 }
 interface WebRtcInfo {
-    port: string;
-    protocol: string;
+    hostname: string;
+    socket: string;
+}
+export interface AgentPosition {
+    name: string;
+    password: string;
 }
 export interface AgentInfo {
     userInfo: UserInfo;
     queues: Queue[];
     numbers: Number[];
     webRtc: WebRtcInfo;
+    position: AgentPosition;
 }
 export declare class AuthenticationService {
     constructor();

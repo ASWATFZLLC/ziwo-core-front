@@ -45,10 +45,11 @@ export class Channel {
   }
 
   public bindVideo(el:any):void {
-    if (!el.srcObject) {
-      // TODO : emit appropriate error message
-      return;
-    }
+    // if (!el.srcObject) {
+    //   // TODO : emit appropriate error message
+    //   console.log('error while linking video');
+    //   return;
+    // }
     el.srcObject = this.stream;
   }
 
