@@ -26,7 +26,8 @@ export class JsonRpcClient {
     socket.onopen = () => {
       this.login(socket);
     };
-    socket.onmessage = (data) => {
+    socket.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
       console.log('socket message', data);
     };
   }

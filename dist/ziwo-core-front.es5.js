@@ -194,7 +194,6 @@ var Md5 = /** @class */ (function () {
     Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
     return Md5;
 }());
-//# sourceMappingURL=index.js.map
 
 const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
 const MESSAGES = {
@@ -202,7 +201,6 @@ const MESSAGES = {
     INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
     AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
 };
-//# sourceMappingURL=messages.js.map
 
 var UserStatus;
 (function (UserStatus) {
@@ -301,7 +299,6 @@ class AuthenticationService {
         });
     }
 }
-//# sourceMappingURL=authentication.service.js.map
 
 class Channel {
     constructor(stream) {
@@ -344,7 +341,6 @@ class Channel {
         return audioContext;
     }
 }
-//# sourceMappingURL=channel.js.map
 
 class UserMedia {
     static getUserMedia(mediaRequested) {
@@ -360,12 +356,10 @@ class UserMedia {
         });
     }
 }
-//# sourceMappingURL=userMedia.js.map
 
 const PATTERNS = {
     phoneNumber: /^\+?\d+$/,
 };
-//# sourceMappingURL=regex.js.map
 
 /**
  * TODO : documentation
@@ -397,7 +391,6 @@ class ZiwoEvent {
     }
 }
 ZiwoEvent.listeners = [];
-//# sourceMappingURL=events.js.map
 
 class JsonRpcClient {
     constructor(socketUrl, login, password) {
@@ -416,7 +409,8 @@ class JsonRpcClient {
         socket.onopen = () => {
             this.login(socket);
         };
-        socket.onmessage = (data) => {
+        socket.onmessage = (msg) => {
+            const data = JSON.parse(msg.data);
             console.log('socket message', data);
         };
     }
@@ -490,7 +484,7 @@ class RtcClient {
     }
     startCall(phoneNumber) {
         var _a;
-        if (!this.isAgentConnected() || !this.channel) {
+        if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
             this.sendNotConnectedEvent('start call');
             return;
         }
@@ -504,6 +498,7 @@ class RtcClient {
             });
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
+        // this.jsonRpcClient.startCall();
         ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
             audio: true,
             video: false,
@@ -626,7 +621,6 @@ class ApiService {
         });
     }
 }
-//# sourceMappingURL=api.service.js.map
 
 class ZiwoClient {
     constructor(options) {
@@ -657,7 +651,6 @@ class ZiwoClient {
         this.rtcClient.startVideoCall(phoneNumber);
     }
 }
-//# sourceMappingURL=main.js.map
 
 export { ZiwoClient };
 //# sourceMappingURL=ziwo-core-front.es5.js.map

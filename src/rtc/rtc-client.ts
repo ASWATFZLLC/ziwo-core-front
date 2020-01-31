@@ -65,7 +65,7 @@ export class RtcClient {
   }
 
   public startCall(phoneNumber:string):void {
-    if (!this.isAgentConnected() || !this.channel) {
+    if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
       this.sendNotConnectedEvent('start call');
       return;
     }
@@ -79,7 +79,7 @@ export class RtcClient {
       });
     }
     this.channel?.startMicrophone();
-    this.jsonRpcClient.startCall();
+    // this.jsonRpcClient.startCall();
     ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
       audio: true,
       video: false,
