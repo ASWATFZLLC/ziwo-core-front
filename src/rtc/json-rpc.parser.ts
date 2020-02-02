@@ -20,6 +20,12 @@ export class JsonRpcParser {
         payload: data.result,
       };
     }
+    if (this.isMediaRequest(data)) {
+      return {
+        type: JsonRpcEventType.MediaRequest,
+        payload: data.params,
+      };
+    }
     return {
       type: JsonRpcEventType.Unknown,
       payload: data
@@ -32,6 +38,10 @@ export class JsonRpcParser {
 
   private static isOutgoingCall(data:any):boolean {
     return data.id === JsonRpcActionId.invite;
+  }
+
+  private static isMediaRequest(data:any):boolean {
+    return data.method === 'verto.media';
   }
 
 }

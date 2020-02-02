@@ -65,38 +65,6 @@ export class JsonRpcParams {
           },
         }
     });
-    return {
-      jsonrpc: '2.0',
-      method: JsonRpcMethod.invite,
-      id: 4,
-      params: {
-        sdp: sdp,
-        sessid: sessionId,
-        dialogParams: {
-          callID: this.getUuid(),
-          tag: this.getUuid(),
-          destination_number: phoneNumber,
-          login: login,
-          useStereo: true,
-          screenShare: false,
-          useMic: true,
-          useSpeak: true,
-          dedEnd: false,
-          videoParams: {},
-          audioParams: {
-            googAutoGainControl: false,
-            googNoiseSuppression: false,
-            googHighpassFilter: false
-          },
-          caller_id_name: '',
-          caller_id_number: '',
-          outgoingBandwidth: 'default',
-          incomingBandwidth: 'default',
-          remote_caller_id_name: 'Outbound Call',
-          remote_caller_id_number: phoneNumber,
-        }
-      },
-    };
   }
 
 

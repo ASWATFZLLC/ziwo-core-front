@@ -8,6 +8,7 @@ export enum JsonRpcEventType {
   Unknown = 'Unknown',
   LoggedIn = 'LoggedIn',
   OutgoingCall = 'OutgoingCall',
+  MediaRequest = 'MediaRequest',
 }
 
 export interface BasePayload {
@@ -17,6 +18,11 @@ export interface BasePayload {
 export interface LoggedInPayload extends BasePayload { }
 
 export interface OutgoingCallPayload extends BasePayload {
-  CallID:string;
+  callID:string;
   message:string;
+}
+
+export interface MediaRequestPayload extends BasePayload {
+  callID:string;
+  sdp:string;
 }

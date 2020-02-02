@@ -60,6 +60,10 @@ export class RtcClient extends RtcClientHandlers {
     switch (ev.type) {
       case JsonRpcEventType.OutgoingCall:
         this.outgoingCall(ev.payload);
+        break;
+      case JsonRpcEventType.MediaRequest:
+        this.acceptMediaRequest(ev.payload);
+        break;
     }
   }
 

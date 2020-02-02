@@ -406,6 +406,7 @@
         JsonRpcEventType["Unknown"] = "Unknown";
         JsonRpcEventType["LoggedIn"] = "LoggedIn";
         JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
+        JsonRpcEventType["MediaRequest"] = "MediaRequest";
     })(JsonRpcEventType || (JsonRpcEventType = {}));
     //# sourceMappingURL=json-rpc.interfaces.js.map
 
@@ -495,6 +496,12 @@
                     payload: data.result,
                 };
             }
+            if (this.isMediaRequest(data)) {
+                return {
+                    type: JsonRpcEventType.MediaRequest,
+                    payload: data.params,
+                };
+            }
             return {
                 type: JsonRpcEventType.Unknown,
                 payload: data
@@ -506,48 +513,20 @@
         static isOutgoingCall(data) {
             return data.id === JsonRpcActionId.invite;
         }
+        static isMediaRequest(data) {
+            return data.method === 'verto.media';
+        }
     }
     //# sourceMappingURL=json-rpc.parser.js.map
 
-    /**
-     * Call holds a call information and provide helpers
-     */
-    class Call {
-        constructor(callId, rtcPeerConnection) {
-            this.callId = callId;
-            this.rtcPeerConnection = rtcPeerConnection;
-        }
-    }
-    //# sourceMappingURL=call.js.map
-
-    var ZiwoSocketEvent;
-    (function (ZiwoSocketEvent) {
-        ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
-        ZiwoSocketEvent["CallCreated"] = "CallCreated";
-    })(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
-    /**
-     * JsonRpcClient provides useful functions to interact with the WebSocket using Verto Protocol
-     *
-     * Usage:
-     *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
-     *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
-     *      .then(() => {
-     *        this.login() // REQUIRED: log the agent into the web socket
-     *        // You can now proceed with any requests
-     *      });
-     *
-     */
-    class JsonRpcClient {
+    class JsonRpcBase {
         constructor(debug) {
+            /**
+             * Callback functions - register using `addListener`
+             */
             this.listeners = [];
-            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
             this.debug = debug || false;
         }
-        /**
-         * INITIALIZERS
-         *
-         * Following functions are used to setup the socket
-         */
         /**
          * addListener allows to listener for incoming Socket Event
          */
@@ -589,8 +568,52 @@
             });
         }
         /**
-         * REQUESTS
-         *
+         * Send data to socket and log in case of debug
+         */
+        send(data) {
+            if (this.debug) {
+                console.log('Write message > ', data);
+            }
+            if (!this.socket) {
+                return;
+            }
+            this.socket.send(JSON.stringify(data));
+        }
+        /**
+         * Concat position to return the login used in Json RTC request
+         */
+        getLogin() {
+            var _a, _b;
+            return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
+        }
+        /**
+         * Validate the JSON RPC headers
+         */
+        isJsonRpcValid(data) {
+            return typeof data === 'object'
+                && 'jsonrpc' in data
+                && data.jsonrpc === '2.0';
+        }
+    }
+    //# sourceMappingURL=json-rpc.base.js.map
+
+    /**
+     * Call holds a call information and provide helpers
+     */
+    class Call {
+        constructor(callId, rtcPeerConnection) {
+            this.callId = callId;
+            this.rtcPeerConnection = rtcPeerConnection;
+        }
+    }
+    //# sourceMappingURL=call.js.map
+
+    class JsonRpcRequests extends JsonRpcBase {
+        constructor(debug) {
+            super(debug);
+            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
+        }
+        /**
          * Following functions send a request to the opened socket. They do not return the result of the request
          * Instead, you should use `addListener` and use the Socket events to follow the status of the request.
          */
@@ -611,7 +634,6 @@
          * send a start call request
          */
         startCall(phoneNumber, callId, channel) {
-            console.log('start call');
             if (!channel.stream) {
                 throw new Error('Error in User Media');
             }
@@ -619,6 +641,12 @@
             const call = new Call(callId, new RTCPeerConnection({
                 iceServers: [{ urls: this.ICE_SERVER }],
             }));
+            call.rtcPeerConnection.ontrack = (tr) => {
+                console.log('tr', tr);
+            };
+            call.rtcPeerConnection.onconnectionstatechange = (st) => {
+                console.log(st);
+            };
             // Attach our media stream to the call's PeerConnection
             channel.stream.getTracks().forEach((track) => {
                 call.rtcPeerConnection.addTrack(track);
@@ -626,54 +654,41 @@
             // We wait for candidate to be null to make sure all candidates have been processed
             call.rtcPeerConnection.onicecandidate = (candidate) => {
                 var _a;
-                console.log('candidate ', candidate);
                 if (!candidate.candidate) {
                     this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
                 }
             };
-            // ??
-            call.rtcPeerConnection.ontrack = (event) => {
-                console.log('on track > ', event);
-            };
-            // // When PeerConnection request a negotiation, start the Verto call
-            call.rtcPeerConnection.onnegotiationneeded = () => {
-                call.rtcPeerConnection.createOffer().then(offer => {
-                    call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
-                });
-            };
+            call.rtcPeerConnection.createOffer().then(offer => {
+                call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
+            });
             return call;
         }
-        /**
-         * PRIVATE Functions
-         */
-        /**
-         * Send data to socket and log in case of debug
-         */
-        send(data) {
-            if (this.debug) {
-                console.log('Write message > ', data);
-            }
-            if (!this.socket) {
-                return;
-            }
-            this.socket.send(JSON.stringify(data));
-        }
-        /**
-         * Validate the JSON RPC headers
-         */
-        isJsonRpcValid(data) {
-            return typeof data === 'object'
-                && 'jsonrpc' in data
-                && data.jsonrpc === '2.0';
-        }
-        /**
-         * Concat position to return the login used in Json RTC request
-         */
-        getLogin() {
-            var _a, _b;
-            return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
+    }
+    //# sourceMappingURL=json-rpc.requests.js.map
+
+    var ZiwoSocketEvent;
+    (function (ZiwoSocketEvent) {
+        ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
+        ZiwoSocketEvent["CallCreated"] = "CallCreated";
+    })(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
+    /**
+     * JsonRpcClient implements Verto protocol using JSON RPC
+     *
+     * Usage:
+     *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
+     *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
+     *      .then(() => {
+     *        this.login() // REQUIRED: log the agent into the web socket
+     *        // You can now proceed with any requests
+     *      });
+     *
+     */
+    class JsonRpcClient extends JsonRpcRequests {
+        constructor(debug) {
+            super(debug);
         }
     }
+    //# sourceMappingURL=json-rpc.js.map
 
     const PATTERNS = {
         phoneNumber: /^\+?\d+$/,
@@ -710,6 +725,7 @@
             });
         }
     }
+    //# sourceMappingURL=rtc-client.base.js.map
 
     class RtcClientRequests extends RtcClientBase {
         constructor(video, debug) {
@@ -744,6 +760,11 @@
             if (this.currentCall) {
                 return console.warn('Outgoing Call - but there is already a call in progress');
             }
+        }
+        acceptMediaRequest(data) {
+            var _a;
+            console.log(data);
+            (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.send(data);
         }
     }
     //# sourceMappingURL=rtc-client.handlers.js.map
@@ -795,6 +816,10 @@
             switch (ev.type) {
                 case JsonRpcEventType.OutgoingCall:
                     this.outgoingCall(ev.payload);
+                    break;
+                case JsonRpcEventType.MediaRequest:
+                    this.acceptMediaRequest(ev.payload);
+                    break;
             }
         }
     }

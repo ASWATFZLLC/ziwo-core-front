@@ -1,7 +1,6 @@
-import {OutgoingCallPayload} from './json-rpc.interfaces';
+import {OutgoingCallPayload, MediaRequestPayload} from './json-rpc.interfaces';
 import {RtcClientRequests} from './rtc-client.requests';
 import {VideoInfo} from './channel';
-import {Call} from './call';
 
 export class RtcClientHandlers extends RtcClientRequests {
 
@@ -13,6 +12,11 @@ export class RtcClientHandlers extends RtcClientRequests {
     if (this.currentCall) {
       return console.warn('Outgoing Call - but there is already a call in progress');
     }
+  }
+
+  protected acceptMediaRequest(data:MediaRequestPayload):void {
+    console.log(data);
+    this.jsonRpcClient?.send(data);
   }
 
 }
