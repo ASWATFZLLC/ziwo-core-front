@@ -10,13 +10,13 @@ export class JsonRpcParser {
     if (this.isLoggedIn(data)) {
       return {
         type: JsonRpcEventType.LoggedIn,
-        payload: data,
+        payload: data.params,
       };
     }
     if (this.isOutgoingCall(data)) {
       return {
         type: JsonRpcEventType.OutgoingCall,
-        payload: data,
+        payload: data.result,
       };
     }
     return {

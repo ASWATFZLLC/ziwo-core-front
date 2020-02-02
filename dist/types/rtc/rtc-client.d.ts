@@ -1,34 +1,23 @@
 import { AgentInfo } from '../authentication.service';
-import { Channel, VideoInfo } from './channel';
-import { JsonRpcClient } from './json-rpc';
+import { VideoInfo } from './channel';
+import { RtcClientHandlers } from './rtc-client.handlers';
 export interface MediaConstraint {
     audio: boolean;
     video: boolean;
 }
 /**
  * RtcClient wraps all interaction with WebRTC
+ *
+ * Inheritance:
+ *  - RtcClientBase: properties, getter, setters & errors
+ *  - RtcRequests: send new request (start call, answer call, ...)
+ *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
  */
-export declare class RtcClient {
-    connectedAgent?: AgentInfo;
-    channel?: Channel;
-    videoInfo?: VideoInfo;
-    jsonRpcClient?: JsonRpcClient;
-    private readonly debug;
+export declare class RtcClient extends RtcClientHandlers {
     constructor(video?: VideoInfo, debug?: boolean);
     /**
      * Connect an agent using its Info
      */
     connectAgent(agent: AgentInfo): Promise<void>;
-    /**
-     * Get connected Agent returns the Info of the current agent
-     */
-    getConnectedAgent(): AgentInfo | undefined;
-    /**
-     * Return true if an agent is connected
-     */
-    isAgentConnected(): boolean;
-    startCall(phoneNumber: string): void;
-    startVideoCall(phoneNumber: string): void;
     private processIncomingSocketMessage;
-    private sendNotConnectedEvent;
 }

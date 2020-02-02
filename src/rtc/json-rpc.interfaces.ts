@@ -10,6 +10,13 @@ export enum JsonRpcEventType {
   OutgoingCall = 'OutgoingCall',
 }
 
-export interface LoggedInPayload {
+export interface BasePayload {
   sessid:string;
+}
+
+export interface LoggedInPayload extends BasePayload { }
+
+export interface OutgoingCallPayload extends BasePayload {
+  CallID:string;
+  message:string;
 }

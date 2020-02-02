@@ -1,7 +1,8 @@
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {JsonRpcParser} from './json-rpc.parser';
 import {AgentPosition} from '../authentication.service';
-import { JsonRpcParams } from './json-rpc.params';
+import {JsonRpcParams} from './json-rpc.params';
+import {Call} from './call';
 
 export enum ZiwoSocketEvent {
   LoggedIn = 'LoggedIn',
@@ -19,18 +20,19 @@ interface Credentials {
  *
  * Usage:
  *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
- *  - client.openSocket(@socketUrl) // Promise opening the web socket
+ *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
  *      .then(() => {
- *        this.login() // should be called instantely after the socket is opened
+ *        this.login() // REQUIRED: log the agent into the web socket
  *        // You can now proceed with any requests
  *      });
  *
  */
 export class JsonRpcClient {
 
+  private sessid?:string;
   private position?:AgentPosition;
   private socket?:WebSocket;
-  private sessid?:string;
+
   private listeners:Function[] = [];
 
   private readonly debug:boolean;
@@ -68,7 +70,6 @@ export class JsonRpcClient {
         onRes();
       };
       this.socket.onmessage = (msg) => {
-        console.log('New message > ', msg);
         try {
           const data = JSON.parse(msg.data);
           if (!this.isJsonRpcValid) {
@@ -90,9 +91,8 @@ export class JsonRpcClient {
   /**
    * REQUESTS
    *
-   * Following functions send a request to the opened socket
-   * Following functions do not return the response.
-   * Instead, you should use `addListener` and use the Socket Event to follow the status of the request.
+   * Following functions send a request to the opened socket. They do not return the result of the request
+   * Instead, you should use `addListener` and use the Socket events to follow the status of the request.
    */
 
   /**

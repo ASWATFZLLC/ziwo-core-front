@@ -368,11 +368,6 @@
     }
     //# sourceMappingURL=userMedia.js.map
 
-    const PATTERNS = {
-        phoneNumber: /^\+?\d+$/,
-    };
-    //# sourceMappingURL=regex.js.map
-
     /**
      * TODO : documentation
      * TODO : define interface for each available type?
@@ -422,13 +417,13 @@
             if (this.isLoggedIn(data)) {
                 return {
                     type: JsonRpcEventType.LoggedIn,
-                    payload: data,
+                    payload: data.params,
                 };
             }
             if (this.isOutgoingCall(data)) {
                 return {
                     type: JsonRpcEventType.OutgoingCall,
-                    payload: data,
+                    payload: data.result,
                 };
             }
             return {
@@ -513,9 +508,9 @@
      *
      * Usage:
      *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
-     *  - client.openSocket(@socketUrl) // Promise opening the web socket
+     *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
      *      .then(() => {
-     *        this.login() // should be called instantely after the socket is opened
+     *        this.login() // REQUIRED: log the agent into the web socket
      *        // You can now proceed with any requests
      *      });
      *
@@ -552,7 +547,6 @@
                     onRes();
                 };
                 this.socket.onmessage = (msg) => {
-                    console.log('New message > ', msg);
                     try {
                         const data = JSON.parse(msg.data);
                         if (!this.isJsonRpcValid) {
@@ -574,9 +568,8 @@
         /**
          * REQUESTS
          *
-         * Following functions send a request to the opened socket
-         * Following functions do not return the response.
-         * Instead, you should use `addListener` and use the Socket Event to follow the status of the request.
+         * Following functions send a request to the opened socket. They do not return the result of the request
+         * Instead, you should use `addListener` and use the Socket events to follow the status of the request.
          */
         /**
          * login log the agent in the newly created socket
@@ -628,46 +621,22 @@
             return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
         }
     }
+    //# sourceMappingURL=json-rpc.js.map
+
+    const PATTERNS = {
+        phoneNumber: /^\+?\d+$/,
+    };
+    //# sourceMappingURL=regex.js.map
 
     /**
-     * RtcClient wraps all interaction with WebRTC
+     * RtcClientBase handles authentication and holds core properties
      */
-    class RtcClient {
+    class RtcClientBase {
         constructor(video, debug) {
             this.debug = debug || false;
             if (video) {
                 this.videoInfo = video;
             }
-        }
-        /**
-         * Connect an agent using its Info
-         */
-        connectAgent(agent) {
-            return new Promise((onRes, onErr) => {
-                this.connectedAgent = agent;
-                this.jsonRpcClient = new JsonRpcClient(this.debug);
-                // First we make ensure access to microphone &| camera
-                // And wait for the socket to open
-                Promise.all([
-                    UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false }),
-                    this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
-                ]).then(res => {
-                    var _a, _b;
-                    this.channel = res[0];
-                    (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
-                        if (ev.type === JsonRpcEventType.LoggedIn) {
-                            ZiwoEvent.emit(ZiwoEventType.AgentConnected);
-                            onRes();
-                            return;
-                        }
-                        // This is our handler to incoming message
-                        this.processIncomingSocketMessage(ev);
-                    });
-                    (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position);
-                }).catch(err => {
-                    onErr(err);
-                });
-            });
         }
         /**
          * Get connected Agent returns the Info of the current agent
@@ -680,6 +649,19 @@
          */
         isAgentConnected() {
             return !!this.connectedAgent && !!this.channel;
+        }
+        sendNotConnectedEvent(action) {
+            return ZiwoEvent.emit(ZiwoEventType.Error, {
+                code: ErrorCode.InvalidPhoneNumber,
+                message: MESSAGES.AGENT_NOT_CONNECTED(action),
+            });
+        }
+    }
+    //# sourceMappingURL=rtc-client.base.js.map
+
+    class RtcClientRequests extends RtcClientBase {
+        constructor(video, debug) {
+            super(video, debug);
         }
         startCall(phoneNumber) {
             var _a;
@@ -723,16 +705,69 @@
                 video: true,
             });
         }
+    }
+    //# sourceMappingURL=rtc-client.requests.js.map
+
+    class RtcClientHandlers extends RtcClientRequests {
+        constructor(video, debug) {
+            super(video, debug);
+        }
+        outgoingCall(data) {
+            if (this.currentCall) {
+                return console.warn('Outgoing Call - but there is already a call in progress');
+            }
+        }
+    }
+    //# sourceMappingURL=rtc-client.handlers.js.map
+
+    /**
+     * RtcClient wraps all interaction with WebRTC
+     *
+     * Inheritance:
+     *  - RtcClientBase: properties, getter, setters & errors
+     *  - RtcRequests: send new request (start call, answer call, ...)
+     *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
+     */
+    class RtcClient extends RtcClientHandlers {
+        constructor(video, debug) {
+            super(video, debug);
+        }
+        /**
+         * Connect an agent using its Info
+         */
+        connectAgent(agent) {
+            return new Promise((onRes, onErr) => {
+                this.connectedAgent = agent;
+                this.jsonRpcClient = new JsonRpcClient(this.debug);
+                // First we make ensure access to microphone &| camera
+                // And wait for the socket to open
+                Promise.all([
+                    UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false }),
+                    this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+                ]).then(res => {
+                    var _a, _b;
+                    this.channel = res[0];
+                    (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
+                        if (ev.type === JsonRpcEventType.LoggedIn) {
+                            ZiwoEvent.emit(ZiwoEventType.AgentConnected);
+                            onRes();
+                            return;
+                        }
+                        // This is our global handler for incoming message
+                        this.processIncomingSocketMessage(ev);
+                    });
+                    (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position);
+                }).catch(err => {
+                    onErr(err);
+                });
+            });
+        }
         processIncomingSocketMessage(ev) {
             console.log('New incoming message', ev);
             switch (ev.type) {
+                case JsonRpcEventType.OutgoingCall:
+                    this.outgoingCall(ev.payload);
             }
-        }
-        sendNotConnectedEvent(action) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
-                code: ErrorCode.InvalidPhoneNumber,
-                message: MESSAGES.AGENT_NOT_CONNECTED(action),
-            });
         }
     }
 
@@ -852,7 +887,6 @@
             this.rtcClient.startVideoCall(phoneNumber);
         }
     }
-    //# sourceMappingURL=main.js.map
 
     exports.ZiwoClient = ZiwoClient;
 
