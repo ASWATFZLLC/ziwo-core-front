@@ -9,6 +9,7 @@ export enum ErrorCode {
   InvalidPhoneNumber = 2,
   UserMediaError = 3,
   AgentNotConnected = 1,
+  ProtocolError = 4,
 }
 
 export interface ErrorData {

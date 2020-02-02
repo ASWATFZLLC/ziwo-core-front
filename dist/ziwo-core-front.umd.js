@@ -200,6 +200,7 @@
         Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
         return Md5;
     }());
+    //# sourceMappingURL=index.js.map
 
     const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
     const MESSAGES = {
@@ -207,6 +208,7 @@
         INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
         AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
     };
+    //# sourceMappingURL=messages.js.map
 
     var UserStatus;
     (function (UserStatus) {
@@ -305,6 +307,7 @@
             });
         }
     }
+    //# sourceMappingURL=authentication.service.js.map
 
     class Channel {
         constructor(stream) {
@@ -347,6 +350,7 @@
             return audioContext;
         }
     }
+    //# sourceMappingURL=channel.js.map
 
     class UserMedia {
         static getUserMedia(mediaRequested) {
@@ -362,10 +366,12 @@
             });
         }
     }
+    //# sourceMappingURL=userMedia.js.map
 
     const PATTERNS = {
         phoneNumber: /^\+?\d+$/,
     };
+    //# sourceMappingURL=regex.js.map
 
     /**
      * TODO : documentation
@@ -377,6 +383,7 @@
         ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
         ErrorCode[ErrorCode["UserMediaError"] = 3] = "UserMediaError";
         ErrorCode[ErrorCode["AgentNotConnected"] = 1] = "AgentNotConnected";
+        ErrorCode[ErrorCode["ProtocolError"] = 4] = "ProtocolError";
     })(ErrorCode || (ErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -397,31 +404,113 @@
         }
     }
     ZiwoEvent.listeners = [];
+    //# sourceMappingURL=events.js.map
 
+    var JsonRpcEventType;
+    (function (JsonRpcEventType) {
+        JsonRpcEventType["Unknown"] = "Unknown";
+        JsonRpcEventType["LoggedIn"] = "LoggedIn";
+    })(JsonRpcEventType || (JsonRpcEventType = {}));
+    class JsonRpcBuilder {
+        static loggedIn(data) {
+            return {
+                type: JsonRpcEventType.LoggedIn,
+                payload: {
+                    sessid: data.result.id
+                },
+            };
+        }
+        static unknown(data) {
+            return {
+                type: JsonRpcEventType.Unknown,
+                payload: data,
+            };
+        }
+    }
+    //# sourceMappingURL=json-rpc.interfaces.js.map
+
+    /**
+     * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
+     */
+    class JsonRpcParser {
+        static parse(data) {
+            if (this.isLoggedIn(data)) {
+                return JsonRpcEventType.LoggedIn;
+            }
+            return JsonRpcEventType.Unknown;
+        }
+        static isLoggedIn(data) {
+            return data.id === 3;
+        }
+    }
+    //# sourceMappingURL=json-rpc.parser.js.map
+
+    var ZiwoSocketEvent;
+    (function (ZiwoSocketEvent) {
+        ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
+    })(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
     class JsonRpcClient {
-        constructor(socketUrl, login, password) {
-            this.socket = new WebSocket(socketUrl);
-            this.addSocketHandlers(this.socket);
-            this.credentials = {
-                login: login,
-                passwd: password,
-                sessid: this.getUuid(),
-            };
+        constructor() {
+            this.listeners = [];
         }
-        addSocketHandlers(socket) {
-            socket.onclose = () => {
-                console.warn('Socket closed');
-            };
-            socket.onopen = () => {
-                this.login(socket);
-            };
-            socket.onmessage = (msg) => {
-                const data = JSON.parse(msg.data);
-                console.log('socket message', data);
-            };
+        openSocket(socketUrl) {
+            return new Promise((onRes, onErr) => {
+                this.socket = new WebSocket(socketUrl);
+                this.socket.onclose = () => {
+                    console.warn('Socket closed');
+                };
+                this.socket.onopen = () => {
+                    onRes();
+                };
+                this.socket.onmessage = (msg) => {
+                    try {
+                        const data = JSON.parse(msg.data);
+                        if (!this.isJsonRpcValid) {
+                            throw new Error('Invalid Incoming JSON RPC');
+                        }
+                        this.listeners.forEach(fn => {
+                            const d = this.parseMessage(data);
+                            if (d) {
+                                fn(d);
+                            }
+                        });
+                    }
+                    catch (err) {
+                        console.warn('Invalid Message', msg);
+                        // NOTE : not sure if we should throw an error here -- need live testing to enable/disable
+                        ZiwoEvent.emit(ZiwoEventType.Error, {
+                            code: ErrorCode.ProtocolError,
+                            message: err,
+                        });
+                    }
+                };
+            });
         }
-        login(socket) {
-            socket.send(this.loginParams(this.credentials));
+        login(login, password) {
+            return new Promise((onRes, onErr) => {
+                if (!this.socket) {
+                    return onErr();
+                }
+                this.socket.send(this.loginParams({
+                    login,
+                    passwd: password,
+                    sessid: this.getUuid(),
+                }));
+            });
+        }
+        addListener(call) {
+            this.listeners.push(call);
+        }
+        parseMessage(data) {
+            switch (JsonRpcParser.parse(data)) {
+                case JsonRpcEventType.LoggedIn:
+                    return JsonRpcBuilder.loggedIn(data);
+                case JsonRpcEventType.Unknown:
+                    // Unknown are not useful message - we skip them
+                    // TODO : add a specific trigger system for those?
+                    break;
+            }
+            return undefined;
         }
         isJsonRpcValid(data) {
             return typeof data === 'object'
@@ -462,19 +551,31 @@
          * Connect an agent using its Info
          */
         connectAgent(agent) {
-            console.log('Init RTC with > ', agent);
-            this.connectedAgent = agent;
-            UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false })
-                .then(c => {
-                this.channel = c;
-                ZiwoEvent.emit(ZiwoEventType.AgentConnected);
-            }).catch(e => {
-                ZiwoEvent.emit(ZiwoEventType.Error, {
-                    code: ErrorCode.UserMediaError,
-                    message: e,
+            return new Promise((onRes, onErr) => {
+                this.connectedAgent = agent;
+                this.jsonRpcClient = new JsonRpcClient();
+                // First we make ensure access to microphone &| camera
+                // And wait for the socket to open
+                Promise.all([
+                    UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false }),
+                    this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+                ]).then(res => {
+                    var _a, _b;
+                    this.channel = res[0];
+                    (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
+                        if (ev.type === JsonRpcEventType.LoggedIn) {
+                            ZiwoEvent.emit(ZiwoEventType.AgentConnected);
+                            onRes();
+                            return;
+                        }
+                        // This is our handler to incoming message
+                        this.processIncomingSocketMessage(ev);
+                    });
+                    (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position.name, agent.position.password);
+                }).catch(err => {
+                    onErr(err);
                 });
             });
-            this.jsonRpcClient = new JsonRpcClient(this.connectedAgent.webRtc.socket, this.connectedAgent.position.name, this.connectedAgent.position.password);
         }
         /**
          * Get connected Agent returns the Info of the current agent
@@ -533,6 +634,9 @@
                 audio: true,
                 video: true,
             });
+        }
+        processIncomingSocketMessage(ev) {
+            console.log('New incoming message', ev);
         }
         sendNotConnectedEvent(action) {
             return ZiwoEvent.emit(ZiwoEventType.Error, {
@@ -627,6 +731,7 @@
             });
         }
     }
+    //# sourceMappingURL=api.service.js.map
 
     class ZiwoClient {
         constructor(options) {
@@ -657,6 +762,7 @@
             this.rtcClient.startVideoCall(phoneNumber);
         }
     }
+    //# sourceMappingURL=main.js.map
 
     exports.ZiwoClient = ZiwoClient;
 

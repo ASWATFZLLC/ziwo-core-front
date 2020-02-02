@@ -17,7 +17,7 @@ export declare class RtcClient {
     /**
      * Connect an agent using its Info
      */
-    connectAgent(agent: AgentInfo): void;
+    connectAgent(agent: AgentInfo): Promise<void>;
     /**
      * Get connected Agent returns the Info of the current agent
      */
@@ -28,5 +28,6 @@ export declare class RtcClient {
     isAgentConnected(): boolean;
     startCall(phoneNumber: string): void;
     startVideoCall(phoneNumber: string): void;
+    private processIncomingSocketMessage;
     private sendNotConnectedEvent;
 }

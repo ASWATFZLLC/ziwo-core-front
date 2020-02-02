@@ -5,6 +5,8 @@ import {MESSAGES} from '../messages';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {Channel, VideoInfo} from './channel';
 import {JsonRpcClient} from './json-rpc';
+import { JsonRpcEvent, JsonRpcEventType } from './json-rpc.interfaces';
+
 
 export interface MediaConstraint {
   audio:boolean;
@@ -30,24 +32,31 @@ export class RtcClient {
   /**
    * Connect an agent using its Info
    */
-  public connectAgent(agent:AgentInfo):void {
-    console.log('Init RTC with > ', agent);
-    this.connectedAgent = agent;
-    UserMedia.getUserMedia({audio: true, video: this.videoInfo ? true : false})
-      .then(c => {
-        this.channel = c;
-        ZiwoEvent.emit(ZiwoEventType.AgentConnected);
-      }).catch(e => {
-        ZiwoEvent.emit(ZiwoEventType.Error, {
-          code: ErrorCode.UserMediaError,
-          message: e,
+  public connectAgent(agent:AgentInfo):Promise<void> {
+    return new Promise<void>((onRes, onErr) => {
+      this.connectedAgent = agent;
+      this.jsonRpcClient = new JsonRpcClient();
+      // First we make ensure access to microphone &| camera
+      // And wait for the socket to open
+      Promise.all([
+        UserMedia.getUserMedia({audio: true, video: this.videoInfo ? true : false}),
+        this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+      ]).then(res => {
+        this.channel = res[0];
+        this.jsonRpcClient?.addListener((ev:JsonRpcEvent) => {
+          if (ev.type === JsonRpcEventType.LoggedIn) {
+            ZiwoEvent.emit(ZiwoEventType.AgentConnected);
+            onRes();
+            return;
+          }
+          // This is our handler to incoming message
+          this.processIncomingSocketMessage(ev);
         });
+        this.jsonRpcClient?.login(agent.position.name, agent.position.password);
+      }).catch(err => {
+        onErr(err);
       });
-    this.jsonRpcClient = new JsonRpcClient(
-      this.connectedAgent.webRtc.socket,
-      this.connectedAgent.position.name,
-      this.connectedAgent.position.password
-    );
+    });
   }
 
   /**
@@ -108,6 +117,10 @@ export class RtcClient {
       audio: true,
       video: true,
     });
+  }
+
+  private processIncomingSocketMessage(ev:JsonRpcEvent):void {
+    console.log('New incoming message', ev);
   }
 
   private sendNotConnectedEvent(action:string):void {
