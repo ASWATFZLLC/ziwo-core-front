@@ -31,6 +31,8 @@ export interface ZiwoClientOptions {
    *
    */
   video?:VideoInfo;
+
+  debug?:boolean;
 }
 
 export class ZiwoClient {
@@ -43,7 +45,7 @@ export class ZiwoClient {
   constructor(options:ZiwoClientOptions) {
     this.options = options;
     this.apiService = new ApiService(options.contactCenterName);
-    this.rtcClient = new RtcClient(options.video);
+    this.rtcClient = new RtcClient(options.video, options.debug);
     if (options.autoConnect) {
       this.connect().then(r => {
       }).catch(err => { throw err; });

@@ -260,12 +260,12 @@ class AuthenticationService {
                     queues: res[1] || [],
                     numbers: res[2] || [],
                     webRtc: {
-                        hostname: api.getHostname(),
                         socket: `${res[3].webSocket.protocol}://${api.getHostname()}:${res[3].webSocket.port}`,
                     },
                     position: {
                         name: `agent-${res[0].ccLogin}`,
                         password: Md5.init(`${res[0].ccLogin}${res[0].ccPassword}`).toString(),
+                        hostname: api.getHostname(),
                     }
                 });
             })
@@ -404,23 +404,8 @@ var JsonRpcEventType;
 (function (JsonRpcEventType) {
     JsonRpcEventType["Unknown"] = "Unknown";
     JsonRpcEventType["LoggedIn"] = "LoggedIn";
+    JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
 })(JsonRpcEventType || (JsonRpcEventType = {}));
-class JsonRpcBuilder {
-    static loggedIn(data) {
-        return {
-            type: JsonRpcEventType.LoggedIn,
-            payload: {
-                sessid: data.result.id
-            },
-        };
-    }
-    static unknown(data) {
-        return {
-            type: JsonRpcEventType.Unknown,
-            payload: data,
-        };
-    }
-}
 //# sourceMappingURL=json-rpc.interfaces.js.map
 
 /**
@@ -429,45 +414,145 @@ class JsonRpcBuilder {
 class JsonRpcParser {
     static parse(data) {
         if (this.isLoggedIn(data)) {
-            return JsonRpcEventType.LoggedIn;
+            return {
+                type: JsonRpcEventType.LoggedIn,
+                payload: data,
+            };
         }
-        return JsonRpcEventType.Unknown;
+        if (this.isOutgoingCall(data)) {
+            return {
+                type: JsonRpcEventType.OutgoingCall,
+                payload: data,
+            };
+        }
+        return {
+            type: JsonRpcEventType.Unknown,
+            payload: data
+        };
     }
     static isLoggedIn(data) {
         return data.id === 3;
     }
+    static isOutgoingCall(data) {
+        return data.id === 4;
+    }
 }
 //# sourceMappingURL=json-rpc.parser.js.map
+
+class JsonRpcParams {
+    static loginParams(sessid, login, passwd) {
+        return JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'login',
+            id: 3,
+            params: {
+                sessid,
+                login,
+                passwd,
+            },
+        });
+    }
+    static startCall(sessionId, login, phoneNumber) {
+        return JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'verto.invite',
+            id: 4,
+            params: {
+                sdp: 'a=candidate',
+                sessid: sessionId,
+                dialogParams: {
+                    callID: this.getUuid(),
+                    tag: this.getUuid(),
+                    destination_number: phoneNumber,
+                    login: login,
+                    useStereo: true,
+                    screenShare: false,
+                    useMic: true,
+                    useSpeak: true,
+                    dedEnd: false,
+                    videoParams: {},
+                    audioParams: {
+                        googAutoGainControl: false,
+                        googNoiseSuppression: false,
+                        googHighpassFilter: false
+                    },
+                    caller_id_name: '',
+                    caller_id_number: '',
+                    outgoingBandwidth: 'default',
+                    incomingBandwidth: 'default',
+                    remote_caller_id_name: 'Outbound Call',
+                    remote_caller_id_number: phoneNumber,
+                }
+            },
+        });
+    }
+    static getUuid() {
+        /* tslint:disable */
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+            /* tslint:enable */
+        });
+    }
+}
+//# sourceMappingURL=json-rpc.params.js.map
 
 var ZiwoSocketEvent;
 (function (ZiwoSocketEvent) {
     ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
+    ZiwoSocketEvent["CallCreated"] = "CallCreated";
 })(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
+/**
+ * JsonRpcClient provides useful functions to interact with the WebSocket using Verto Protocol
+ *
+ * Usage:
+ *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
+ *  - client.openSocket(@socketUrl) // Promise opening the web socket
+ *      .then(() => {
+ *        this.login() // should be called instantely after the socket is opened
+ *        // You can now proceed with any requests
+ *      });
+ *
+ */
 class JsonRpcClient {
-    constructor() {
+    constructor(debug) {
         this.listeners = [];
+        this.debug = debug || false;
     }
+    /**
+     * INITIALIZERS
+     *
+     * Following functions are used to setup the socket
+     */
+    /**
+     * addListener allows to listener for incoming Socket Event
+     */
+    addListener(call) {
+        this.listeners.push(call);
+    }
+    /**
+     * openSocket should be called directly after the constructor
+     * It initializate the socket and set the handlers
+     */
     openSocket(socketUrl) {
         return new Promise((onRes, onErr) => {
             this.socket = new WebSocket(socketUrl);
             this.socket.onclose = () => {
-                console.warn('Socket closed');
+                if (this.debug) {
+                    console.warn('Socket closed');
+                }
             };
             this.socket.onopen = () => {
                 onRes();
             };
             this.socket.onmessage = (msg) => {
+                console.log('New message > ', msg);
                 try {
                     const data = JSON.parse(msg.data);
                     if (!this.isJsonRpcValid) {
                         throw new Error('Invalid Incoming JSON RPC');
                     }
-                    this.listeners.forEach(fn => {
-                        const d = this.parseMessage(data);
-                        if (d) {
-                            fn(d);
-                        }
-                    });
+                    this.listeners.forEach(fn => fn(JsonRpcParser.parse(data)));
                 }
                 catch (err) {
                     console.warn('Invalid Message', msg);
@@ -480,55 +565,61 @@ class JsonRpcClient {
             };
         });
     }
-    login(login, password) {
+    /**
+     * REQUESTS
+     *
+     * Following functions send a request to the opened socket
+     * Following functions do not return the response.
+     * Instead, you should use `addListener` and use the Socket Event to follow the status of the request.
+     */
+    /**
+     * login log the agent in the newly created socket
+     */
+    login(agentPosition) {
+        this.position = agentPosition;
         return new Promise((onRes, onErr) => {
             if (!this.socket) {
                 return onErr();
             }
-            this.socket.send(this.loginParams({
-                login,
-                passwd: password,
-                sessid: this.getUuid(),
-            }));
+            this.sessid = JsonRpcParams.getUuid();
+            this.send(JsonRpcParams.loginParams(this.sessid, agentPosition.name, agentPosition.password));
         });
     }
-    addListener(call) {
-        this.listeners.push(call);
+    /**
+     * send a start call request
+     */
+    startCall(phoneNumber) {
+        this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber));
     }
-    parseMessage(data) {
-        switch (JsonRpcParser.parse(data)) {
-            case JsonRpcEventType.LoggedIn:
-                return JsonRpcBuilder.loggedIn(data);
-            case JsonRpcEventType.Unknown:
-                // Unknown are not useful message - we skip them
-                // TODO : add a specific trigger system for those?
-                break;
+    /**
+     * PRIVATE Functions
+     */
+    /**
+     * Send data to socket and log in case of debug
+     */
+    send(data) {
+        if (this.debug) {
+            console.log('Write message > ', JSON.parse(data));
         }
-        return undefined;
+        if (!this.socket) {
+            return;
+        }
+        this.socket.send(data);
     }
+    /**
+     * Validate the JSON RPC headers
+     */
     isJsonRpcValid(data) {
         return typeof data === 'object'
             && 'jsonrpc' in data
             && data.jsonrpc === '2.0';
     }
-    getUuid() {
-        /* tslint:disable */
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-            /* tslint:enable */
-        });
-    }
     /**
-     * REQUEST
+     * Concat position to return the login used in Json RTC request
      */
-    loginParams(credentials) {
-        return JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'login',
-            params: credentials,
-            id: 3,
-        });
+    getLogin() {
+        var _a, _b;
+        return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
     }
 }
 
@@ -536,7 +627,8 @@ class JsonRpcClient {
  * RtcClient wraps all interaction with WebRTC
  */
 class RtcClient {
-    constructor(video) {
+    constructor(video, debug) {
+        this.debug = debug || false;
         if (video) {
             this.videoInfo = video;
         }
@@ -547,7 +639,7 @@ class RtcClient {
     connectAgent(agent) {
         return new Promise((onRes, onErr) => {
             this.connectedAgent = agent;
-            this.jsonRpcClient = new JsonRpcClient();
+            this.jsonRpcClient = new JsonRpcClient(this.debug);
             // First we make ensure access to microphone &| camera
             // And wait for the socket to open
             Promise.all([
@@ -565,7 +657,7 @@ class RtcClient {
                     // This is our handler to incoming message
                     this.processIncomingSocketMessage(ev);
                 });
-                (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position.name, agent.position.password);
+                (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position);
             }).catch(err => {
                 onErr(err);
             });
@@ -599,11 +691,7 @@ class RtcClient {
             });
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        // this.jsonRpcClient.startCall();
-        ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
-            audio: true,
-            video: false,
-        });
+        this.jsonRpcClient.startCall(phoneNumber);
     }
     startVideoCall(phoneNumber) {
         var _a;
@@ -631,6 +719,8 @@ class RtcClient {
     }
     processIncomingSocketMessage(ev) {
         console.log('New incoming message', ev);
+        switch (ev.type) {
+        }
     }
     sendNotConnectedEvent(action) {
         return ZiwoEvent.emit(ZiwoEventType.Error, {
@@ -731,7 +821,7 @@ class ZiwoClient {
     constructor(options) {
         this.options = options;
         this.apiService = new ApiService(options.contactCenterName);
-        this.rtcClient = new RtcClient(options.video);
+        this.rtcClient = new RtcClient(options.video, options.debug);
         if (options.autoConnect) {
             this.connect().then(r => {
             }).catch(err => { throw err; });

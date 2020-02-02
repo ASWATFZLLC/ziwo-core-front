@@ -111,13 +111,13 @@ interface Number {
 }
 
 interface WebRtcInfo {
-  hostname:string;
   socket:string;
 }
 
 export interface AgentPosition {
   name:string;
   password:string;
+  hostname:string;
 }
 
 export interface AgentInfo {
@@ -177,12 +177,12 @@ export class AuthenticationService {
           queues: res[1] || [],
           numbers: res[2] || [],
           webRtc: {
-            hostname: api.getHostname(),
             socket: `${res[3].webSocket.protocol}://${api.getHostname()}:${res[3].webSocket.port}`,
           },
           position: {
             name: `agent-${res[0].ccLogin}`,
             password: Md5.init(`${res[0].ccLogin}${res[0].ccPassword}`).toString(),
+            hostname: api.getHostname(),
           }
         });
       })

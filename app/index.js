@@ -5,16 +5,18 @@ function start() {
     document.getElementById('connect-button').style = 'display:none';
     document.getElementById('connecting').style = '';
     ziwoClient = new ziwoCoreFront.ZiwoClient({
-    autoConnect: true,
-    contactCenterName: document.getElementById('center').value,
-    credentials: {
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-    },
-    video: {
-      selfTag: document.getElementById('self-video')
+        autoConnect: true,
+        contactCenterName: document.getElementById('center').value,
+        credentials: {
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+        },
+        video: {
+            selfTag: document.getElementById('self-video')
+        },
+        debug: true,
     }
-  });
+  );
 
   ziwoClient.addListener((type, data) => {
     console.log(`[Ziwo Event] ${type}`, data);

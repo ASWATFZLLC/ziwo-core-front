@@ -23,6 +23,7 @@ export interface ZiwoClientOptions {
      *
      */
     video?: VideoInfo;
+    debug?: boolean;
 }
 export declare class ZiwoClient {
     readonly options: ZiwoClientOptions;

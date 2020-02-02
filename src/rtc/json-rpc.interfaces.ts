@@ -7,28 +7,9 @@ export interface JsonRpcEvent {
 export enum JsonRpcEventType {
   Unknown = 'Unknown',
   LoggedIn = 'LoggedIn',
+  OutgoingCall = 'OutgoingCall',
 }
 
 export interface LoggedInPayload {
   sessid:string;
-}
-
-export class JsonRpcBuilder {
-
-  public static loggedIn(data:any):JsonRpcEvent {
-    return {
-      type: JsonRpcEventType.LoggedIn,
-      payload: {
-        sessid: data.result.id
-      },
-    };
-  }
-
-  public static unknown(data:any):JsonRpcEvent {
-    return {
-      type: JsonRpcEventType.Unknown,
-      payload: data,
-    };
-  }
-
 }

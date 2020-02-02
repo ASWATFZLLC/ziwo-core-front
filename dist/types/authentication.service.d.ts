@@ -98,12 +98,12 @@ interface Number {
     urgentMessage: any | null;
 }
 interface WebRtcInfo {
-    hostname: string;
     socket: string;
 }
 export interface AgentPosition {
     name: string;
     password: string;
+    hostname: string;
 }
 export interface AgentInfo {
     userInfo: UserInfo;

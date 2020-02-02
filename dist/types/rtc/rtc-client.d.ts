@@ -13,7 +13,8 @@ export declare class RtcClient {
     channel?: Channel;
     videoInfo?: VideoInfo;
     jsonRpcClient?: JsonRpcClient;
-    constructor(video?: VideoInfo);
+    private readonly debug;
+    constructor(video?: VideoInfo, debug?: boolean);
     /**
      * Connect an agent using its Info
      */

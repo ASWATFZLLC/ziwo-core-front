@@ -5,8 +5,7 @@ import {MESSAGES} from '../messages';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {Channel, VideoInfo} from './channel';
 import {JsonRpcClient} from './json-rpc';
-import { JsonRpcEvent, JsonRpcEventType } from './json-rpc.interfaces';
-
+import {JsonRpcEvent, JsonRpcEventType} from './json-rpc.interfaces';
 
 export interface MediaConstraint {
   audio:boolean;
@@ -22,8 +21,10 @@ export class RtcClient {
   public channel?:Channel;
   public videoInfo?:VideoInfo;
   public jsonRpcClient?:JsonRpcClient;
+  private readonly debug:boolean;
 
-  constructor(video?:VideoInfo) {
+  constructor(video?:VideoInfo, debug?:boolean) {
+    this.debug = debug || false;
     if (video) {
       this.videoInfo = video;
     }
@@ -35,7 +36,7 @@ export class RtcClient {
   public connectAgent(agent:AgentInfo):Promise<void> {
     return new Promise<void>((onRes, onErr) => {
       this.connectedAgent = agent;
-      this.jsonRpcClient = new JsonRpcClient();
+      this.jsonRpcClient = new JsonRpcClient(this.debug);
       // First we make ensure access to microphone &| camera
       // And wait for the socket to open
       Promise.all([
@@ -52,7 +53,7 @@ export class RtcClient {
           // This is our handler to incoming message
           this.processIncomingSocketMessage(ev);
         });
-        this.jsonRpcClient?.login(agent.position.name, agent.position.password);
+        this.jsonRpcClient?.login(agent.position);
       }).catch(err => {
         onErr(err);
       });
@@ -88,11 +89,7 @@ export class RtcClient {
       });
     }
     this.channel?.startMicrophone();
-    // this.jsonRpcClient.startCall();
-    ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
-      audio: true,
-      video: false,
-    });
+    this.jsonRpcClient.startCall(phoneNumber);
   }
 
   public startVideoCall(phoneNumber:string):void {
@@ -121,6 +118,9 @@ export class RtcClient {
 
   private processIncomingSocketMessage(ev:JsonRpcEvent):void {
     console.log('New incoming message', ev);
+    switch (ev.type) {
+
+    }
   }
 
   private sendNotConnectedEvent(action:string):void {
