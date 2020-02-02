@@ -15,6 +15,7 @@ export class RtcClientBase {
   public videoInfo?:VideoInfo;
   public jsonRpcClient?:JsonRpcClient;
   public currentCall?:Call;
+  public calls:Call[] = [];
   protected readonly debug:boolean;
 
   constructor(video?:VideoInfo, debug?:boolean) {

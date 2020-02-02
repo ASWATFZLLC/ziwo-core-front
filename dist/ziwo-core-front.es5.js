@@ -403,6 +403,75 @@ var JsonRpcEventType;
 })(JsonRpcEventType || (JsonRpcEventType = {}));
 //# sourceMappingURL=json-rpc.interfaces.js.map
 
+var JsonRpcMethod;
+(function (JsonRpcMethod) {
+    JsonRpcMethod["login"] = "login";
+    JsonRpcMethod["invite"] = "verto.invite";
+})(JsonRpcMethod || (JsonRpcMethod = {}));
+var JsonRpcActionId;
+(function (JsonRpcActionId) {
+    JsonRpcActionId[JsonRpcActionId["login"] = 3] = "login";
+    JsonRpcActionId[JsonRpcActionId["invite"] = 4] = "invite";
+})(JsonRpcActionId || (JsonRpcActionId = {}));
+class JsonRpcParams {
+    static wrapParams(method, id = 0, params = {}) {
+        return {
+            jsonrpc: '2.0',
+            method: method,
+            id: id,
+            params: params,
+        };
+    }
+    static loginParams(sessid, login, passwd) {
+        return this.wrapParams(JsonRpcMethod.login, 3, {
+            sessid,
+            login,
+            passwd
+        });
+    }
+    static startCall(sessionId, login, phoneNumber, sdp) {
+        return this.wrapParams(JsonRpcMethod.invite, 4, {
+            sdp: sdp,
+            sessid: sessionId,
+            dialogParams: {
+                callID: this.getUuid(),
+                caller_id_name: '',
+                caller_id_number: '',
+                dedEnc: false,
+                destination_number: phoneNumber,
+                incomingBandwidth: 'default',
+                localTag: null,
+                login: login,
+                outgoingBandwidth: 'default',
+                remote_caller_id_name: 'Outbound Call',
+                remote_caller_id_number: phoneNumber,
+                screenShare: false,
+                tag: this.getUuid(),
+                useCamera: false,
+                useMic: true,
+                useSpeak: true,
+                useStereo: true,
+                useVideo: undefined,
+                videoParams: {},
+                audioParams: {
+                    googAutoGainControl: false,
+                    googNoiseSuppression: false,
+                    googHighpassFilter: false
+                },
+            }
+        });
+    }
+    static getUuid() {
+        /* tslint:disable */
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+            /* tslint:enable */
+        });
+    }
+}
+//# sourceMappingURL=json-rpc.params.js.map
+
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
  */
@@ -426,71 +495,24 @@ class JsonRpcParser {
         };
     }
     static isLoggedIn(data) {
-        return data.id === 3;
+        return data.id === JsonRpcActionId.login;
     }
     static isOutgoingCall(data) {
-        return data.id === 4;
+        return data.id === JsonRpcActionId.invite;
     }
 }
 //# sourceMappingURL=json-rpc.parser.js.map
 
-class JsonRpcParams {
-    static loginParams(sessid, login, passwd) {
-        return JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'login',
-            id: 3,
-            params: {
-                sessid,
-                login,
-                passwd,
-            },
-        });
-    }
-    static startCall(sessionId, login, phoneNumber) {
-        return JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'verto.invite',
-            id: 4,
-            params: {
-                sdp: 'a=candidate',
-                sessid: sessionId,
-                dialogParams: {
-                    callID: this.getUuid(),
-                    tag: this.getUuid(),
-                    destination_number: phoneNumber,
-                    login: login,
-                    useStereo: true,
-                    screenShare: false,
-                    useMic: true,
-                    useSpeak: true,
-                    dedEnd: false,
-                    videoParams: {},
-                    audioParams: {
-                        googAutoGainControl: false,
-                        googNoiseSuppression: false,
-                        googHighpassFilter: false
-                    },
-                    caller_id_name: '',
-                    caller_id_number: '',
-                    outgoingBandwidth: 'default',
-                    incomingBandwidth: 'default',
-                    remote_caller_id_name: 'Outbound Call',
-                    remote_caller_id_number: phoneNumber,
-                }
-            },
-        });
-    }
-    static getUuid() {
-        /* tslint:disable */
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-            /* tslint:enable */
-        });
+/**
+ * Call holds a call information and provide helpers
+ */
+class Call {
+    constructor(callId, rtcPeerConnection) {
+        this.callId = callId;
+        this.rtcPeerConnection = rtcPeerConnection;
     }
 }
-//# sourceMappingURL=json-rpc.params.js.map
+//# sourceMappingURL=call.js.map
 
 var ZiwoSocketEvent;
 (function (ZiwoSocketEvent) {
@@ -512,6 +534,7 @@ var ZiwoSocketEvent;
 class JsonRpcClient {
     constructor(debug) {
         this.listeners = [];
+        this.ICE_SERVER = 'stun:stun.l.google.com:19302';
         this.debug = debug || false;
     }
     /**
@@ -581,8 +604,38 @@ class JsonRpcClient {
     /**
      * send a start call request
      */
-    startCall(phoneNumber) {
-        this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber));
+    startCall(phoneNumber, callId, channel) {
+        console.log('start call');
+        if (!channel.stream) {
+            throw new Error('Error in User Media');
+        }
+        // Create Call and its PeerConnection
+        const call = new Call(callId, new RTCPeerConnection({
+            iceServers: [{ urls: this.ICE_SERVER }],
+        }));
+        // Attach our media stream to the call's PeerConnection
+        channel.stream.getTracks().forEach((track) => {
+            call.rtcPeerConnection.addTrack(track);
+        });
+        // We wait for candidate to be null to make sure all candidates have been processed
+        call.rtcPeerConnection.onicecandidate = (candidate) => {
+            var _a;
+            console.log('candidate ', candidate);
+            if (!candidate.candidate) {
+                this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+            }
+        };
+        // ??
+        call.rtcPeerConnection.ontrack = (event) => {
+            console.log('on track > ', event);
+        };
+        // // When PeerConnection request a negotiation, start the Verto call
+        call.rtcPeerConnection.onnegotiationneeded = () => {
+            call.rtcPeerConnection.createOffer().then(offer => {
+                call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
+            });
+        };
+        return call;
     }
     /**
      * PRIVATE Functions
@@ -592,12 +645,12 @@ class JsonRpcClient {
      */
     send(data) {
         if (this.debug) {
-            console.log('Write message > ', JSON.parse(data));
+            console.log('Write message > ', data);
         }
         if (!this.socket) {
             return;
         }
-        this.socket.send(data);
+        this.socket.send(JSON.stringify(data));
     }
     /**
      * Validate the JSON RPC headers
@@ -615,7 +668,6 @@ class JsonRpcClient {
         return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
     }
 }
-//# sourceMappingURL=json-rpc.js.map
 
 const PATTERNS = {
     phoneNumber: /^\+?\d+$/,
@@ -627,6 +679,7 @@ const PATTERNS = {
  */
 class RtcClientBase {
     constructor(video, debug) {
+        this.calls = [];
         this.debug = debug || false;
         if (video) {
             this.videoInfo = video;
@@ -651,7 +704,6 @@ class RtcClientBase {
         });
     }
 }
-//# sourceMappingURL=rtc-client.base.js.map
 
 class RtcClientRequests extends RtcClientBase {
     constructor(video, debug) {
@@ -673,31 +725,7 @@ class RtcClientRequests extends RtcClientBase {
             });
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        this.jsonRpcClient.startCall(phoneNumber);
-    }
-    startVideoCall(phoneNumber) {
-        var _a;
-        if (!this.isAgentConnected() || !this.channel) {
-            this.sendNotConnectedEvent('start call');
-            return;
-        }
-        if (!PATTERNS.phoneNumber.test(phoneNumber)) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
-                code: ErrorCode.InvalidPhoneNumber,
-                message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
-                data: {
-                    phoneNumber: phoneNumber,
-                }
-            });
-        }
-        (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        if (this.videoInfo && this.videoInfo.selfTag) {
-            this.channel.bindVideo(this.videoInfo.selfTag);
-        }
-        ZiwoEvent.emit(ZiwoEventType.OutgoingCall, {
-            audio: true,
-            video: true,
-        });
+        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel));
     }
 }
 //# sourceMappingURL=rtc-client.requests.js.map
@@ -718,7 +746,7 @@ class RtcClientHandlers extends RtcClientRequests {
  * RtcClient wraps all interaction with WebRTC
  *
  * Inheritance:
- *  - RtcClientBase: properties, getter, setters & errors
+ *  - RtcClientBase: shared properties, getter, setters & errors
  *  - RtcRequests: send new request (start call, answer call, ...)
  *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
  */
@@ -877,10 +905,8 @@ class ZiwoClient {
     startCall(phoneNumber) {
         this.rtcClient.startCall(phoneNumber);
     }
-    startVideoCall(phoneNumber) {
-        this.rtcClient.startVideoCall(phoneNumber);
-    }
 }
+//# sourceMappingURL=main.js.map
 
 export { ZiwoClient };
 //# sourceMappingURL=ziwo-core-front.es5.js.map

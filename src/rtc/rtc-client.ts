@@ -15,7 +15,7 @@ export interface MediaConstraint {
  * RtcClient wraps all interaction with WebRTC
  *
  * Inheritance:
- *  - RtcClientBase: properties, getter, setters & errors
+ *  - RtcClientBase: shared properties, getter, setters & errors
  *  - RtcRequests: send new request (start call, answer call, ...)
  *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
  */

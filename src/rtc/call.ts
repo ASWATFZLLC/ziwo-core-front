@@ -4,10 +4,12 @@
  */
 export class Call {
 
-  private callId:string;
+  public readonly callId:string;
+  public readonly rtcPeerConnection:RTCPeerConnection;
 
-  constructor(callId:string) {
+  constructor(callId:string, rtcPeerConnection:RTCPeerConnection) {
     this.callId = callId;
+    this.rtcPeerConnection = rtcPeerConnection;
   }
 
 }

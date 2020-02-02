@@ -1,4 +1,5 @@
 import {JsonRpcEventType, JsonRpcEvent} from './json-rpc.interfaces';
+import {JsonRpcActionId} from './json-rpc.params';
 
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
@@ -26,11 +27,11 @@ export class JsonRpcParser {
   }
 
   private static isLoggedIn(data:any):boolean {
-    return data.id === 3;
+    return data.id === JsonRpcActionId.login;
   }
 
   private static isOutgoingCall(data:any):boolean {
-    return data.id === 4;
+    return data.id === JsonRpcActionId.invite;
   }
 
 }

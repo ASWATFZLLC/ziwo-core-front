@@ -33,5 +33,4 @@ export declare class ZiwoClient {
     connect(): Promise<AgentInfo>;
     addListener(func: Function): void;
     startCall(phoneNumber: string): void;
-    startVideoCall(phoneNumber: string): void;
 }

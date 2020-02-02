@@ -11,9 +11,6 @@ function start() {
             email: document.getElementById('email').value,
             password: document.getElementById('password').value,
         },
-        video: {
-            selfTag: document.getElementById('self-video')
-        },
         debug: true,
     }
   );

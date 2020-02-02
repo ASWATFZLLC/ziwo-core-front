@@ -1,6 +1,7 @@
 import {OutgoingCallPayload} from './json-rpc.interfaces';
 import {RtcClientRequests} from './rtc-client.requests';
 import {VideoInfo} from './channel';
+import {Call} from './call';
 
 export class RtcClientHandlers extends RtcClientRequests {
 

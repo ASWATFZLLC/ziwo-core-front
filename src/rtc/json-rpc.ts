@@ -3,6 +3,7 @@ import {JsonRpcParser} from './json-rpc.parser';
 import {AgentPosition} from '../authentication.service';
 import {JsonRpcParams} from './json-rpc.params';
 import {Call} from './call';
+import {Channel} from './channel';
 
 export enum ZiwoSocketEvent {
   LoggedIn = 'LoggedIn',
@@ -32,10 +33,12 @@ export class JsonRpcClient {
   private sessid?:string;
   private position?:AgentPosition;
   private socket?:WebSocket;
+  private pc:any;
 
   private listeners:Function[] = [];
 
   private readonly debug:boolean;
+  private readonly ICE_SERVER = 'stun:stun.l.google.com:19302';
 
   constructor(debug?:boolean) {
     this.debug = debug || false;
@@ -112,8 +115,48 @@ export class JsonRpcClient {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string):void {
-    this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber));
+  public startCall(phoneNumber:string, callId:string, channel:Channel):Call {
+    console.log('start call');
+    if (!channel.stream) {
+      throw new Error('Error in User Media');
+    }
+
+    // Create Call and its PeerConnection
+    const call = new Call(callId, new RTCPeerConnection({
+      iceServers: [{urls: this.ICE_SERVER}],
+    }));
+
+    // Attach our media stream to the call's PeerConnection
+    channel.stream.getTracks().forEach((track:any) => {
+      call.rtcPeerConnection.addTrack(track);
+    });
+
+    // We wait for candidate to be null to make sure all candidates have been processed
+    call.rtcPeerConnection.onicecandidate = (candidate) => {
+      console.log('candidate ', candidate);
+      if (!candidate.candidate) {
+        this.send(JsonRpcParams.startCall(
+          this.sessid,
+          this.getLogin(),
+          phoneNumber,
+          call.rtcPeerConnection.localDescription?.sdp as string)
+        );
+      }
+    };
+
+    // ??
+    call.rtcPeerConnection.ontrack = (event) => {
+      console.log('on track > ', event);
+    };
+
+    // // When PeerConnection request a negotiation, start the Verto call
+    call.rtcPeerConnection.onnegotiationneeded = () => {
+      call.rtcPeerConnection.createOffer().then(offer => {
+        call.rtcPeerConnection.setLocalDescription(offer).then(() => {});
+      });
+    };
+
+    return call;
   }
 
   /**
@@ -125,12 +168,12 @@ export class JsonRpcClient {
    */
   private send(data:any):void {
     if (this.debug) {
-      console.log('Write message > ', JSON.parse(data));
+      console.log('Write message > ', data);
     }
     if (!this.socket) {
       return;
     }
-    this.socket.send(data);
+    this.socket.send(JSON.stringify(data));
   }
 
   /**
