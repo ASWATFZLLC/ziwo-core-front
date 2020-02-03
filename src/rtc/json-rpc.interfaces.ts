@@ -1,6 +1,7 @@
 
 export interface JsonRpcEvent {
   type:JsonRpcEventType;
+  raw:any;
   payload:any; // should be casted into appropriate Interface based on the type
 }
 

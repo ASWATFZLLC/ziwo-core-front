@@ -344,7 +344,6 @@ class Channel {
         return audioContext;
     }
 }
-//# sourceMappingURL=channel.js.map
 
 class UserMedia {
     static getUserMedia(mediaRequested) {
@@ -360,7 +359,6 @@ class UserMedia {
         });
     }
 }
-//# sourceMappingURL=userMedia.js.map
 
 /**
  * TODO : documentation
@@ -430,12 +428,12 @@ class JsonRpcParams {
             passwd
         });
     }
-    static startCall(sessionId, login, phoneNumber, sdp) {
+    static startCall(sessionId, callId, login, phoneNumber, sdp) {
         return this.wrapParams(JsonRpcMethod.invite, 4, {
             sdp: sdp,
             sessid: sessionId,
             dialogParams: {
-                callID: this.getUuid(),
+                callID: callId,
                 caller_id_name: '',
                 caller_id_number: '',
                 dedEnc: false,
@@ -481,23 +479,27 @@ class JsonRpcParser {
         if (this.isLoggedIn(data)) {
             return {
                 type: JsonRpcEventType.LoggedIn,
+                raw: data,
                 payload: data.params,
             };
         }
         if (this.isOutgoingCall(data)) {
             return {
                 type: JsonRpcEventType.OutgoingCall,
+                raw: data,
                 payload: data.result,
             };
         }
         if (this.isMediaRequest(data)) {
             return {
                 type: JsonRpcEventType.MediaRequest,
+                raw: data,
                 payload: data.params,
             };
         }
         return {
             type: JsonRpcEventType.Unknown,
+            raw: data,
             payload: data
         };
     }
@@ -581,7 +583,7 @@ class JsonRpcBase {
         return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
     }
     /**
-     * Validate the JSON RPC headers
+     * Validate the JSON RPC headersx
      */
     isJsonRpcValid(data) {
         return typeof data === 'object'
@@ -595,12 +597,14 @@ class JsonRpcBase {
  * Call holds a call information and provide helpers
  */
 class Call {
-    constructor(callId, rtcPeerConnection) {
+    constructor(callId, rtcPeerConnection, channel) {
         this.callId = callId;
         this.rtcPeerConnection = rtcPeerConnection;
+        this.channel = channel;
+    }
+    answer() {
     }
 }
-//# sourceMappingURL=call.js.map
 
 class JsonRpcRequests extends JsonRpcBase {
     constructor(debug) {
@@ -627,29 +631,41 @@ class JsonRpcRequests extends JsonRpcBase {
     /**
      * send a start call request
      */
-    startCall(phoneNumber, callId, channel) {
+    startCall(phoneNumber, callId, channel, tags) {
         if (!channel.stream) {
             throw new Error('Error in User Media');
         }
         // Create Call and its PeerConnection
         const call = new Call(callId, new RTCPeerConnection({
             iceServers: [{ urls: this.ICE_SERVER }],
-        }));
+        }), channel);
         call.rtcPeerConnection.ontrack = (tr) => {
-            console.log('tr', tr);
+            const track = tr.track;
+            if (track.kind !== 'audio') {
+                return;
+            }
+            const stream = new MediaStream();
+            stream.addTrack(track);
+            channel.remoteStream = stream;
+            tags.peerTag.srcObject = stream;
+            console.log("REMOTE STREAM", channel.stream, tags.peerTag);
         };
         call.rtcPeerConnection.onconnectionstatechange = (st) => {
             console.log(st);
         };
+        call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
+            // console.log('on ice gathering state change', ev);
+        };
         // Attach our media stream to the call's PeerConnection
         channel.stream.getTracks().forEach((track) => {
+            console.log('add track', track);
             call.rtcPeerConnection.addTrack(track);
         });
         // We wait for candidate to be null to make sure all candidates have been processed
         call.rtcPeerConnection.onicecandidate = (candidate) => {
             var _a;
             if (!candidate.candidate) {
-                this.send(JsonRpcParams.startCall(this.sessid, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                this.send(JsonRpcParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
             }
         };
         call.rtcPeerConnection.createOffer().then(offer => {
@@ -658,7 +674,6 @@ class JsonRpcRequests extends JsonRpcBase {
         return call;
     }
 }
-//# sourceMappingURL=json-rpc.requests.js.map
 
 var ZiwoSocketEvent;
 (function (ZiwoSocketEvent) {
@@ -682,7 +697,6 @@ class JsonRpcClient extends JsonRpcRequests {
         super(debug);
     }
 }
-//# sourceMappingURL=json-rpc.js.map
 
 const PATTERNS = {
     phoneNumber: /^\+?\d+$/,
@@ -693,12 +707,10 @@ const PATTERNS = {
  * RtcClientBase handles authentication and holds core properties
  */
 class RtcClientBase {
-    constructor(video, debug) {
+    constructor(tags, debug) {
         this.calls = [];
         this.debug = debug || false;
-        if (video) {
-            this.videoInfo = video;
-        }
+        this.tags = tags;
     }
     /**
      * Get connected Agent returns the Info of the current agent
@@ -719,11 +731,10 @@ class RtcClientBase {
         });
     }
 }
-//# sourceMappingURL=rtc-client.base.js.map
 
 class RtcClientRequests extends RtcClientBase {
-    constructor(video, debug) {
-        super(video, debug);
+    constructor(tags, debug) {
+        super(tags, debug);
     }
     startCall(phoneNumber) {
         var _a;
@@ -741,14 +752,14 @@ class RtcClientRequests extends RtcClientBase {
             });
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel));
+        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+        console.log(this.calls);
     }
 }
-//# sourceMappingURL=rtc-client.requests.js.map
 
 class RtcClientHandlers extends RtcClientRequests {
-    constructor(video, debug) {
-        super(video, debug);
+    constructor(tags, debug) {
+        super(tags, debug);
     }
     outgoingCall(data) {
         if (this.currentCall) {
@@ -756,12 +767,16 @@ class RtcClientHandlers extends RtcClientRequests {
         }
     }
     acceptMediaRequest(data) {
-        var _a;
-        console.log(data);
-        (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.send(data);
+        const call = this.calls.find(x => x.callId === data.callID);
+        if (!call) {
+            return; // invalid call id?
+        }
+        call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
+            .then(() => console.log('Remote media connected'))
+            .catch(() => console.warn('fail to attach remote media'));
+        call.answer();
     }
 }
-//# sourceMappingURL=rtc-client.handlers.js.map
 
 /**
  * RtcClient wraps all interaction with WebRTC
@@ -772,8 +787,8 @@ class RtcClientHandlers extends RtcClientRequests {
  *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
  */
 class RtcClient extends RtcClientHandlers {
-    constructor(video, debug) {
-        super(video, debug);
+    constructor(tags, debug) {
+        super(tags, debug);
     }
     /**
      * Connect an agent using its Info
@@ -785,7 +800,7 @@ class RtcClient extends RtcClientHandlers {
             // First we make ensure access to microphone &| camera
             // And wait for the socket to open
             Promise.all([
-                UserMedia.getUserMedia({ audio: true, video: this.videoInfo ? true : false }),
+                UserMedia.getUserMedia({ audio: true, video: false }),
                 this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
             ]).then(res => {
                 var _a, _b;
@@ -909,7 +924,7 @@ class ZiwoClient {
     constructor(options) {
         this.options = options;
         this.apiService = new ApiService(options.contactCenterName);
-        this.rtcClient = new RtcClient(options.video, options.debug);
+        this.rtcClient = new RtcClient(options.tags, options.debug);
         if (options.autoConnect) {
             this.connect().then(r => {
             }).catch(err => { throw err; });
@@ -931,7 +946,6 @@ class ZiwoClient {
         this.rtcClient.startCall(phoneNumber);
     }
 }
-//# sourceMappingURL=main.js.map
 
 export { ZiwoClient };
 //# sourceMappingURL=ziwo-core-front.es5.js.map

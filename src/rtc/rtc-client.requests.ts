@@ -7,8 +7,8 @@ import { JsonRpcParams } from './json-rpc.params';
 
 export class RtcClientRequests extends RtcClientBase {
 
-  constructor(video?:VideoInfo, debug?:boolean) {
-    super(video, debug);
+  constructor(tags:VideoInfo, debug?:boolean) {
+    super(tags, debug);
   }
 
   public startCall(phoneNumber:string):void {
@@ -26,7 +26,8 @@ export class RtcClientRequests extends RtcClientBase {
       });
     }
     this.channel?.startMicrophone();
-    this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel));
+    this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+    console.log(this.calls);
   }
 
 }

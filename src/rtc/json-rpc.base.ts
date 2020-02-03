@@ -94,7 +94,7 @@ export class JsonRpcBase {
   }
 
   /**
-   * Validate the JSON RPC headers
+   * Validate the JSON RPC headersx
    */
   private isJsonRpcValid(data:any):boolean {
     return typeof data === 'object'

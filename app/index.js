@@ -11,6 +11,10 @@ function start() {
             email: document.getElementById('email').value,
             password: document.getElementById('password').value,
         },
+        tags: {
+            selfTag: document.getElementById('self-video'),
+            peerTag: document.getElementById('peer-video'),
+        },
         debug: true,
     }
   );

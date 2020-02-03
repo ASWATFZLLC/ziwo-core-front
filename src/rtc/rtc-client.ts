@@ -21,8 +21,8 @@ export interface MediaConstraint {
  */
 export class RtcClient extends RtcClientHandlers {
 
-  constructor(video?:VideoInfo, debug?:boolean) {
-    super(video, debug);
+  constructor(tags:VideoInfo, debug?:boolean) {
+    super(tags, debug);
   }
 
   /**
@@ -35,7 +35,7 @@ export class RtcClient extends RtcClientHandlers {
       // First we make ensure access to microphone &| camera
       // And wait for the socket to open
       Promise.all([
-        UserMedia.getUserMedia({audio: true, video: this.videoInfo ? true : false}),
+        UserMedia.getUserMedia({audio: true, video: false}),
         this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
       ]).then(res => {
         this.channel = res[0];

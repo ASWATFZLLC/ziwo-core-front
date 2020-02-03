@@ -4,8 +4,8 @@ import {VideoInfo} from './channel';
 
 export class RtcClientHandlers extends RtcClientRequests {
 
-  constructor(video?:VideoInfo, debug?:boolean) {
-    super(video, debug);
+  constructor(tags:VideoInfo, debug?:boolean) {
+    super(tags, debug);
   }
 
   protected outgoingCall(data:OutgoingCallPayload):void {
@@ -15,8 +15,14 @@ export class RtcClientHandlers extends RtcClientRequests {
   }
 
   protected acceptMediaRequest(data:MediaRequestPayload):void {
-    console.log(data);
-    this.jsonRpcClient?.send(data);
+    const call = this.calls.find(x => x.callId === data.callID);
+    if (!call) {
+      return ; // invalid call id?
+    }
+    call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: data.sdp}))
+      .then(() => console.log('Remote media connected'))
+      .catch(() => console.warn('fail to attach remote media'));
+    call.answer();
   }
 
 }

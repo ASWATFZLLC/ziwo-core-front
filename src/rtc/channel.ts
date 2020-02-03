@@ -6,13 +6,14 @@ interface MicrophoneData {
 }
 
 export interface VideoInfo {
-  selfTag?:Element;
-  peerTag?:Element;
+  selfTag:HTMLMediaElement;
+  peerTag:HTMLMediaElement;
 }
 
 export class Channel {
 
   public readonly stream:any;
+  public remoteStream:any;
 
   private microphone?:MicrophoneData;
 

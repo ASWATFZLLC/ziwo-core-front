@@ -1,9 +1,10 @@
 export interface VideoInfo {
-    selfTag?: Element;
-    peerTag?: Element;
+    selfTag: HTMLMediaElement;
+    peerTag: HTMLMediaElement;
 }
 export declare class Channel {
     readonly stream: any;
+    remoteStream: any;
     private microphone?;
     private readonly audioContext;
     constructor(stream: any);

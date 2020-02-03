@@ -12,17 +12,15 @@ export class RtcClientBase {
 
   public connectedAgent?:AgentInfo;
   public channel?:Channel;
-  public videoInfo?:VideoInfo;
+  public tags:VideoInfo;
   public jsonRpcClient?:JsonRpcClient;
   public currentCall?:Call;
   public calls:Call[] = [];
   protected readonly debug:boolean;
 
-  constructor(video?:VideoInfo, debug?:boolean) {
+  constructor(tags:VideoInfo, debug?:boolean) {
     this.debug = debug || false;
-    if (video) {
-      this.videoInfo = video;
-    }
+    this.tags = tags;
   }
 
   /**

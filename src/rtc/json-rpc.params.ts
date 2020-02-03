@@ -34,12 +34,12 @@ export class JsonRpcParams {
     });
   }
 
-  public static startCall(sessionId:string|undefined, login:string, phoneNumber:string, sdp:string):JsonRpcRequest<any> {
+  public static startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):JsonRpcRequest<any> {
     return this.wrapParams(JsonRpcMethod.invite, 4, {
         sdp: sdp,
         sessid: sessionId,
         dialogParams: {
-          callID: this.getUuid(),
+          callID: callId,
           caller_id_name: '',
           caller_id_number: '',
           dedEnc: false,

@@ -1,7 +1,7 @@
 import {JsonRpcBase} from './json-rpc.base';
 import {AgentPosition} from '../authentication.service';
 import {JsonRpcParams} from './json-rpc.params';
-import {Channel} from './channel';
+import {Channel, VideoInfo} from './channel';
 import {Call} from './call';
 
 export class JsonRpcRequests extends JsonRpcBase {
@@ -34,7 +34,7 @@ export class JsonRpcRequests extends JsonRpcBase {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string, callId:string, channel:Channel):Call {
+  public startCall(phoneNumber:string, callId:string, channel:Channel, tags:VideoInfo):Call {
     if (!channel.stream) {
       throw new Error('Error in User Media');
     }
@@ -42,18 +42,31 @@ export class JsonRpcRequests extends JsonRpcBase {
     // Create Call and its PeerConnection
     const call = new Call(callId, new RTCPeerConnection({
       iceServers: [{urls: this.ICE_SERVER}],
-    }));
+    }), channel);
 
     call.rtcPeerConnection.ontrack = (tr) => {
-      console.log('tr', tr);
+      const track = tr.track;
+      if (track.kind !== 'audio') {
+        return;
+      }
+      const stream = new MediaStream();
+      stream.addTrack(track);
+      channel.remoteStream = stream;
+      tags.peerTag.srcObject = stream;
+      console.log("REMOTE STREAM", channel.stream, tags.peerTag);
     };
 
     call.rtcPeerConnection.onconnectionstatechange = (st) => {
       console.log(st);
     };
 
+    call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
+      // console.log('on ice gathering state change', ev);
+    };
+
     // Attach our media stream to the call's PeerConnection
     channel.stream.getTracks().forEach((track:any) => {
+      console.log('add track', track);
       call.rtcPeerConnection.addTrack(track);
     });
 
@@ -62,6 +75,7 @@ export class JsonRpcRequests extends JsonRpcBase {
       if (!candidate.candidate) {
         this.send(JsonRpcParams.startCall(
           this.sessid,
+          call.callId,
           this.getLogin(),
           phoneNumber,
           call.rtcPeerConnection.localDescription?.sdp as string)

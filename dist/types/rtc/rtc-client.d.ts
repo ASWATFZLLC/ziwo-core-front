@@ -14,7 +14,7 @@ export interface MediaConstraint {
  *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
  */
 export declare class RtcClient extends RtcClientHandlers {
-    constructor(video?: VideoInfo, debug?: boolean);
+    constructor(tags: VideoInfo, debug?: boolean);
     /**
      * Connect an agent using its Info
      */

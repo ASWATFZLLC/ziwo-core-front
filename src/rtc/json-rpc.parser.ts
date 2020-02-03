@@ -11,23 +11,27 @@ export class JsonRpcParser {
     if (this.isLoggedIn(data)) {
       return {
         type: JsonRpcEventType.LoggedIn,
+        raw: data,
         payload: data.params,
       };
     }
     if (this.isOutgoingCall(data)) {
       return {
         type: JsonRpcEventType.OutgoingCall,
+        raw: data,
         payload: data.result,
       };
     }
     if (this.isMediaRequest(data)) {
       return {
         type: JsonRpcEventType.MediaRequest,
+        raw: data,
         payload: data.params,
       };
     }
     return {
       type: JsonRpcEventType.Unknown,
+      raw: data,
       payload: data
     };
   }
