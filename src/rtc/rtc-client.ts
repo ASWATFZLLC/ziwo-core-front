@@ -1,10 +1,13 @@
 import {AgentInfo} from '../authentication.service';
 import {UserMedia} from './userMedia';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
-import {VideoInfo} from './channel';
+import {VideoInfo} from './media-channel';
 import {JsonRpcClient} from './json-rpc';
 import {JsonRpcEvent, JsonRpcEventType,} from './json-rpc.interfaces';
 import {RtcClientHandlers} from './rtc-client.handlers';
+import {PATTERNS} from '../regex';
+import {MESSAGES} from '../messages';
+import {JsonRpcParams} from './json-rpc.params';
 
 export interface MediaConstraint {
   audio:boolean;
@@ -55,8 +58,29 @@ export class RtcClient extends RtcClientHandlers {
     });
   }
 
+  public startCall(phoneNumber:string):void {
+    if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
+      this.sendNotConnectedEvent('start call');
+      return;
+    }
+    if (!PATTERNS.phoneNumber.test(phoneNumber)) {
+      return ZiwoEvent.emit(ZiwoEventType.Error, {
+        code: ErrorCode.InvalidPhoneNumber,
+        message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
+        data: {
+          phoneNumber: phoneNumber,
+        }
+      });
+    }
+    this.channel?.startMicrophone();
+    this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+  }
+
+
   private processIncomingSocketMessage(ev:JsonRpcEvent):void {
-    console.log('New incoming message', ev);
+    if (this.debug) {
+      console.log('New incoming message', ev);
+    }
     switch (ev.type) {
       case JsonRpcEventType.OutgoingCall:
         this.outgoingCall(ev.payload);

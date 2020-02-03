@@ -1,5 +1,5 @@
 import {AgentInfo} from '../authentication.service';
-import {Channel, VideoInfo} from './channel';
+import {MediaChannel, VideoInfo} from './media-channel';
 import {JsonRpcClient} from './json-rpc';
 import {Call} from './call';
 import {ZiwoEventType, ZiwoEvent, ErrorCode} from '../events';
@@ -11,7 +11,7 @@ import {MESSAGES} from '../messages';
 export class RtcClientBase {
 
   public connectedAgent?:AgentInfo;
-  public channel?:Channel;
+  public channel?:MediaChannel;
   public tags:VideoInfo;
   public jsonRpcClient?:JsonRpcClient;
   public currentCall?:Call;

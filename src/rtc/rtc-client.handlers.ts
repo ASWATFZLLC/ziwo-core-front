@@ -1,8 +1,8 @@
 import {OutgoingCallPayload, MediaRequestPayload} from './json-rpc.interfaces';
-import {RtcClientRequests} from './rtc-client.requests';
-import {VideoInfo} from './channel';
+import {VideoInfo} from './media-channel';
+import {RtcClientBase} from './rtc-client.base';
 
-export class RtcClientHandlers extends RtcClientRequests {
+export class RtcClientHandlers extends RtcClientBase {
 
   constructor(tags:VideoInfo, debug?:boolean) {
     super(tags, debug);

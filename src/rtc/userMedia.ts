@@ -1,4 +1,4 @@
-import {Channel} from './channel';
+import {MediaChannel} from './media-channel';
 
 export interface MediaRequested {
   audio?:boolean;
@@ -10,11 +10,11 @@ export interface MediaRequested {
 
 export class UserMedia {
 
-  public static getUserMedia(mediaRequested:UserMedia):Promise<Channel> {
-    return new Promise<Channel>((onRes, onErr) => {
+  public static getUserMedia(mediaRequested:UserMedia):Promise<MediaChannel> {
+    return new Promise<MediaChannel>((onRes, onErr) => {
       try {
         navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
-          onRes(new Channel(stream));
+          onRes(new MediaChannel(stream));
         });
       } catch (e) {
         onErr(e);

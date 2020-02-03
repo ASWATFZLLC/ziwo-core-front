@@ -303,7 +303,7 @@ class AuthenticationService {
 }
 //# sourceMappingURL=authentication.service.js.map
 
-class Channel {
+class MediaChannel {
     constructor(stream) {
         this.stream = stream;
         this.audioContext = this.getAudioContext();
@@ -326,11 +326,6 @@ class Channel {
         };
     }
     bindVideo(el) {
-        // if (!el.srcObject) {
-        //   // TODO : emit appropriate error message
-        //   console.log('error while linking video');
-        //   return;
-        // }
         el.srcObject = this.stream;
     }
     getAudioContext() {
@@ -344,13 +339,14 @@ class Channel {
         return audioContext;
     }
 }
+//# sourceMappingURL=media-channel.js.map
 
 class UserMedia {
     static getUserMedia(mediaRequested) {
         return new Promise((onRes, onErr) => {
             try {
                 navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
-                    onRes(new Channel(stream));
+                    onRes(new MediaChannel(stream));
                 });
             }
             catch (e) {
@@ -359,6 +355,7 @@ class UserMedia {
         });
     }
 }
+//# sourceMappingURL=userMedia.js.map
 
 /**
  * TODO : documentation
@@ -392,15 +389,6 @@ class ZiwoEvent {
 }
 ZiwoEvent.listeners = [];
 //# sourceMappingURL=events.js.map
-
-var JsonRpcEventType;
-(function (JsonRpcEventType) {
-    JsonRpcEventType["Unknown"] = "Unknown";
-    JsonRpcEventType["LoggedIn"] = "LoggedIn";
-    JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
-    JsonRpcEventType["MediaRequest"] = "MediaRequest";
-})(JsonRpcEventType || (JsonRpcEventType = {}));
-//# sourceMappingURL=json-rpc.interfaces.js.map
 
 var JsonRpcMethod;
 (function (JsonRpcMethod) {
@@ -470,6 +458,42 @@ class JsonRpcParams {
     }
 }
 //# sourceMappingURL=json-rpc.params.js.map
+
+/**
+ * Call holds a call information and provide helpers
+ */
+class Call {
+    constructor(callId, rtcPeerConnection, channel) {
+        this.callId = callId;
+        this.rtcPeerConnection = rtcPeerConnection;
+        this.channel = channel;
+    }
+    answer() {
+        console.warn('Answer not implemented');
+    }
+    hangup() {
+        console.warn('Hangup not implemented');
+    }
+    mute() {
+        console.warn('Mute not implemented');
+    }
+    unmute() {
+        console.warn('Unmute not implemented');
+    }
+    hold() {
+        console.warn('Hold not implemented');
+    }
+}
+//# sourceMappingURL=call.js.map
+
+var JsonRpcEventType;
+(function (JsonRpcEventType) {
+    JsonRpcEventType["Unknown"] = "Unknown";
+    JsonRpcEventType["LoggedIn"] = "LoggedIn";
+    JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
+    JsonRpcEventType["MediaRequest"] = "MediaRequest";
+})(JsonRpcEventType || (JsonRpcEventType = {}));
+//# sourceMappingURL=json-rpc.interfaces.js.map
 
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
@@ -593,20 +617,24 @@ class JsonRpcBase {
 }
 //# sourceMappingURL=json-rpc.base.js.map
 
+var ZiwoSocketEvent;
+(function (ZiwoSocketEvent) {
+    ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
+    ZiwoSocketEvent["CallCreated"] = "CallCreated";
+})(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
 /**
- * Call holds a call information and provide helpers
+ * JsonRpcClient implements Verto protocol using JSON RPC
+ *
+ * Usage:
+ *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
+ *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
+ *      .then(() => {
+ *        this.login() // REQUIRED: log the agent into the web socket
+ *        // You can now proceed with any requests
+ *      });
+ *
  */
-class Call {
-    constructor(callId, rtcPeerConnection, channel) {
-        this.callId = callId;
-        this.rtcPeerConnection = rtcPeerConnection;
-        this.channel = channel;
-    }
-    answer() {
-    }
-}
-
-class JsonRpcRequests extends JsonRpcBase {
+class JsonRpcClient extends JsonRpcBase {
     constructor(debug) {
         super(debug);
         this.ICE_SERVER = 'stun:stun.l.google.com:19302';
@@ -648,17 +676,9 @@ class JsonRpcRequests extends JsonRpcBase {
             stream.addTrack(track);
             channel.remoteStream = stream;
             tags.peerTag.srcObject = stream;
-            console.log("REMOTE STREAM", channel.stream, tags.peerTag);
-        };
-        call.rtcPeerConnection.onconnectionstatechange = (st) => {
-            console.log(st);
-        };
-        call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
-            // console.log('on ice gathering state change', ev);
         };
         // Attach our media stream to the call's PeerConnection
         channel.stream.getTracks().forEach((track) => {
-            console.log('add track', track);
             call.rtcPeerConnection.addTrack(track);
         });
         // We wait for candidate to be null to make sure all candidates have been processed
@@ -674,34 +694,7 @@ class JsonRpcRequests extends JsonRpcBase {
         return call;
     }
 }
-
-var ZiwoSocketEvent;
-(function (ZiwoSocketEvent) {
-    ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
-    ZiwoSocketEvent["CallCreated"] = "CallCreated";
-})(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
-/**
- * JsonRpcClient implements Verto protocol using JSON RPC
- *
- * Usage:
- *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
- *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
- *      .then(() => {
- *        this.login() // REQUIRED: log the agent into the web socket
- *        // You can now proceed with any requests
- *      });
- *
- */
-class JsonRpcClient extends JsonRpcRequests {
-    constructor(debug) {
-        super(debug);
-    }
-}
-
-const PATTERNS = {
-    phoneNumber: /^\+?\d+$/,
-};
-//# sourceMappingURL=regex.js.map
+//# sourceMappingURL=json-rpc.js.map
 
 /**
  * RtcClientBase handles authentication and holds core properties
@@ -731,33 +724,9 @@ class RtcClientBase {
         });
     }
 }
+//# sourceMappingURL=rtc-client.base.js.map
 
-class RtcClientRequests extends RtcClientBase {
-    constructor(tags, debug) {
-        super(tags, debug);
-    }
-    startCall(phoneNumber) {
-        var _a;
-        if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
-            this.sendNotConnectedEvent('start call');
-            return;
-        }
-        if (!PATTERNS.phoneNumber.test(phoneNumber)) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
-                code: ErrorCode.InvalidPhoneNumber,
-                message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
-                data: {
-                    phoneNumber: phoneNumber,
-                }
-            });
-        }
-        (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
-        console.log(this.calls);
-    }
-}
-
-class RtcClientHandlers extends RtcClientRequests {
+class RtcClientHandlers extends RtcClientBase {
     constructor(tags, debug) {
         super(tags, debug);
     }
@@ -777,6 +746,12 @@ class RtcClientHandlers extends RtcClientRequests {
         call.answer();
     }
 }
+//# sourceMappingURL=rtc-client.handlers.js.map
+
+const PATTERNS = {
+    phoneNumber: /^\+?\d+$/,
+};
+//# sourceMappingURL=regex.js.map
 
 /**
  * RtcClient wraps all interaction with WebRTC
@@ -820,8 +795,28 @@ class RtcClient extends RtcClientHandlers {
             });
         });
     }
+    startCall(phoneNumber) {
+        var _a;
+        if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
+            this.sendNotConnectedEvent('start call');
+            return;
+        }
+        if (!PATTERNS.phoneNumber.test(phoneNumber)) {
+            return ZiwoEvent.emit(ZiwoEventType.Error, {
+                code: ErrorCode.InvalidPhoneNumber,
+                message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
+                data: {
+                    phoneNumber: phoneNumber,
+                }
+            });
+        }
+        (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
+        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+    }
     processIncomingSocketMessage(ev) {
-        console.log('New incoming message', ev);
+        if (this.debug) {
+            console.log('New incoming message', ev);
+        }
         switch (ev.type) {
             case JsonRpcEventType.OutgoingCall:
                 this.outgoingCall(ev.payload);
@@ -832,6 +827,7 @@ class RtcClient extends RtcClientHandlers {
         }
     }
 }
+//# sourceMappingURL=rtc-client.js.map
 
 /**
  * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE

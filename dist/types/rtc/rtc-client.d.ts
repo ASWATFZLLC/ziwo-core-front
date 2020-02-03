@@ -1,5 +1,5 @@
 import { AgentInfo } from '../authentication.service';
-import { VideoInfo } from './channel';
+import { VideoInfo } from './media-channel';
 import { RtcClientHandlers } from './rtc-client.handlers';
 export interface MediaConstraint {
     audio: boolean;
@@ -19,5 +19,6 @@ export declare class RtcClient extends RtcClientHandlers {
      * Connect an agent using its Info
      */
     connectAgent(agent: AgentInfo): Promise<void>;
+    startCall(phoneNumber: string): void;
     private processIncomingSocketMessage;
 }
