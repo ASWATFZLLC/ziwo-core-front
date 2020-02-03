@@ -1,0 +1,119 @@
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Ziwo Core Front Test</title>
+
+  <style>
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    form div {
+      margin: 10px;
+    }
+
+    label {
+      display: inline-block;
+      width: 100px;
+    }
+
+    input {
+      display: inline-block;
+      width: 300px;
+    }
+
+    .videos {
+      display: flex;
+    }
+
+    .videos h3 {
+      margin: 0;
+    }
+
+    video {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 5px 10px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    #stream-info {
+      margin: 1px solid #ccc;
+      padding: 3px;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    #stream-info p {
+      border-top: 1px solid #ccc;
+      padding: 5px;
+      margin: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+
+<body>
+  <script type="text/javascript" src="./ziwo-core-front.umd.js" charset="utf-8"></script>
+
+  <form class="not-connected" action="#">
+    <div>
+      <label>Email</label>
+      <input id="email" type="text" value="mathieu@kalvad.com" />
+    </div>
+    <div>
+      <label>Password</label>
+      <input id="password" type="text" value="T0t0#4242" />
+    </div>
+    <div>
+      <label>Email</label>
+      <input id="center" type="text" value="kalvad-poc" />
+    </div>
+    <button id="connect-button" type="submit" onclick="start()">Connect</button>
+    <div id="connecting" style="display:none">Connecting</div>
+  </form>
+
+  <div class="row connected">
+    <div class="videos">
+      <div>
+        <h3>Your video</h3>
+        <video id="self-video" playsinline autoplay></video>
+      </div>
+      <div>
+        <h3>Peer video</h3>
+        <video id="peer-video" playsinline autoplay></video>
+      </div>
+    </div>
+
+    <div class="dialpad">
+      <label>Phone Number</label>
+      <input id="phonenumber" type="text" value="+33643085503" />
+      <div class="row">
+        <button onclick="startCall()">Start Call</button>
+        <button onclick="startVideoCall()">Start Video Call</button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="connected">
+    <h2>Live Update</h2>
+    <div id="stream-info">
+    </div>
+  </div>
+
+  <script type="text/javascript" src="./index.js" charset="utf-8"></script>
+</body>
+
+</html>

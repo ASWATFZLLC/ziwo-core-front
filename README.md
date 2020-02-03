@@ -1,16 +1,26 @@
 # Seed for Typescript Library
 
-## About this seed
+## Demo
+
+You can see a live demo using `npm run start:app`. Demo app is available in `app/`
+
+## Docs
+
+Docs is available in `docs`. Open using `npm run open:doc`
 
 ## Commands
 
-| Command       | Description                     |
-| ------------- | ------------------------------- |
-| build         | Build the library into `/dist`  |
-| start         | Start the library in watch mode |
-| lint          | Run tslint                      |
-| test          | Run the unit tests              |
-| test:coverage | Display a test coverage report  |
+| Command        | Description                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| build          | Build the library into `/dist`                                                             |
+| start          | Start the library in watch mode                                                            |
+| start:app      | Start the demo application                                                                 |
+| start:app:port | Start the demo application on a specific port. Usage: `$ PORT=1818 npm run start:app:port` |
+| lint           | Run tslint                                                                                 |
+| test           | Run the unit tests                                                                         |
+| test:coverage  | Display a test coverage report                                                             |
+| doc            | Build the documentation                                                                    |
+| open:doc       | Open the documentation                                                                     |
 
 ## Coding standards
 
