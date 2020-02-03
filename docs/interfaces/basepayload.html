@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ApiResult | ziwo-core-front</title>
+	<title>BasePayload | ziwo-core-front</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2365,17 +2365,11 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface tsd-has-type-parameter">
-			<a href="apiresult.html" class="tsd-kind-icon">Api<wbr>Result</a>
+		<li class="current tsd-kind-interface">
+			<a href="basepayload.html" class="tsd-kind-icon">Base<wbr>Payload</a>
 			<ul>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#content" class="tsd-kind-icon">content</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#info" class="tsd-kind-icon">info</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#result" class="tsd-kind-icon">result</a>
+					<a href="basepayload.html#sessid" class="tsd-kind-icon">sessid</a>
 				</li>
 			</ul>
 		</li>
@@ -2383,19 +2377,22 @@ img {
 </nav>
 <div class="container container-main">
 	<div class="content-wrap">
-		<section class="tsd-panel tsd-type-parameters">
-			<h3>Type parameters</h3>
-			<ul class="tsd-type-parameters">
-				<li>
-					<h4>T</h4>
-				</li>
-			</ul>
-		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">ApiResult</span>
+					<span class="target">BasePayload</span>
+					<ul class="tsd-hierarchy">
+						<li>
+							<a href="loggedinpayload.html" class="tsd-signature-type">LoggedInPayload</a>
+						</li>
+						<li>
+							<a href="outgoingcallpayload.html" class="tsd-signature-type">OutgoingCallPayload</a>
+						</li>
+						<li>
+							<a href="mediarequestpayload.html" class="tsd-signature-type">MediaRequestPayload</a>
+						</li>
+					</ul>
 				</li>
 			</ul>
 		</section>
@@ -2406,9 +2403,7 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#content" class="tsd-kind-icon">content</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#info" class="tsd-kind-icon">info</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#result" class="tsd-kind-icon">result</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="basepayload.html#sessid" class="tsd-kind-icon">sessid</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2417,32 +2412,12 @@ img {
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="content" class="tsd-anchor"></a>
-				<h3>content</h3>
-				<div class="tsd-signature tsd-kind-icon">content<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span></div>
+				<a name="sessid" class="tsd-anchor"></a>
+				<h3>sessid</h3>
+				<div class="tsd-signature tsd-kind-icon">sessid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L5">src/api.service.ts:5</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="info" class="tsd-anchor"></a>
-				<h3>info</h3>
-				<div class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L4">src/api.service.ts:4</a></li>
-					</ul>
-				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="result" class="tsd-anchor"></a>
-				<h3>result</h3>
-				<div class="tsd-signature tsd-kind-icon">result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L3">src/api.service.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.interfaces.ts#L16">src/rtc/json-rpc.interfaces.ts:16</a></li>
 					</ul>
 				</aside>
 			</section>

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ApiResult | ziwo-core-front</title>
+	<title>JsonRpcBase | ziwo-core-front</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2365,17 +2365,41 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface tsd-has-type-parameter">
-			<a href="apiresult.html" class="tsd-kind-icon">Api<wbr>Result</a>
+		<li class="current tsd-kind-class">
+			<a href="jsonrpcbase.html" class="tsd-kind-icon">Json<wbr>Rpc<wbr>Base</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#content" class="tsd-kind-icon">content</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class">
+					<a href="jsonrpcbase.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#info" class="tsd-kind-icon">info</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#debug" class="tsd-kind-icon">debug</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="apiresult.html#result" class="tsd-kind-icon">result</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#listeners" class="tsd-kind-icon">listeners</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#position" class="tsd-kind-icon">position</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#sessid" class="tsd-kind-icon">sessid</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#socket" class="tsd-kind-icon">socket</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="jsonrpcbase.html#addlistener" class="tsd-kind-icon">add<wbr>Listener</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<a href="jsonrpcbase.html#getlogin" class="tsd-kind-icon">get<wbr>Login</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a href="jsonrpcbase.html#isjsonrpcvalid" class="tsd-kind-icon">is<wbr>Json<wbr>Rpc<wbr>Valid</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="jsonrpcbase.html#opensocket" class="tsd-kind-icon">open<wbr>Socket</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="jsonrpcbase.html#send" class="tsd-kind-icon">send</a>
 				</li>
 			</ul>
 		</li>
@@ -2383,19 +2407,16 @@ img {
 </nav>
 <div class="container container-main">
 	<div class="content-wrap">
-		<section class="tsd-panel tsd-type-parameters">
-			<h3>Type parameters</h3>
-			<ul class="tsd-type-parameters">
-				<li>
-					<h4>T</h4>
-				</li>
-			</ul>
-		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">ApiResult</span>
+					<span class="target">JsonRpcBase</span>
+					<ul class="tsd-hierarchy">
+						<li>
+							<a href="jsonrpcclient.html" class="tsd-signature-type">JsonRpcClient</a>
+						</li>
+					</ul>
 				</li>
 			</ul>
 		</section>
@@ -2404,47 +2425,269 @@ img {
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
 					<section class="tsd-index-section ">
+						<h3>Constructors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="jsonrpcbase.html#constructor" class="tsd-kind-icon">constructor</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-private-protected">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#content" class="tsd-kind-icon">content</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#info" class="tsd-kind-icon">info</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="apiresult.html#result" class="tsd-kind-icon">result</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#debug" class="tsd-kind-icon">debug</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#listeners" class="tsd-kind-icon">listeners</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#position" class="tsd-kind-icon">position</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#sessid" class="tsd-kind-icon">sessid</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#socket" class="tsd-kind-icon">socket</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section ">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="jsonrpcbase.html#addlistener" class="tsd-kind-icon">add<wbr>Listener</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="jsonrpcbase.html#getlogin" class="tsd-kind-icon">get<wbr>Login</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="jsonrpcbase.html#isjsonrpcvalid" class="tsd-kind-icon">is<wbr>Json<wbr>Rpc<wbr>Valid</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="jsonrpcbase.html#opensocket" class="tsd-kind-icon">open<wbr>Socket</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="jsonrpcbase.html#send" class="tsd-kind-icon">send</a></li>
 						</ul>
 					</section>
 				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Constructors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
+				<a name="constructor" class="tsd-anchor"></a>
+				<h3>constructor</h3>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Json<wbr>Rpc<wbr>Base<span class="tsd-signature-symbol">(</span>debug<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="jsonrpcbase.html" class="tsd-signature-type">JsonRpcBase</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L28">src/rtc/json-rpc.base.ts:28</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> debug: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="jsonrpcbase.html" class="tsd-signature-type">JsonRpcBase</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="content" class="tsd-anchor"></a>
-				<h3>content</h3>
-				<div class="tsd-signature tsd-kind-icon">content<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="debug" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> debug</h3>
+				<div class="tsd-signature tsd-kind-icon">debug<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L5">src/api.service.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L28">src/rtc/json-rpc.base.ts:28</a></li>
 					</ul>
 				</aside>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="info" class="tsd-anchor"></a>
-				<h3>info</h3>
-				<div class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="listeners" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> listeners</h3>
+				<div class="tsd-signature tsd-kind-icon">listeners<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Function</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L4">src/api.service.ts:4</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L25">src/rtc/json-rpc.base.ts:25</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Callback functions - register using <code>addListener</code></p>
+					</div>
+				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="result" class="tsd-anchor"></a>
-				<h3>result</h3>
-				<div class="tsd-signature tsd-kind-icon">result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="position" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagOptional">Optional</span> position</h3>
+				<div class="tsd-signature tsd-kind-icon">position<span class="tsd-signature-symbol">:</span> <a href="../interfaces/agentposition.html" class="tsd-signature-type">AgentPosition</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/api.service.ts#L3">src/api.service.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L20">src/rtc/json-rpc.base.ts:20</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Information about agent</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="sessid" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagOptional">Optional</span> sessid</h3>
+				<div class="tsd-signature tsd-kind-icon">sessid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L15">src/rtc/json-rpc.base.ts:15</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Session ID used with the current socket</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="socket" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagOptional">Optional</span> socket</h3>
+				<div class="tsd-signature tsd-kind-icon">socket<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">WebSocket</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L10">src/rtc/json-rpc.base.ts:10</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Our communication channel</p>
+					</div>
+				</div>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="addlistener" class="tsd-anchor"></a>
+				<h3>add<wbr>Listener</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">add<wbr>Listener<span class="tsd-signature-symbol">(</span>call<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L37">src/rtc/json-rpc.base.ts:37</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>addListener allows to listener for incoming Socket Event</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>call: <span class="tsd-signature-type">Function</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<a name="getlogin" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Login</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Login<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L92">src/rtc/json-rpc.base.ts:92</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Concat position to return the login used in Json RTC request</p>
+							</div>
+						</div>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+				<a name="isjsonrpcvalid" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagPrivate">Private</span> is<wbr>Json<wbr>Rpc<wbr>Valid</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<li class="tsd-signature tsd-kind-icon">is<wbr>Json<wbr>Rpc<wbr>Valid<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L99">src/rtc/json-rpc.base.ts:99</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Validate the JSON RPC headersx</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>data: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="opensocket" class="tsd-anchor"></a>
+				<h3>open<wbr>Socket</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">open<wbr>Socket<span class="tsd-signature-symbol">(</span>socketUrl<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/asyncapiresult.html#promise" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L45">src/rtc/json-rpc.base.ts:45</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>openSocket should be called directly after the constructor
+								It initializate the socket and set the handlers</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>socketUrl: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="../interfaces/asyncapiresult.html#promise" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="send" class="tsd-anchor"></a>
+				<h3>send</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">send<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/rtc/json-rpc.base.ts#L79">src/rtc/json-rpc.base.ts:79</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Send data to socket and log in case of debug</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>data: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer class="with-border-bottom">

@@ -2365,33 +2365,6 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class=" tsd-kind-class">
-			<a href="../classes/apiservice.html" class="tsd-kind-icon">Api<wbr>Service</a>
-		</li>
-		<li class=" tsd-kind-class">
-			<a href="../classes/authenticationservice.html" class="tsd-kind-icon">Authentication<wbr>Service</a>
-		</li>
-		<li class=" tsd-kind-class">
-			<a href="../classes/channel.html" class="tsd-kind-icon">Channel</a>
-		</li>
-		<li class=" tsd-kind-class">
-			<a href="../classes/rtcclient.html" class="tsd-kind-icon">Rtc<wbr>Client</a>
-		</li>
-		<li class=" tsd-kind-class">
-			<a href="../classes/ziwoclient.html" class="tsd-kind-icon">Ziwo<wbr>Client</a>
-		</li>
-		<li class=" tsd-kind-interface">
-			<a href="apiendpoint.html" class="tsd-kind-icon">Api<wbr>Endpoint</a>
-		</li>
-		<li class=" tsd-kind-interface tsd-has-type-parameter">
-			<a href="apiresult.html" class="tsd-kind-icon">Api<wbr>Result</a>
-		</li>
-		<li class=" tsd-kind-interface">
-			<a href="credentials.html" class="tsd-kind-icon">Credentials</a>
-		</li>
-		<li class=" tsd-kind-interface">
-			<a href="httpheaders.html" class="tsd-kind-icon">Http<wbr>Headers</a>
-		</li>
 		<li class="current tsd-kind-interface">
 			<a href="ziwoclientoptions.html" class="tsd-kind-icon">Ziwo<wbr>Client<wbr>Options</a>
 			<ul>
@@ -2403,6 +2376,12 @@ img {
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
 					<a href="ziwoclientoptions.html#credentials" class="tsd-kind-icon">credentials</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="ziwoclientoptions.html#debug" class="tsd-kind-icon">debug</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="ziwoclientoptions.html#tags" class="tsd-kind-icon">tags</a>
 				</li>
 			</ul>
 		</li>
@@ -2435,6 +2414,8 @@ img {
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ziwoclientoptions.html#autoconnect" class="tsd-kind-icon">auto<wbr>Connect</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ziwoclientoptions.html#contactcentername" class="tsd-kind-icon">contact<wbr>Center<wbr>Name</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ziwoclientoptions.html#credentials" class="tsd-kind-icon">credentials</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ziwoclientoptions.html#debug" class="tsd-kind-icon">debug</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ziwoclientoptions.html#tags" class="tsd-kind-icon">tags</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2448,7 +2429,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">auto<wbr>Connect<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/1b83137/src/main.ts#L26">main.ts:26</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/main.ts#L28">src/main.ts:28</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2467,7 +2448,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">contact<wbr>Center<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/1b83137/src/main.ts#L13">main.ts:13</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/main.ts#L15">src/main.ts:15</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2484,7 +2465,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">credentials<span class="tsd-signature-symbol">:</span> <a href="credentials.html" class="tsd-signature-type">Credentials</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/1b83137/src/main.ts#L19">main.ts:19</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/main.ts#L21">src/main.ts:21</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2492,6 +2473,32 @@ img {
 						<p>see <code>authentication.ts#Credentials</code> for complete definition
 						If <code>credentials</code> is not provided, please provide an Authentication Token</p>
 					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="debug" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> debug</h3>
+				<div class="tsd-signature tsd-kind-icon">debug<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/main.ts#L35">src/main.ts:35</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="tags" class="tsd-anchor"></a>
+				<h3>tags</h3>
+				<div class="tsd-signature tsd-kind-icon">tags<span class="tsd-signature-symbol">:</span> <a href="mediainfo.html" class="tsd-signature-type">MediaInfo</a></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/bfff2c3/src/main.ts#L33">src/main.ts:33</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<dl class="tsd-comment-tags">
+						<dt>tags</dt>
+						<dd></dd>
+					</dl>
 				</div>
 			</section>
 		</section>
