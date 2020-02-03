@@ -1,13 +1,13 @@
 import {AgentInfo} from '../authentication.service';
-import {UserMedia} from './userMedia';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
-import {VideoInfo} from './media-channel';
+import {MediaInfo, MediaChannel} from './media-channel';
 import {JsonRpcClient} from './json-rpc';
 import {JsonRpcEvent, JsonRpcEventType,} from './json-rpc.interfaces';
 import {RtcClientHandlers} from './rtc-client.handlers';
 import {PATTERNS} from '../regex';
 import {MESSAGES} from '../messages';
 import {JsonRpcParams} from './json-rpc.params';
+import {Call} from './call';
 
 export interface MediaConstraint {
   audio:boolean;
@@ -16,20 +16,17 @@ export interface MediaConstraint {
 
 /**
  * RtcClient wraps all interaction with WebRTC
- *
- * Inheritance:
- *  - RtcClientBase: shared properties, getter, setters & errors
- *  - RtcRequests: send new request (start call, answer call, ...)
- *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
+ * It holds the validation & all properties required for usage of Web RTC
  */
 export class RtcClient extends RtcClientHandlers {
 
-  constructor(tags:VideoInfo, debug?:boolean) {
+  constructor(tags:MediaInfo, debug?:boolean) {
     super(tags, debug);
   }
 
   /**
-   * Connect an agent using its Info
+   * User Agent Info to authenticate on the socket
+   * Also requests access to User Media (audio &| video)
    */
   public connectAgent(agent:AgentInfo):Promise<void> {
     return new Promise<void>((onRes, onErr) => {
@@ -38,7 +35,7 @@ export class RtcClient extends RtcClientHandlers {
       // First we make ensure access to microphone &| camera
       // And wait for the socket to open
       Promise.all([
-        UserMedia.getUserMedia({audio: true, video: false}),
+        MediaChannel.getUserMediaAsChannel({audio: true, video: false}),
         this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
       ]).then(res => {
         this.channel = res[0];
@@ -58,25 +55,33 @@ export class RtcClient extends RtcClientHandlers {
     });
   }
 
-  public startCall(phoneNumber:string):void {
+  /**
+   * Start a phone call and return a Call or undefined if an error occured
+   */
+  public startCall(phoneNumber:string):Call|undefined {
     if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
       this.sendNotConnectedEvent('start call');
       return;
     }
     if (!PATTERNS.phoneNumber.test(phoneNumber)) {
-      return ZiwoEvent.emit(ZiwoEventType.Error, {
+      ZiwoEvent.emit(ZiwoEventType.Error, {
         code: ErrorCode.InvalidPhoneNumber,
         message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
         data: {
           phoneNumber: phoneNumber,
         }
       });
+      return;
     }
     this.channel?.startMicrophone();
-    this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+    const call = this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags);
+    this.calls.push(call);
+    return call;
   }
 
-
+  /**
+   * Process message
+   */
   private processIncomingSocketMessage(ev:JsonRpcEvent):void {
     if (this.debug) {
       console.log('New incoming message', ev);

@@ -303,10 +303,55 @@ class AuthenticationService {
 }
 //# sourceMappingURL=authentication.service.js.map
 
+/**
+ * TODO : documentation
+ * TODO : define interface for each available type?
+ * TODO : define all event type
+ */
+var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
+    ErrorCode[ErrorCode["UserMediaError"] = 3] = "UserMediaError";
+    ErrorCode[ErrorCode["AgentNotConnected"] = 1] = "AgentNotConnected";
+    ErrorCode[ErrorCode["ProtocolError"] = 4] = "ProtocolError";
+})(ErrorCode || (ErrorCode = {}));
+var ZiwoEventType;
+(function (ZiwoEventType) {
+    ZiwoEventType["Error"] = "Error";
+    ZiwoEventType["AgentConnected"] = "AgentConnected";
+    ZiwoEventType["IncomingCall"] = "IncomingCall";
+    ZiwoEventType["OutgoingCall"] = "OutgoingCall";
+    ZiwoEventType["CallStarted"] = "CallStarted";
+    ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
+    ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
+})(ZiwoEventType || (ZiwoEventType = {}));
+class ZiwoEvent {
+    static subscribe(func) {
+        this.listeners.push(func);
+    }
+    static emit(type, data) {
+        this.listeners.forEach(x => x(type, data));
+    }
+}
+ZiwoEvent.listeners = [];
+//# sourceMappingURL=events.js.map
+
 class MediaChannel {
     constructor(stream) {
         this.stream = stream;
         this.audioContext = this.getAudioContext();
+    }
+    static getUserMediaAsChannel(mediaRequested) {
+        return new Promise((onRes, onErr) => {
+            try {
+                navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+                    onRes(new MediaChannel(stream));
+                });
+            }
+            catch (e) {
+                onErr(e);
+            }
+        });
     }
     startMicrophone() {
         // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
@@ -340,55 +385,6 @@ class MediaChannel {
     }
 }
 //# sourceMappingURL=media-channel.js.map
-
-class UserMedia {
-    static getUserMedia(mediaRequested) {
-        return new Promise((onRes, onErr) => {
-            try {
-                navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
-                    onRes(new MediaChannel(stream));
-                });
-            }
-            catch (e) {
-                onErr(e);
-            }
-        });
-    }
-}
-//# sourceMappingURL=userMedia.js.map
-
-/**
- * TODO : documentation
- * TODO : define interface for each available type?
- * TODO : define all event type
- */
-var ErrorCode;
-(function (ErrorCode) {
-    ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
-    ErrorCode[ErrorCode["UserMediaError"] = 3] = "UserMediaError";
-    ErrorCode[ErrorCode["AgentNotConnected"] = 1] = "AgentNotConnected";
-    ErrorCode[ErrorCode["ProtocolError"] = 4] = "ProtocolError";
-})(ErrorCode || (ErrorCode = {}));
-var ZiwoEventType;
-(function (ZiwoEventType) {
-    ZiwoEventType["Error"] = "Error";
-    ZiwoEventType["AgentConnected"] = "AgentConnected";
-    ZiwoEventType["IncomingCall"] = "IncomingCall";
-    ZiwoEventType["OutgoingCall"] = "OutgoingCall";
-    ZiwoEventType["CallStarted"] = "CallStarted";
-    ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
-    ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
-})(ZiwoEventType || (ZiwoEventType = {}));
-class ZiwoEvent {
-    static subscribe(func) {
-        this.listeners.push(func);
-    }
-    static emit(type, data) {
-        this.listeners.forEach(x => x(type, data));
-    }
-}
-ZiwoEvent.listeners = [];
-//# sourceMappingURL=events.js.map
 
 var JsonRpcMethod;
 (function (JsonRpcMethod) {
@@ -751,22 +747,18 @@ class RtcClientHandlers extends RtcClientBase {
 const PATTERNS = {
     phoneNumber: /^\+?\d+$/,
 };
-//# sourceMappingURL=regex.js.map
 
 /**
  * RtcClient wraps all interaction with WebRTC
- *
- * Inheritance:
- *  - RtcClientBase: shared properties, getter, setters & errors
- *  - RtcRequests: send new request (start call, answer call, ...)
- *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
+ * It holds the validation & all properties required for usage of Web RTC
  */
 class RtcClient extends RtcClientHandlers {
     constructor(tags, debug) {
         super(tags, debug);
     }
     /**
-     * Connect an agent using its Info
+     * User Agent Info to authenticate on the socket
+     * Also requests access to User Media (audio &| video)
      */
     connectAgent(agent) {
         return new Promise((onRes, onErr) => {
@@ -775,7 +767,7 @@ class RtcClient extends RtcClientHandlers {
             // First we make ensure access to microphone &| camera
             // And wait for the socket to open
             Promise.all([
-                UserMedia.getUserMedia({ audio: true, video: false }),
+                MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
                 this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
             ]).then(res => {
                 var _a, _b;
@@ -795,6 +787,9 @@ class RtcClient extends RtcClientHandlers {
             });
         });
     }
+    /**
+     * Start a phone call and return a Call or undefined if an error occured
+     */
     startCall(phoneNumber) {
         var _a;
         if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
@@ -802,17 +797,23 @@ class RtcClient extends RtcClientHandlers {
             return;
         }
         if (!PATTERNS.phoneNumber.test(phoneNumber)) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
+            ZiwoEvent.emit(ZiwoEventType.Error, {
                 code: ErrorCode.InvalidPhoneNumber,
                 message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
                 data: {
                     phoneNumber: phoneNumber,
                 }
             });
+            return;
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        this.calls.push(this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags));
+        const call = this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags);
+        this.calls.push(call);
+        return call;
     }
+    /**
+     * Process message
+     */
     processIncomingSocketMessage(ev) {
         if (this.debug) {
             console.log('New incoming message', ev);
@@ -827,7 +828,6 @@ class RtcClient extends RtcClientHandlers {
         }
     }
 }
-//# sourceMappingURL=rtc-client.js.map
 
 /**
  * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE
@@ -942,6 +942,7 @@ class ZiwoClient {
         this.rtcClient.startCall(phoneNumber);
     }
 }
+//# sourceMappingURL=main.js.map
 
 export { ZiwoClient };
 //# sourceMappingURL=ziwo-core-front.es5.js.map

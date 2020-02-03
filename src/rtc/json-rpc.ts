@@ -1,6 +1,6 @@
 import {AgentPosition} from '../authentication.service';
 import {JsonRpcParams} from './json-rpc.params';
-import {MediaChannel, VideoInfo} from './media-channel';
+import {MediaChannel, MediaInfo} from './media-channel';
 import {Call} from './call';
 import {JsonRpcBase} from './json-rpc.base';
 
@@ -52,7 +52,7 @@ export class JsonRpcClient extends JsonRpcBase {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string, callId:string, channel:MediaChannel, tags:VideoInfo):Call {
+  public startCall(phoneNumber:string, callId:string, channel:MediaChannel, tags:MediaInfo):Call {
     if (!channel.stream) {
       throw new Error('Error in User Media');
     }

@@ -1,24 +1,28 @@
 import { AgentInfo } from '../authentication.service';
-import { VideoInfo } from './media-channel';
+import { MediaInfo } from './media-channel';
 import { RtcClientHandlers } from './rtc-client.handlers';
+import { Call } from './call';
 export interface MediaConstraint {
     audio: boolean;
     video: boolean;
 }
 /**
  * RtcClient wraps all interaction with WebRTC
- *
- * Inheritance:
- *  - RtcClientBase: shared properties, getter, setters & errors
- *  - RtcRequests: send new request (start call, answer call, ...)
- *  - RtcHandlers: handler incoming message (call received, outgoing call, ...)
+ * It holds the validation & all properties required for usage of Web RTC
  */
 export declare class RtcClient extends RtcClientHandlers {
-    constructor(tags: VideoInfo, debug?: boolean);
+    constructor(tags: MediaInfo, debug?: boolean);
     /**
-     * Connect an agent using its Info
+     * User Agent Info to authenticate on the socket
+     * Also requests access to User Media (audio &| video)
      */
     connectAgent(agent: AgentInfo): Promise<void>;
-    startCall(phoneNumber: string): void;
+    /**
+     * Start a phone call and return a Call or undefined if an error occured
+     */
+    startCall(phoneNumber: string): Call | undefined;
+    /**
+     * Process message
+     */
     private processIncomingSocketMessage;
 }

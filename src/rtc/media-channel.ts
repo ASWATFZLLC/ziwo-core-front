@@ -5,7 +5,7 @@ interface MicrophoneData {
   source:MediaStreamAudioSourceNode;
 }
 
-export interface VideoInfo {
+export interface MediaInfo {
   selfTag:HTMLMediaElement;
   peerTag:HTMLMediaElement;
 }
@@ -22,6 +22,18 @@ export class MediaChannel {
   constructor(stream:any) {
     this.stream = stream;
     this.audioContext = this.getAudioContext();
+  }
+
+  public static getUserMediaAsChannel(mediaRequested:any):Promise<MediaChannel> {
+    return new Promise<MediaChannel>((onRes, onErr) => {
+      try {
+        navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+          onRes(new MediaChannel(stream));
+        });
+      } catch (e) {
+        onErr(e);
+      }
+    });
   }
 
   public startMicrophone():void {

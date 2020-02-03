@@ -1,5 +1,5 @@
 import { Credentials, AgentInfo } from './authentication.service';
-import { VideoInfo } from './rtc/media-channel';
+import { MediaInfo } from './rtc/media-channel';
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
  */
@@ -22,7 +22,7 @@ export interface ZiwoClientOptions {
     /**
      * @tags
      */
-    tags: VideoInfo;
+    tags: MediaInfo;
     debug?: boolean;
 }
 export declare class ZiwoClient {
