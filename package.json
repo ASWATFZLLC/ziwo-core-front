@@ -16,8 +16,9 @@
     "start": "rollup -c rollup.config.ts --watch",
     "start:app": "./node_modules/.bin/http-server app/ -c-1",
     "start:app:port": "./node_modules/.bin/http-server app/ --port=$PORT -c-1",
-    "test": "jest --coverage",
-    "test:coverage": "jest --coverage --watch",
+    "test": "./node_modules/.bin/jest",
+    "test:watch": "./node_modules/.bin/jest --watch",
+    "test:coverage": "./node_mdules/.bin/jest --coverage --watch",
     "doc": "./node_modules/.bin/typedoc --out docs --target es6 --readme none --theme minimal --mode file src",
     "open:doc": "firefox docs/index.html"
   },
@@ -60,6 +61,6 @@
       "ts",
       "js"
     ],
-    "testRegex": "^.+\\.spec\\.ts$"
+    "testRegex": "./test/.*.ts$"
   }
 }

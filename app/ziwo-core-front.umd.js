@@ -753,6 +753,7 @@
     const PATTERNS = {
         phoneNumber: /^\+?\d+$/,
     };
+    //# sourceMappingURL=regex.js.map
 
     /**
      * RtcClient wraps all interaction with WebRTC
@@ -948,7 +949,6 @@
             this.rtcClient.startCall(phoneNumber);
         }
     }
-    //# sourceMappingURL=main.js.map
 
     exports.ZiwoClient = ZiwoClient;
 

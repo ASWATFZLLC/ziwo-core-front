@@ -2,7 +2,7 @@ import {AgentInfo} from '../authentication.service';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {MediaInfo, MediaChannel} from './media-channel';
 import {JsonRpcClient} from './json-rpc';
-import {JsonRpcEvent, JsonRpcEventType,} from './json-rpc.interfaces';
+import {JsonRpcEvent, JsonRpcEventType} from './json-rpc.interfaces';
 import {RtcClientHandlers} from './rtc-client.handlers';
 import {PATTERNS} from '../regex';
 import {MESSAGES} from '../messages';
