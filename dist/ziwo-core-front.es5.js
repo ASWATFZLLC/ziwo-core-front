@@ -194,7 +194,6 @@ var Md5 = /** @class */ (function () {
     Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
     return Md5;
 }());
-//# sourceMappingURL=index.js.map
 
 const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
 const MESSAGES = {
@@ -202,7 +201,6 @@ const MESSAGES = {
     INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
     AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
 };
-//# sourceMappingURL=messages.js.map
 
 var UserStatus;
 (function (UserStatus) {
@@ -341,7 +339,6 @@ class ZiwoEvent {
     }
 }
 ZiwoEvent.listeners = [];
-//# sourceMappingURL=events.js.map
 
 class MediaChannel {
     constructor(stream) {
@@ -391,7 +388,6 @@ class MediaChannel {
         return audioContext;
     }
 }
-//# sourceMappingURL=media-channel.js.map
 
 var JsonRpcMethod;
 (function (JsonRpcMethod) {
@@ -460,7 +456,6 @@ class JsonRpcParams {
         });
     }
 }
-//# sourceMappingURL=json-rpc.params.js.map
 
 /**
  * Call holds a call information and provide helpers
@@ -487,7 +482,6 @@ class Call {
         console.warn('Hold not implemented');
     }
 }
-//# sourceMappingURL=call.js.map
 
 var JsonRpcEventType;
 (function (JsonRpcEventType) {
@@ -496,7 +490,6 @@ var JsonRpcEventType;
     JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
     JsonRpcEventType["MediaRequest"] = "MediaRequest";
 })(JsonRpcEventType || (JsonRpcEventType = {}));
-//# sourceMappingURL=json-rpc.interfaces.js.map
 
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
@@ -540,7 +533,6 @@ class JsonRpcParser {
         return data.method === 'verto.media';
     }
 }
-//# sourceMappingURL=json-rpc.parser.js.map
 
 class JsonRpcBase {
     constructor(debug) {
@@ -753,12 +745,10 @@ class RtcClientHandlers extends RtcClientBase {
         // call.answer();
     }
 }
-//# sourceMappingURL=rtc-client.handlers.js.map
 
 const PATTERNS = {
     phoneNumber: /^\+?\d+$/,
 };
-//# sourceMappingURL=regex.js.map
 
 /**
  * RtcClient wraps all interaction with WebRTC
@@ -879,28 +869,28 @@ class ApiService {
      * @endpoint url endpoint. Base url should not be included
      */
     get(endpoint) {
-        return this.query(endpoint, 'GET');
+        return this.query(endpoint + `?bc=${Date.now()}`, 'GET');
     }
     /**
      * Execute a POST query
      * @endpoint url endpoint. Base url should not be included
      */
     post(endpoint, payload) {
-        return this.query(endpoint, 'POST', payload);
+        return this.query(endpoint + `?bc=${Date.now()}`, 'POST', payload);
     }
     /**
      * Execute a PUT query
      * @endpoint url endpoint. Base url should not be included
      */
     put(endpoint, payload) {
-        return this.query(endpoint, 'PUT', payload);
+        return this.query(endpoint + `?bc=${Date.now()}`, 'PUT', payload);
     }
     /**
      * Execute a DELETE query
      * @endpoint url endpoint. Base url should not be included
      */
     delete(endpoint) {
-        return this.query(endpoint, 'DELETE');
+        return this.query(endpoint + `?bc=${Date.now()}`, 'DELETE');
     }
     query(endpoint, method, payload) {
         return new Promise((onRes, onErr) => {
