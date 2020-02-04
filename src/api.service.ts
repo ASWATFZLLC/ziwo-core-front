@@ -55,7 +55,7 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public get<T>(endpoint:string):AsyncApiResult<T> {
-    return this.query<T>(endpoint, 'GET');
+    return this.query<T>(endpoint + `?bc=${Date.now()}`, 'GET');
   }
 
   /**
@@ -63,7 +63,7 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public post<T>(endpoint:string, payload:any):AsyncApiResult<T> {
-    return this.query<T>(endpoint, 'POST', payload);
+    return this.query<T>(endpoint + `?bc=${Date.now()}`, 'POST', payload);
   }
 
   /**
@@ -71,7 +71,7 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public put<T>(endpoint:string, payload:any):AsyncApiResult<T> {
-    return this.query<T>(endpoint, 'PUT', payload);
+    return this.query<T>(endpoint + `?bc=${Date.now()}`, 'PUT', payload);
   }
 
   /**
@@ -79,7 +79,7 @@ export class ApiService {
    * @endpoint url endpoint. Base url should not be included
    */
   public delete<T>(endpoint:string):AsyncApiResult<T> {
-    return this.query<T>(endpoint, 'DELETE');
+    return this.query<T>(endpoint + `?bc=${Date.now()}`, 'DELETE');
   }
 
   private query<T>(endpoint:string, method:'GET'|'POST'|'PUT'|'DELETE', payload?:any):Promise<ApiResult<T>> {
