@@ -1,4 +1,6 @@
-# Seed for Typescript Library
+# Ziwo Core Front
+
+Provides a Ziwo Client to perform call
 
 ## Demo
 
