@@ -71,7 +71,16 @@ export class JsonRpcClient extends JsonRpcBase {
       stream.addTrack(track);
       channel.remoteStream = stream;
       tags.peerTag.srcObject = stream;
+      console.log('REMOTE STREAM', channel.stream, tags.peerTag);
     };
+
+    // call.rtcPeerConnection.onconnectionstatechange = (st) => {
+    //   console.log(st);
+    // };
+
+    // call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
+    //   console.log('on ice gathering state change', ev);
+    // };
 
     // Attach our media stream to the call's PeerConnection
     channel.stream.getTracks().forEach((track:any) => {

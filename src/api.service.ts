@@ -8,7 +8,7 @@ export interface ApiResult<T> {
 export interface AsyncApiResult<T> extends Promise<ApiResult<T>> {}
 
 /**
- * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE
+ * ApiService provide functions for GET, POST, PUT and DELETE query
  *
  * Usage:
  *
@@ -32,6 +32,7 @@ export class ApiService {
     this.endpoints = {
       authenticate: `/auth/login`,
       profile: '/profile',
+      autologin: '/agents/autoLogin',
     };
   }
 
