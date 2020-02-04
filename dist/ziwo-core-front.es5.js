@@ -220,7 +220,10 @@ class AuthenticationService {
         if (credentials.authenticationToken) {
             api.setToken(credentials.authenticationToken);
             return new Promise((onRes, onErr) => {
-                this.initAgent(api).then(res => onRes(res)).catch(err => onErr(err));
+                Promise.all([
+                    this.initAgent(api),
+                    this.autoLogin(api),
+                ]).then(res => onRes(res[0])).catch(err => onErr(err));
             });
         }
         if (!credentials.email || !credentials.password) {
