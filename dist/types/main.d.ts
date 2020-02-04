@@ -1,5 +1,6 @@
 import { Credentials, AgentInfo } from './authentication.service';
 import { MediaInfo } from './rtc/media-channel';
+import { Call } from './rtc/call';
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
  */
@@ -32,5 +33,5 @@ export declare class ZiwoClient {
     constructor(options: ZiwoClientOptions);
     connect(): Promise<AgentInfo>;
     addListener(func: Function): void;
-    startCall(phoneNumber: string): void;
+    startCall(phoneNumber: string): Call | undefined;
 }

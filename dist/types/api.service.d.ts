@@ -6,7 +6,7 @@ export interface ApiResult<T> {
 export interface AsyncApiResult<T> extends Promise<ApiResult<T>> {
 }
 /**
- * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE
+ * ApiService provide functions for GET, POST, PUT and DELETE query
  *
  * Usage:
  *

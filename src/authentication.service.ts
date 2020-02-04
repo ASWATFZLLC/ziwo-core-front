@@ -1,5 +1,5 @@
 import {Md5} from 'md5-typescript';
-import {ApiService} from './api.service';
+import {ApiService, ApiResult} from './api.service';
 import {MESSAGES} from './messages';
 
 /**
@@ -145,7 +145,12 @@ export class AuthenticationService {
     }
     return new Promise<any>((onRes, onErr) => {
       this.loginZiwo(api, credentials.email, credentials.password).then(() => {
-        this.initAgent(api).then(res => onRes(res)).catch(err => onErr(err));
+        Promise.all([
+          this.initAgent(api),
+          this.autoLogin(api),
+        ]).then(res => {
+          onRes(res[0]);
+        }).catch(err => onErr(err));
       }).catch(err => onErr(err));
     });
   }
@@ -162,6 +167,10 @@ export class AuthenticationService {
         onErr(e);
       });
     });
+  }
+
+  private static autoLogin(api:ApiService):Promise<any> {
+    return api.put<any>('/agents/autologin', {});
   }
 
   private static initAgent(api:ApiService):Promise<AgentInfo> {

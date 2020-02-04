@@ -31,7 +31,8 @@ function start() {
 }
 
 function startCall() {
-    ziwoClient.startCall(document.getElementById('phonenumber').value);
+    const call = ziwoClient.startCall(document.getElementById('phonenumber').value);
+    console.log(call);
 }
 
 function startVideoCall() {

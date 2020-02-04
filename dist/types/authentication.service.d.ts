@@ -116,6 +116,7 @@ export declare class AuthenticationService {
     constructor();
     static authenticate(api: ApiService, credentials: Credentials): Promise<AgentInfo>;
     private static loginZiwo;
+    private static autoLogin;
     private static initAgent;
     private static fetchAgentProfile;
     private static fetchListQueues;

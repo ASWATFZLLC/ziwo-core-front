@@ -3,6 +3,7 @@ import {RtcClient} from './rtc/rtc-client';
 import {ApiService} from './api.service';
 import {ZiwoEvent, ZiwoEventType} from './events';
 import {MediaInfo} from './rtc/media-channel';
+import {Call} from './rtc/call';
 
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
@@ -66,8 +67,8 @@ export class ZiwoClient {
     return ZiwoEvent.subscribe(func);
   }
 
-  public startCall(phoneNumber:string):void {
-    this.rtcClient.startCall(phoneNumber);
+  public startCall(phoneNumber:string):Call|undefined {
+    return this.rtcClient.startCall(phoneNumber);
   }
 
 }

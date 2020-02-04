@@ -22,7 +22,7 @@ export class RtcClientHandlers extends RtcClientBase {
     call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: data.sdp}))
       .then(() => console.log('Remote media connected'))
       .catch(() => console.warn('fail to attach remote media'));
-    call.answer();
+    // call.answer();
   }
 
 }

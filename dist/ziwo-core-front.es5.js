@@ -230,7 +230,12 @@ class AuthenticationService {
         }
         return new Promise((onRes, onErr) => {
             this.loginZiwo(api, credentials.email, credentials.password).then(() => {
-                this.initAgent(api).then(res => onRes(res)).catch(err => onErr(err));
+                Promise.all([
+                    this.initAgent(api),
+                    this.autoLogin(api),
+                ]).then(res => {
+                    onRes(res[0]);
+                }).catch(err => onErr(err));
             }).catch(err => onErr(err));
         });
     }
@@ -246,6 +251,9 @@ class AuthenticationService {
                 onErr(e);
             });
         });
+    }
+    static autoLogin(api) {
+        return api.put('/agents/autologin', {});
     }
     static initAgent(api) {
         return new Promise((onRes, onErr) => {
@@ -301,7 +309,6 @@ class AuthenticationService {
         });
     }
 }
-//# sourceMappingURL=authentication.service.js.map
 
 /**
  * TODO : documentation
@@ -611,7 +618,6 @@ class JsonRpcBase {
             && data.jsonrpc === '2.0';
     }
 }
-//# sourceMappingURL=json-rpc.base.js.map
 
 var ZiwoSocketEvent;
 (function (ZiwoSocketEvent) {
@@ -672,7 +678,14 @@ class JsonRpcClient extends JsonRpcBase {
             stream.addTrack(track);
             channel.remoteStream = stream;
             tags.peerTag.srcObject = stream;
+            console.log('REMOTE STREAM', channel.stream, tags.peerTag);
         };
+        // call.rtcPeerConnection.onconnectionstatechange = (st) => {
+        //   console.log(st);
+        // };
+        // call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
+        //   console.log('on ice gathering state change', ev);
+        // };
         // Attach our media stream to the call's PeerConnection
         channel.stream.getTracks().forEach((track) => {
             call.rtcPeerConnection.addTrack(track);
@@ -690,7 +703,6 @@ class JsonRpcClient extends JsonRpcBase {
         return call;
     }
 }
-//# sourceMappingURL=json-rpc.js.map
 
 /**
  * RtcClientBase handles authentication and holds core properties
@@ -720,7 +732,6 @@ class RtcClientBase {
         });
     }
 }
-//# sourceMappingURL=rtc-client.base.js.map
 
 class RtcClientHandlers extends RtcClientBase {
     constructor(tags, debug) {
@@ -739,7 +750,7 @@ class RtcClientHandlers extends RtcClientBase {
         call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
             .then(() => console.log('Remote media connected'))
             .catch(() => console.warn('fail to attach remote media'));
-        call.answer();
+        // call.answer();
     }
 }
 //# sourceMappingURL=rtc-client.handlers.js.map
@@ -831,7 +842,7 @@ class RtcClient extends RtcClientHandlers {
 }
 
 /**
- * ApiService wraps the axios to provide quick GET, POST, PUT and DELETE
+ * ApiService provide functions for GET, POST, PUT and DELETE query
  *
  * Usage:
  *
@@ -848,6 +859,7 @@ class ApiService {
         this.endpoints = {
             authenticate: `/auth/login`,
             profile: '/profile',
+            autologin: '/agents/autoLogin',
         };
     }
     /**
@@ -915,7 +927,6 @@ class ApiService {
         });
     }
 }
-//# sourceMappingURL=api.service.js.map
 
 class ZiwoClient {
     constructor(options) {
@@ -940,7 +951,7 @@ class ZiwoClient {
         return ZiwoEvent.subscribe(func);
     }
     startCall(phoneNumber) {
-        this.rtcClient.startCall(phoneNumber);
+        return this.rtcClient.startCall(phoneNumber);
     }
 }
 
