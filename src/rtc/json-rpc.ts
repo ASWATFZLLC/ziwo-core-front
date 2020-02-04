@@ -45,7 +45,7 @@ export class JsonRpcClient extends JsonRpcBase {
         return onErr();
       }
       this.sessid = JsonRpcParams.getUuid();
-      this.send(JsonRpcParams.loginParams(this.sessid, agentPosition.name, agentPosition.password));
+      this.send(JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
     });
   }
 
@@ -58,9 +58,14 @@ export class JsonRpcClient extends JsonRpcBase {
     }
 
     // Create Call and its PeerConnection
-    const call = new Call(callId, new RTCPeerConnection({
-      iceServers: [{urls: this.ICE_SERVER}],
-    }), channel);
+    const call = new Call(
+      callId,
+      this,
+      new RTCPeerConnection({
+        iceServers: [{urls: this.ICE_SERVER}],
+      }),
+      channel
+    );
 
     call.rtcPeerConnection.ontrack = (tr) => {
       const track = tr.track;
@@ -71,16 +76,7 @@ export class JsonRpcClient extends JsonRpcBase {
       stream.addTrack(track);
       channel.remoteStream = stream;
       tags.peerTag.srcObject = stream;
-      console.log('REMOTE STREAM', channel.stream, tags.peerTag);
     };
-
-    // call.rtcPeerConnection.onconnectionstatechange = (st) => {
-    //   console.log(st);
-    // };
-
-    // call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
-    //   console.log('on ice gathering state change', ev);
-    // };
 
     // Attach our media stream to the call's PeerConnection
     channel.stream.getTracks().forEach((track:any) => {
@@ -105,6 +101,13 @@ export class JsonRpcClient extends JsonRpcBase {
     });
 
     return call;
+  }
+
+  /**
+   * Hang up a specific call
+   */
+  public hangupCall(callId:string):void {
+    this.send(JsonRpcParams.hangUp());
   }
 
 }

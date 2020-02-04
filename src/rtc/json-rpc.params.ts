@@ -17,7 +17,7 @@ export interface JsonRpcRequest<T> {
 
 export class JsonRpcParams {
 
-  public static wrapParams(method:string, id:number = 0, params:any = {}):JsonRpcRequest<any> {
+  public static wrap(method:string, id:number = 0, params:any = {}):JsonRpcRequest<any> {
     return {
       jsonrpc: '2.0',
       method: method as JsonRpcMethod,
@@ -26,8 +26,8 @@ export class JsonRpcParams {
     };
   }
 
-  public static loginParams(sessid:string, login:string, passwd:string):JsonRpcRequest<any> {
-    return this.wrapParams(JsonRpcMethod.login, 3, {
+  public static login(sessid:string, login:string, passwd:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.login, 3, {
       sessid,
       login,
       passwd
@@ -35,7 +35,7 @@ export class JsonRpcParams {
   }
 
   public static startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):JsonRpcRequest<any> {
-    return this.wrapParams(JsonRpcMethod.invite, 4, {
+    return this.wrap(JsonRpcMethod.invite, 4, {
         sdp: sdp,
         sessid: sessionId,
         dialogParams: {
