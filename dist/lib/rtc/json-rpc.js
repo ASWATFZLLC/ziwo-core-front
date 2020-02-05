@@ -85,6 +85,18 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
     hangupCall(callId, phoneNumber) {
         this.send(json_rpc_params_1.JsonRpcParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
+    /**
+     * Hold a specific call
+     */
+    holdCall(callId, phoneNumber) {
+        this.send(json_rpc_params_1.JsonRpcParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+    }
+    /**
+     * Hang up a specific call
+     */
+    unholdCall(callId, phoneNumber) {
+        this.send(json_rpc_params_1.JsonRpcParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+    }
 }
 exports.JsonRpcClient = JsonRpcClient;
 //# sourceMappingURL=json-rpc.js.map
