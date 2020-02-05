@@ -11,4 +11,4 @@
  * User can unhold a phone call
  * User can mute his microphone
  * User can unmute his microphone
- * Ziwo events available for end-user
+ * Event system (Error, AgentConnected, IncomingCall, OutgoingCall)
