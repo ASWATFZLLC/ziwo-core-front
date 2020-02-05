@@ -111,4 +111,18 @@ export class JsonRpcClient extends JsonRpcBase {
     this.send(JsonRpcParams.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
+  /**
+   * Hold a specific call
+   */
+  public holdCall(callId:string, phoneNumber:string):void {
+    this.send(JsonRpcParams.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+  }
+
+  /**
+   * Hang up a specific call
+   */
+  public unholdCall(callId:string, phoneNumber:string):void {
+    this.send(JsonRpcParams.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+  }
+
 }

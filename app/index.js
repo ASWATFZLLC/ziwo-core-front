@@ -46,6 +46,30 @@ function hangup() {
     }
 }
 
+function mute() {
+    if (call) {
+        call.mute();
+    }
+}
+
+function unmute() {
+    if (call) {
+        call.unmute();
+    }
+}
+
+function hold() {
+    if (call) {
+        call.hold();
+    }
+}
+
+function unhold() {
+    if (call) {
+        call.unhold();
+    }
+}
+
 /**
  * TOOLS
  */

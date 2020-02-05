@@ -37,4 +37,12 @@ export declare class JsonRpcClient extends JsonRpcBase {
      * Hang up a specific call
      */
     hangupCall(callId: string, phoneNumber: string): void;
+    /**
+     * Hold a specific call
+     */
+    holdCall(callId: string, phoneNumber: string): void;
+    /**
+     * Hang up a specific call
+     */
+    unholdCall(callId: string, phoneNumber: string): void;
 }

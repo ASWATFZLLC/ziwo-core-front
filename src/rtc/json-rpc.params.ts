@@ -1,6 +1,7 @@
 export enum JsonRpcMethod {
   login = 'login',
   invite = 'verto.invite',
+  modify = 'verto.modify',
   bye = 'verto.bye',
 }
 
@@ -39,32 +40,7 @@ export class JsonRpcParams {
     return this.wrap(JsonRpcMethod.invite, 4, {
         sdp: sdp,
         sessid: sessionId,
-        dialogParams: {
-          callID: callId,
-          caller_id_name: '',
-          caller_id_number: '',
-          dedEnc: false,
-          destination_number: phoneNumber,
-          incomingBandwidth: 'default',
-          localTag: null,
-          login: login,
-          outgoingBandwidth: 'default',
-          remote_caller_id_name: 'Outbound Call',
-          remote_caller_id_number: phoneNumber,
-          screenShare: false,
-          tag: this.getUuid(),
-          useCamera: false,
-          useMic: true,
-          useSpeak: true,
-          useStereo: true,
-          useVideo: undefined,
-          videoParams: {},
-          audioParams: {
-            googAutoGainControl: false,
-            googNoiseSuppression: false,
-            googHighpassFilter: false
-          },
-        }
+        dialogParams: this.dialogParams(callId, login, phoneNumber),
     });
   }
 
@@ -72,32 +48,21 @@ export class JsonRpcParams {
     return this.wrap(JsonRpcMethod.bye, 9, {
       cause: 'NORMAL_CLEARING',
       causeCode: 16,
-      dialogParams: {
-        callID: callId,
-        caller_id_name: '',
-        caller_id_number: '',
-        dedEnc: false,
-        destination_number: phoneNumber,
-        incomingBandwidth: 'default',
-        localTag: null,
-        login: login,
-        outgoingBandwidth: 'default',
-        remote_caller_id_name: 'Outbound Call',
-        remote_caller_id_number: phoneNumber,
-        screenShare: false,
-        tag: this.getUuid(),
-        useCamera: false,
-        useMic: true,
-        useSpeak: true,
-        useStereo: true,
-        useVideo: undefined,
-        videoParams: {},
-        audioParams: {
-          googAutoGainControl: false,
-          googNoiseSuppression: false,
-          googHighpassFilter: false
-        },
-      }
+      dialogParams: this.dialogParams(callId, login, phoneNumber),
+    });
+  }
+
+  public static holdCall(sessionid:string, callId:string, login:string, phoneNumber:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.modify, 11, {
+      action: 'hold',
+      dialogParams: this.dialogParams(callId, login, phoneNumber),
+    });
+  }
+
+  public static unholdCall(sessionid:string, callId:string, login:string, phoneNumber:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.modify, 10, {
+      action: 'unhold',
+      dialogParams: this.dialogParams(callId, login, phoneNumber),
     });
   }
 
@@ -109,6 +74,35 @@ export class JsonRpcParams {
       return v.toString(16);
     /* tslint:enable */
     });
+  }
+
+  private static dialogParams(callId:string, login:string, phoneNumber:string):any {
+    return {
+      callID: callId,
+      caller_id_name: '',
+      caller_id_number: '',
+      dedEnc: false,
+      destination_number: phoneNumber,
+      incomingBandwidth: 'default',
+      localTag: null,
+      login: login,
+      outgoingBandwidth: 'default',
+      remote_caller_id_name: 'Outbound Call',
+      remote_caller_id_number: phoneNumber,
+      screenShare: false,
+      tag: this.getUuid(),
+      useCamera: false,
+      useMic: true,
+      useSpeak: true,
+      useStereo: true,
+      useVideo: undefined,
+      videoParams: {},
+      audioParams: {
+        googAutoGainControl: false,
+        googNoiseSuppression: false,
+        googHighpassFilter: false
+      },
+    }
   }
 
 }
