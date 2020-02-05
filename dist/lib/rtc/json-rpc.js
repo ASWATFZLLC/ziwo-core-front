@@ -39,7 +39,7 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
                 return onErr();
             }
             this.sessid = json_rpc_params_1.JsonRpcParams.getUuid();
-            this.send(json_rpc_params_1.JsonRpcParams.loginParams(this.sessid, agentPosition.name, agentPosition.password));
+            this.send(json_rpc_params_1.JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
         });
     }
     /**
@@ -50,9 +50,9 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
             throw new Error('Error in User Media');
         }
         // Create Call and its PeerConnection
-        const call = new call_1.Call(callId, new RTCPeerConnection({
+        const call = new call_1.Call(callId, this, new RTCPeerConnection({
             iceServers: [{ urls: this.ICE_SERVER }],
-        }), channel);
+        }), channel, phoneNumber);
         call.rtcPeerConnection.ontrack = (tr) => {
             const track = tr.track;
             if (track.kind !== 'audio') {
@@ -62,14 +62,7 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
             stream.addTrack(track);
             channel.remoteStream = stream;
             tags.peerTag.srcObject = stream;
-            console.log('REMOTE STREAM', channel.stream, tags.peerTag);
         };
-        // call.rtcPeerConnection.onconnectionstatechange = (st) => {
-        //   console.log(st);
-        // };
-        // call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
-        //   console.log('on ice gathering state change', ev);
-        // };
         // Attach our media stream to the call's PeerConnection
         channel.stream.getTracks().forEach((track) => {
             call.rtcPeerConnection.addTrack(track);
@@ -85,6 +78,24 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
             call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
         });
         return call;
+    }
+    /**
+     * Hang up a specific call
+     */
+    hangupCall(callId, phoneNumber) {
+        this.send(json_rpc_params_1.JsonRpcParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+    }
+    /**
+     * Hold a specific call
+     */
+    holdCall(callId, phoneNumber) {
+        this.send(json_rpc_params_1.JsonRpcParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+    }
+    /**
+     * Hang up a specific call
+     */
+    unholdCall(callId, phoneNumber) {
+        this.send(json_rpc_params_1.JsonRpcParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
 }
 exports.JsonRpcClient = JsonRpcClient;
