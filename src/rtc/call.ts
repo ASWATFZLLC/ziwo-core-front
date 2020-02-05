@@ -1,5 +1,5 @@
 import {MediaChannel} from './media-channel';
-import { JsonRpcClient } from './json-rpc';
+import {JsonRpcClient} from './json-rpc';
 
 /**
  * Call holds a call information and provide helpers
