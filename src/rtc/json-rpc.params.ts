@@ -1,6 +1,7 @@
 export enum JsonRpcMethod {
   login = 'login',
   invite = 'verto.invite',
+  bye = 'verto.bye',
 }
 
 export enum JsonRpcActionId {
@@ -17,7 +18,7 @@ export interface JsonRpcRequest<T> {
 
 export class JsonRpcParams {
 
-  public static wrapParams(method:string, id:number = 0, params:any = {}):JsonRpcRequest<any> {
+  public static wrap(method:string, id:number = 0, params:any = {}):JsonRpcRequest<any> {
     return {
       jsonrpc: '2.0',
       method: method as JsonRpcMethod,
@@ -26,8 +27,8 @@ export class JsonRpcParams {
     };
   }
 
-  public static loginParams(sessid:string, login:string, passwd:string):JsonRpcRequest<any> {
-    return this.wrapParams(JsonRpcMethod.login, 3, {
+  public static login(sessid:string, login:string, passwd:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.login, 3, {
       sessid,
       login,
       passwd
@@ -35,7 +36,7 @@ export class JsonRpcParams {
   }
 
   public static startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):JsonRpcRequest<any> {
-    return this.wrapParams(JsonRpcMethod.invite, 4, {
+    return this.wrap(JsonRpcMethod.invite, 4, {
         sdp: sdp,
         sessid: sessionId,
         dialogParams: {
@@ -67,7 +68,38 @@ export class JsonRpcParams {
     });
   }
 
-
+  public static hangupCall(sessionid:string, callId:string, login:string, phoneNumber:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.bye, 9, {
+      cause: 'NORMAL_CLEARING',
+      causeCode: 16,
+      dialogParams: {
+        callID: callId,
+        caller_id_name: '',
+        caller_id_number: '',
+        dedEnc: false,
+        destination_number: phoneNumber,
+        incomingBandwidth: 'default',
+        localTag: null,
+        login: login,
+        outgoingBandwidth: 'default',
+        remote_caller_id_name: 'Outbound Call',
+        remote_caller_id_number: phoneNumber,
+        screenShare: false,
+        tag: this.getUuid(),
+        useCamera: false,
+        useMic: true,
+        useSpeak: true,
+        useStereo: true,
+        useVideo: undefined,
+        videoParams: {},
+        audioParams: {
+          googAutoGainControl: false,
+          googNoiseSuppression: false,
+          googHighpassFilter: false
+        },
+      }
+    });
+  }
 
   public static getUuid():string {
     /* tslint:disable */
