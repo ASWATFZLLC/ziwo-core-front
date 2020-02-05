@@ -102,7 +102,7 @@ export class JsonRpcParams {
         googNoiseSuppression: false,
         googHighpassFilter: false
       },
-    }
+    };
   }
 
 }
