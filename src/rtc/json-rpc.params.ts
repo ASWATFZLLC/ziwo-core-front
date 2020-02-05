@@ -1,6 +1,7 @@
 export enum JsonRpcMethod {
   login = 'login',
   invite = 'verto.invite',
+  bye = 'verto.bye',
 }
 
 export enum JsonRpcActionId {
@@ -67,7 +68,38 @@ export class JsonRpcParams {
     });
   }
 
-
+  public static hangupCall(sessionid:string, callId:string, login:string, phoneNumber:string):JsonRpcRequest<any> {
+    return this.wrap(JsonRpcMethod.bye, 9, {
+      cause: 'NORMAL_CLEARING',
+      causeCode: 16,
+      dialogParams: {
+        callID: callId,
+        caller_id_name: '',
+        caller_id_number: '',
+        dedEnc: false,
+        destination_number: phoneNumber,
+        incomingBandwidth: 'default',
+        localTag: null,
+        login: login,
+        outgoingBandwidth: 'default',
+        remote_caller_id_name: 'Outbound Call',
+        remote_caller_id_number: phoneNumber,
+        screenShare: false,
+        tag: this.getUuid(),
+        useCamera: false,
+        useMic: true,
+        useSpeak: true,
+        useStereo: true,
+        useVideo: undefined,
+        videoParams: {},
+        audioParams: {
+          googAutoGainControl: false,
+          googNoiseSuppression: false,
+          googHighpassFilter: false
+        },
+      }
+    });
+  }
 
   public static getUuid():string {
     /* tslint:disable */

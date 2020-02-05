@@ -10,12 +10,14 @@ export class Call {
   public readonly rtcPeerConnection:RTCPeerConnection;
   public readonly channel:MediaChannel;
   public readonly jsonRpcClient:JsonRpcClient;
+  public readonly phoneNumber:string;
 
-  constructor(callId:string, jsonRpcClient:JsonRpcClient, rtcPeerConnection:RTCPeerConnection, channel:MediaChannel) {
+  constructor(callId:string, jsonRpcClient:JsonRpcClient, rtcPeerConnection:RTCPeerConnection, channel:MediaChannel, phoneNumber:string) {
     this.jsonRpcClient = jsonRpcClient;
     this.callId = callId;
     this.rtcPeerConnection = rtcPeerConnection;
     this.channel = channel;
+    this.phoneNumber = phoneNumber;
   }
 
   public answer():void {
@@ -24,7 +26,7 @@ export class Call {
 
   public hangup():void {
     console.warn('Hangup not implemented');
-    this.jsonRpcClient.hangupCall(this.callId);
+    this.jsonRpcClient.hangupCall(this.callId, this.phoneNumber);
   }
 
   public mute():void {

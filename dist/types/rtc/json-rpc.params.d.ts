@@ -1,6 +1,7 @@
 export declare enum JsonRpcMethod {
     login = "login",
-    invite = "verto.invite"
+    invite = "verto.invite",
+    bye = "verto.bye"
 }
 export declare enum JsonRpcActionId {
     login = 3,
@@ -13,8 +14,9 @@ export interface JsonRpcRequest<T> {
     params: T;
 }
 export declare class JsonRpcParams {
-    static wrapParams(method: string, id?: number, params?: any): JsonRpcRequest<any>;
-    static loginParams(sessid: string, login: string, passwd: string): JsonRpcRequest<any>;
+    static wrap(method: string, id?: number, params?: any): JsonRpcRequest<any>;
+    static login(sessid: string, login: string, passwd: string): JsonRpcRequest<any>;
     static startCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): JsonRpcRequest<any>;
+    static hangupCall(sessionid: string, callId: string, login: string, phoneNumber: string): JsonRpcRequest<any>;
     static getUuid(): string;
 }

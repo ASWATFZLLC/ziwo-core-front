@@ -396,6 +396,7 @@ var JsonRpcMethod;
 (function (JsonRpcMethod) {
     JsonRpcMethod["login"] = "login";
     JsonRpcMethod["invite"] = "verto.invite";
+    JsonRpcMethod["bye"] = "verto.bye";
 })(JsonRpcMethod || (JsonRpcMethod = {}));
 var JsonRpcActionId;
 (function (JsonRpcActionId) {
@@ -403,7 +404,7 @@ var JsonRpcActionId;
     JsonRpcActionId[JsonRpcActionId["invite"] = 4] = "invite";
 })(JsonRpcActionId || (JsonRpcActionId = {}));
 class JsonRpcParams {
-    static wrapParams(method, id = 0, params = {}) {
+    static wrap(method, id = 0, params = {}) {
         return {
             jsonrpc: '2.0',
             method: method,
@@ -411,17 +412,49 @@ class JsonRpcParams {
             params: params,
         };
     }
-    static loginParams(sessid, login, passwd) {
-        return this.wrapParams(JsonRpcMethod.login, 3, {
+    static login(sessid, login, passwd) {
+        return this.wrap(JsonRpcMethod.login, 3, {
             sessid,
             login,
             passwd
         });
     }
     static startCall(sessionId, callId, login, phoneNumber, sdp) {
-        return this.wrapParams(JsonRpcMethod.invite, 4, {
+        return this.wrap(JsonRpcMethod.invite, 4, {
             sdp: sdp,
             sessid: sessionId,
+            dialogParams: {
+                callID: callId,
+                caller_id_name: '',
+                caller_id_number: '',
+                dedEnc: false,
+                destination_number: phoneNumber,
+                incomingBandwidth: 'default',
+                localTag: null,
+                login: login,
+                outgoingBandwidth: 'default',
+                remote_caller_id_name: 'Outbound Call',
+                remote_caller_id_number: phoneNumber,
+                screenShare: false,
+                tag: this.getUuid(),
+                useCamera: false,
+                useMic: true,
+                useSpeak: true,
+                useStereo: true,
+                useVideo: undefined,
+                videoParams: {},
+                audioParams: {
+                    googAutoGainControl: false,
+                    googNoiseSuppression: false,
+                    googHighpassFilter: false
+                },
+            }
+        });
+    }
+    static hangupCall(sessionid, callId, login, phoneNumber) {
+        return this.wrap(JsonRpcMethod.bye, 9, {
+            cause: 'NORMAL_CLEARING',
+            causeCode: 16,
             dialogParams: {
                 callID: callId,
                 caller_id_name: '',
@@ -464,16 +497,19 @@ class JsonRpcParams {
  * Call holds a call information and provide helpers
  */
 class Call {
-    constructor(callId, rtcPeerConnection, channel) {
+    constructor(callId, jsonRpcClient, rtcPeerConnection, channel, phoneNumber) {
+        this.jsonRpcClient = jsonRpcClient;
         this.callId = callId;
         this.rtcPeerConnection = rtcPeerConnection;
         this.channel = channel;
+        this.phoneNumber = phoneNumber;
     }
     answer() {
         console.warn('Answer not implemented');
     }
     hangup() {
         console.warn('Hangup not implemented');
+        this.jsonRpcClient.hangupCall(this.callId, this.phoneNumber);
     }
     mute() {
         console.warn('Mute not implemented');
@@ -650,7 +686,7 @@ class JsonRpcClient extends JsonRpcBase {
                 return onErr();
             }
             this.sessid = JsonRpcParams.getUuid();
-            this.send(JsonRpcParams.loginParams(this.sessid, agentPosition.name, agentPosition.password));
+            this.send(JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
         });
     }
     /**
@@ -661,9 +697,9 @@ class JsonRpcClient extends JsonRpcBase {
             throw new Error('Error in User Media');
         }
         // Create Call and its PeerConnection
-        const call = new Call(callId, new RTCPeerConnection({
+        const call = new Call(callId, this, new RTCPeerConnection({
             iceServers: [{ urls: this.ICE_SERVER }],
-        }), channel);
+        }), channel, phoneNumber);
         call.rtcPeerConnection.ontrack = (tr) => {
             const track = tr.track;
             if (track.kind !== 'audio') {
@@ -673,14 +709,7 @@ class JsonRpcClient extends JsonRpcBase {
             stream.addTrack(track);
             channel.remoteStream = stream;
             tags.peerTag.srcObject = stream;
-            console.log('REMOTE STREAM', channel.stream, tags.peerTag);
         };
-        // call.rtcPeerConnection.onconnectionstatechange = (st) => {
-        //   console.log(st);
-        // };
-        // call.rtcPeerConnection.onicegatheringstatechange = (ev) => {
-        //   console.log('on ice gathering state change', ev);
-        // };
         // Attach our media stream to the call's PeerConnection
         channel.stream.getTracks().forEach((track) => {
             call.rtcPeerConnection.addTrack(track);
@@ -696,6 +725,12 @@ class JsonRpcClient extends JsonRpcBase {
             call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
         });
         return call;
+    }
+    /**
+     * Hang up a specific call
+     */
+    hangupCall(callId, phoneNumber) {
+        this.send(JsonRpcParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
 }
 

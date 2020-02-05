@@ -64,7 +64,8 @@ export class JsonRpcClient extends JsonRpcBase {
       new RTCPeerConnection({
         iceServers: [{urls: this.ICE_SERVER}],
       }),
-      channel
+      channel,
+      phoneNumber
     );
 
     call.rtcPeerConnection.ontrack = (tr) => {
@@ -106,8 +107,8 @@ export class JsonRpcClient extends JsonRpcBase {
   /**
    * Hang up a specific call
    */
-  public hangupCall(callId:string):void {
-    this.send(JsonRpcParams.hangUp());
+  public hangupCall(callId:string, phoneNumber:string):void {
+    this.send(JsonRpcParams.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
 }

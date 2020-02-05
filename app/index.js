@@ -1,5 +1,6 @@
 
 var ziwoClient;
+var call;
 
 function start() {
     document.getElementById('connect-button').style = 'display:none';
@@ -31,12 +32,18 @@ function start() {
 }
 
 function startCall() {
-    const call = ziwoClient.startCall(document.getElementById('phonenumber').value);
+    call = ziwoClient.startCall(document.getElementById('phonenumber').value);
     console.log(call);
 }
 
 function startVideoCall() {
     ziwoClient.startVideoCall(document.getElementById('phonenumber').value);
+}
+
+function hangup() {
+    if (call) {
+        call.hangup();
+    }
 }
 
 /**

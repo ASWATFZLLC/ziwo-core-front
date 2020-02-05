@@ -33,4 +33,8 @@ export declare class JsonRpcClient extends JsonRpcBase {
      * send a start call request
      */
     startCall(phoneNumber: string, callId: string, channel: MediaChannel, tags: MediaInfo): Call;
+    /**
+     * Hang up a specific call
+     */
+    hangupCall(callId: string, phoneNumber: string): void;
 }
