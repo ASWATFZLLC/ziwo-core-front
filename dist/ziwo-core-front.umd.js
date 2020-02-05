@@ -398,97 +398,59 @@
         }
     }
 
-    var JsonRpcMethod;
-    (function (JsonRpcMethod) {
-        JsonRpcMethod["login"] = "login";
-        JsonRpcMethod["invite"] = "verto.invite";
-        JsonRpcMethod["modify"] = "verto.modify";
-        JsonRpcMethod["bye"] = "verto.bye";
-    })(JsonRpcMethod || (JsonRpcMethod = {}));
-    var JsonRpcActionId;
-    (function (JsonRpcActionId) {
-        JsonRpcActionId[JsonRpcActionId["login"] = 3] = "login";
-        JsonRpcActionId[JsonRpcActionId["invite"] = 4] = "invite";
-    })(JsonRpcActionId || (JsonRpcActionId = {}));
-    class JsonRpcParams {
-        static wrap(method, id = 0, params = {}) {
-            return {
-                jsonrpc: '2.0',
-                method: method,
-                id: id,
-                params: params,
-            };
+    /**
+     * RtcClientBase handles authentication and holds core properties
+     */
+    class RtcClientBase {
+        constructor(tags, debug) {
+            this.calls = [];
+            this.debug = debug || false;
+            this.tags = tags;
         }
-        static login(sessid, login, passwd) {
-            return this.wrap(JsonRpcMethod.login, 3, {
-                sessid,
-                login,
-                passwd
+        /**
+         * Get connected Agent returns the Info of the current agent
+         */
+        getConnectedAgent() {
+            return this.connectedAgent;
+        }
+        /**
+         * Return true if an agent is connected
+         */
+        isAgentConnected() {
+            return !!this.connectedAgent && !!this.channel;
+        }
+        sendNotConnectedEvent(action) {
+            return ZiwoEvent.emit(ZiwoEventType.Error, {
+                code: ErrorCode.InvalidPhoneNumber,
+                message: MESSAGES.AGENT_NOT_CONNECTED(action),
             });
-        }
-        static startCall(sessionId, callId, login, phoneNumber, sdp) {
-            return this.wrap(JsonRpcMethod.invite, 4, {
-                sdp: sdp,
-                sessid: sessionId,
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-            });
-        }
-        static hangupCall(sessionid, callId, login, phoneNumber) {
-            return this.wrap(JsonRpcMethod.bye, 9, {
-                cause: 'NORMAL_CLEARING',
-                causeCode: 16,
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-            });
-        }
-        static holdCall(sessionid, callId, login, phoneNumber) {
-            return this.wrap(JsonRpcMethod.modify, 11, {
-                action: 'hold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-            });
-        }
-        static unholdCall(sessionid, callId, login, phoneNumber) {
-            return this.wrap(JsonRpcMethod.modify, 10, {
-                action: 'unhold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-            });
-        }
-        static getUuid() {
-            /* tslint:disable */
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-                /* tslint:enable */
-            });
-        }
-        static dialogParams(callId, login, phoneNumber) {
-            return {
-                callID: callId,
-                caller_id_name: '',
-                caller_id_number: '',
-                dedEnc: false,
-                destination_number: phoneNumber,
-                incomingBandwidth: 'default',
-                localTag: null,
-                login: login,
-                outgoingBandwidth: 'default',
-                remote_caller_id_name: 'Outbound Call',
-                remote_caller_id_number: phoneNumber,
-                screenShare: false,
-                tag: this.getUuid(),
-                useCamera: false,
-                useMic: true,
-                useSpeak: true,
-                useStereo: true,
-                useVideo: undefined,
-                videoParams: {},
-                audioParams: {
-                    googAutoGainControl: false,
-                    googNoiseSuppression: false,
-                    googHighpassFilter: false
-                },
-            };
         }
     }
+
+    class RtcClientHandlers extends RtcClientBase {
+        constructor(tags, debug) {
+            super(tags, debug);
+        }
+        outgoingCall(data) {
+            if (this.currentCall) {
+                return console.warn('Outgoing Call - but there is already a call in progress');
+            }
+        }
+        acceptMediaRequest(data) {
+            const call = this.calls.find(x => x.callId === data.callID);
+            if (!call) {
+                return; // invalid call id?
+            }
+            call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
+                .then(() => console.log('Remote media connected'))
+                .catch(() => console.warn('fail to attach remote media'));
+            // call.answer();
+        }
+    }
+
+    const PATTERNS = {
+        phoneNumber: /^\+?\d+$/,
+    };
 
     var CallStatus;
     (function (CallStatus) {
@@ -545,58 +507,58 @@
         }
     }
 
-    var JsonRpcEventType;
-    (function (JsonRpcEventType) {
-        JsonRpcEventType["Unknown"] = "Unknown";
-        JsonRpcEventType["LoggedIn"] = "LoggedIn";
-        JsonRpcEventType["OutgoingCall"] = "OutgoingCall";
-        JsonRpcEventType["MediaRequest"] = "MediaRequest";
-    })(JsonRpcEventType || (JsonRpcEventType = {}));
+    var VertoEventType;
+    (function (VertoEventType) {
+        VertoEventType["Unknown"] = "Unknown";
+        VertoEventType["LoggedIn"] = "LoggedIn";
+        VertoEventType["OutgoingCall"] = "OutgoingCall";
+        VertoEventType["MediaRequest"] = "MediaRequest";
+    })(VertoEventType || (VertoEventType = {}));
 
     /**
      * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
      */
-    class JsonRpcParser {
+    class VertoParser {
         static parse(data) {
             if (this.isLoggedIn(data)) {
                 return {
-                    type: JsonRpcEventType.LoggedIn,
+                    type: VertoEventType.LoggedIn,
                     raw: data,
                     payload: data.params,
                 };
             }
             if (this.isOutgoingCall(data)) {
                 return {
-                    type: JsonRpcEventType.OutgoingCall,
+                    type: VertoEventType.OutgoingCall,
                     raw: data,
                     payload: data.result,
                 };
             }
             if (this.isMediaRequest(data)) {
                 return {
-                    type: JsonRpcEventType.MediaRequest,
+                    type: VertoEventType.MediaRequest,
                     raw: data,
                     payload: data.params,
                 };
             }
             return {
-                type: JsonRpcEventType.Unknown,
+                type: VertoEventType.Unknown,
                 raw: data,
                 payload: data
             };
         }
         static isLoggedIn(data) {
-            return data.id === JsonRpcActionId.login;
+            return data.id === 3;
         }
         static isOutgoingCall(data) {
-            return data.id === JsonRpcActionId.invite;
+            return data.id === 4;
         }
         static isMediaRequest(data) {
             return data.method === 'verto.media';
         }
     }
 
-    class JsonRpcBase {
+    class VertoBase {
         constructor(debug) {
             /**
              * Callback functions - register using `addListener`
@@ -605,7 +567,7 @@
             this.debug = debug || false;
         }
         /**
-         * addListener allows to listener for incoming Socket Event
+         * addListener allows to listen for incoming Socket Event
          */
         addListener(call) {
             this.listeners.push(call);
@@ -631,7 +593,7 @@
                         if (!this.isJsonRpcValid) {
                             throw new Error('Invalid Incoming JSON RPC');
                         }
-                        this.listeners.forEach(fn => fn(JsonRpcParser.parse(data)));
+                        this.listeners.forEach(fn => fn(VertoParser.parse(data)));
                     }
                     catch (err) {
                         console.warn('Invalid Message', msg);
@@ -673,6 +635,96 @@
         }
     }
 
+    var VertoMethod;
+    (function (VertoMethod) {
+        VertoMethod["login"] = "login";
+        VertoMethod["invite"] = "verto.invite";
+        VertoMethod["modify"] = "verto.modify";
+        VertoMethod["bye"] = "verto.bye";
+    })(VertoMethod || (VertoMethod = {}));
+    class VertoParams {
+        static wrap(method, id = 0, params = {}) {
+            return {
+                jsonrpc: '2.0',
+                method: method,
+                id: id,
+                params: params,
+            };
+        }
+        static login(sessid, login, passwd) {
+            return this.wrap(VertoMethod.login, 3, {
+                sessid,
+                login,
+                passwd
+            });
+        }
+        static startCall(sessionId, callId, login, phoneNumber, sdp) {
+            return this.wrap(VertoMethod.invite, 4, {
+                sdp: sdp,
+                sessid: sessionId,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+            });
+        }
+        static hangupCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.bye, 9, {
+                cause: 'NORMAL_CLEARING',
+                causeCode: 16,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        static holdCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.modify, 11, {
+                action: 'hold',
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        static unholdCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.modify, 10, {
+                action: 'unhold',
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        static getUuid() {
+            /* tslint:disable */
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+                /* tslint:enable */
+            });
+        }
+        static dialogParams(callId, login, phoneNumber) {
+            return {
+                callID: callId,
+                caller_id_name: '',
+                caller_id_number: '',
+                dedEnc: false,
+                destination_number: phoneNumber,
+                incomingBandwidth: 'default',
+                localTag: null,
+                login: login,
+                outgoingBandwidth: 'default',
+                remote_caller_id_name: 'Outbound Call',
+                remote_caller_id_number: phoneNumber,
+                screenShare: false,
+                tag: this.getUuid(),
+                useCamera: false,
+                useMic: true,
+                useSpeak: true,
+                useStereo: true,
+                useVideo: undefined,
+                videoParams: {},
+                audioParams: {
+                    googAutoGainControl: false,
+                    googNoiseSuppression: false,
+                    googHighpassFilter: false
+                },
+            };
+        }
+    }
+
     var ZiwoSocketEvent;
     (function (ZiwoSocketEvent) {
         ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
@@ -690,7 +742,7 @@
      *      });
      *
      */
-    class JsonRpcClient extends JsonRpcBase {
+    class Verto extends VertoBase {
         constructor(debug) {
             super(debug);
             this.ICE_SERVER = 'stun:stun.l.google.com:19302';
@@ -708,8 +760,8 @@
                 if (!this.socket) {
                     return onErr();
                 }
-                this.sessid = JsonRpcParams.getUuid();
-                this.send(JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
+                this.sessid = VertoParams.getUuid();
+                this.send(VertoParams.login(this.sessid, agentPosition.name, agentPosition.password));
             });
         }
         /**
@@ -741,7 +793,7 @@
             call.rtcPeerConnection.onicecandidate = (candidate) => {
                 var _a;
                 if (!candidate.candidate) {
-                    this.send(JsonRpcParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                    this.send(VertoParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
                 }
             };
             call.rtcPeerConnection.createOffer().then(offer => {
@@ -753,75 +805,21 @@
          * Hang up a specific call
          */
         hangupCall(callId, phoneNumber) {
-            this.send(JsonRpcParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+            this.send(VertoParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
         }
         /**
          * Hold a specific call
          */
         holdCall(callId, phoneNumber) {
-            this.send(JsonRpcParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+            this.send(VertoParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
         }
         /**
          * Hang up a specific call
          */
         unholdCall(callId, phoneNumber) {
-            this.send(JsonRpcParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+            this.send(VertoParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
         }
     }
-
-    /**
-     * RtcClientBase handles authentication and holds core properties
-     */
-    class RtcClientBase {
-        constructor(tags, debug) {
-            this.calls = [];
-            this.debug = debug || false;
-            this.tags = tags;
-        }
-        /**
-         * Get connected Agent returns the Info of the current agent
-         */
-        getConnectedAgent() {
-            return this.connectedAgent;
-        }
-        /**
-         * Return true if an agent is connected
-         */
-        isAgentConnected() {
-            return !!this.connectedAgent && !!this.channel;
-        }
-        sendNotConnectedEvent(action) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
-                code: ErrorCode.InvalidPhoneNumber,
-                message: MESSAGES.AGENT_NOT_CONNECTED(action),
-            });
-        }
-    }
-
-    class RtcClientHandlers extends RtcClientBase {
-        constructor(tags, debug) {
-            super(tags, debug);
-        }
-        outgoingCall(data) {
-            if (this.currentCall) {
-                return console.warn('Outgoing Call - but there is already a call in progress');
-            }
-        }
-        acceptMediaRequest(data) {
-            const call = this.calls.find(x => x.callId === data.callID);
-            if (!call) {
-                return; // invalid call id?
-            }
-            call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
-                .then(() => console.log('Remote media connected'))
-                .catch(() => console.warn('fail to attach remote media'));
-            // call.answer();
-        }
-    }
-
-    const PATTERNS = {
-        phoneNumber: /^\+?\d+$/,
-    };
 
     /**
      * RtcClient wraps all interaction with WebRTC
@@ -838,17 +836,17 @@
         connectAgent(agent) {
             return new Promise((onRes, onErr) => {
                 this.connectedAgent = agent;
-                this.jsonRpcClient = new JsonRpcClient(this.debug);
+                this.verto = new Verto(this.debug);
                 // First we make ensure access to microphone &| camera
                 // And wait for the socket to open
                 Promise.all([
                     MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
-                    this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+                    this.verto.openSocket(this.connectedAgent.webRtc.socket),
                 ]).then(res => {
                     var _a, _b;
                     this.channel = res[0];
-                    (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
-                        if (ev.type === JsonRpcEventType.LoggedIn) {
+                    (_a = this.verto) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
+                        if (ev.type === VertoEventType.LoggedIn) {
                             ZiwoEvent.emit(ZiwoEventType.AgentConnected);
                             onRes();
                             return;
@@ -856,7 +854,7 @@
                         // This is our global handler for incoming message
                         this.processIncomingSocketMessage(ev);
                     });
-                    (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position);
+                    (_b = this.verto) === null || _b === void 0 ? void 0 : _b.login(agent.position);
                 }).catch(err => {
                     onErr(err);
                 });
@@ -867,7 +865,7 @@
          */
         startCall(phoneNumber) {
             var _a;
-            if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
+            if (!this.isAgentConnected() || !this.channel || !this.verto) {
                 this.sendNotConnectedEvent('start call');
                 return;
             }
@@ -882,7 +880,7 @@
                 return;
             }
             (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-            const call = this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags);
+            const call = this.verto.startCall(phoneNumber, VertoParams.getUuid(), this.channel, this.tags);
             this.calls.push(call);
             return call;
         }
@@ -894,10 +892,10 @@
                 console.log('New incoming message', ev);
             }
             switch (ev.type) {
-                case JsonRpcEventType.OutgoingCall:
+                case VertoEventType.OutgoingCall:
                     this.outgoingCall(ev.payload);
                     break;
-                case JsonRpcEventType.MediaRequest:
+                case VertoEventType.MediaRequest:
                     this.acceptMediaRequest(ev.payload);
                     break;
             }

@@ -1,8 +1,25 @@
 import {AgentPosition} from '../authentication.service';
-import {JsonRpcParser} from './json-rpc.parser';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
+import {VertoParser} from './verto.parser';
 
-export class JsonRpcBase {
+export interface BasePayload {
+  sessid:string;
+}
+
+export interface LoggedInPayload extends BasePayload { }
+
+export interface OutgoingCallPayload extends BasePayload {
+  callID:string;
+  message:string;
+}
+
+export interface MediaRequestPayload extends BasePayload {
+  callID:string;
+  sdp:string;
+}
+
+
+export class VertoBase {
 
   /**
    * Our communication channel
@@ -32,7 +49,7 @@ export class JsonRpcBase {
   }
 
   /**
-   * addListener allows to listener for incoming Socket Event
+   * addListener allows to listen for incoming Socket Event
    */
   public addListener(call:Function):void {
     this.listeners.push(call);
@@ -59,7 +76,7 @@ export class JsonRpcBase {
           if (!this.isJsonRpcValid) {
             throw new Error('Invalid Incoming JSON RPC');
           }
-          this.listeners.forEach(fn => fn(JsonRpcParser.parse(data)));
+          this.listeners.forEach(fn => fn(VertoParser.parse(data)));
         } catch (err) {
           console.warn('Invalid Message', msg);
           // NOTE : not sure if we should throw an error here -- need live testing to enable/disable

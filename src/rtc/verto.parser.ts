@@ -1,47 +1,46 @@
-import {JsonRpcEventType, JsonRpcEvent} from './json-rpc.interfaces';
-import {JsonRpcActionId} from './json-rpc.params';
+import {VertoEvent, VertoEventType} from './verto.event';
 
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
  */
 
-export class JsonRpcParser {
+export class VertoParser {
 
-  public static parse(data:any):JsonRpcEvent {
+  public static parse(data:any):VertoEvent {
     if (this.isLoggedIn(data)) {
       return {
-        type: JsonRpcEventType.LoggedIn,
+        type: VertoEventType.LoggedIn,
         raw: data,
         payload: data.params,
       };
     }
     if (this.isOutgoingCall(data)) {
       return {
-        type: JsonRpcEventType.OutgoingCall,
+        type: VertoEventType.OutgoingCall,
         raw: data,
         payload: data.result,
       };
     }
     if (this.isMediaRequest(data)) {
       return {
-        type: JsonRpcEventType.MediaRequest,
+        type: VertoEventType.MediaRequest,
         raw: data,
         payload: data.params,
       };
     }
     return {
-      type: JsonRpcEventType.Unknown,
+      type: VertoEventType.Unknown,
       raw: data,
       payload: data
     };
   }
 
   private static isLoggedIn(data:any):boolean {
-    return data.id === JsonRpcActionId.login;
+    return data.id === 3;
   }
 
   private static isOutgoingCall(data:any):boolean {
-    return data.id === JsonRpcActionId.invite;
+    return data.id === 4;
   }
 
   private static isMediaRequest(data:any):boolean {

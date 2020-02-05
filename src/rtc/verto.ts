@@ -1,8 +1,8 @@
 import {AgentPosition} from '../authentication.service';
-import {JsonRpcParams} from './json-rpc.params';
 import {MediaChannel, MediaInfo} from './media-channel';
 import {Call} from './call';
-import {JsonRpcBase} from './json-rpc.base';
+import {VertoBase} from './verto.base';
+import {VertoParams} from './verto.params';
 
 export enum ZiwoSocketEvent {
   LoggedIn = 'LoggedIn',
@@ -21,7 +21,7 @@ export enum ZiwoSocketEvent {
  *      });
  *
  */
-export class JsonRpcClient extends JsonRpcBase {
+export class Verto extends VertoBase {
 
   private readonly ICE_SERVER = 'stun:stun.l.google.com:19302';
 
@@ -44,8 +44,8 @@ export class JsonRpcClient extends JsonRpcBase {
       if (!this.socket) {
         return onErr();
       }
-      this.sessid = JsonRpcParams.getUuid();
-      this.send(JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
+      this.sessid = VertoParams.getUuid();
+      this.send(VertoParams.login(this.sessid, agentPosition.name, agentPosition.password));
     });
   }
 
@@ -87,7 +87,7 @@ export class JsonRpcClient extends JsonRpcBase {
     // We wait for candidate to be null to make sure all candidates have been processed
     call.rtcPeerConnection.onicecandidate = (candidate) => {
       if (!candidate.candidate) {
-        this.send(JsonRpcParams.startCall(
+        this.send(VertoParams.startCall(
           this.sessid,
           call.callId,
           this.getLogin(),
@@ -108,21 +108,21 @@ export class JsonRpcClient extends JsonRpcBase {
    * Hang up a specific call
    */
   public hangupCall(callId:string, phoneNumber:string):void {
-    this.send(JsonRpcParams.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(VertoParams.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
   /**
    * Hold a specific call
    */
   public holdCall(callId:string, phoneNumber:string):void {
-    this.send(JsonRpcParams.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(VertoParams.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
   /**
    * Hang up a specific call
    */
   public unholdCall(callId:string, phoneNumber:string):void {
-    this.send(JsonRpcParams.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(VertoParams.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
 }

@@ -1,6 +1,6 @@
-import {OutgoingCallPayload, MediaRequestPayload} from './json-rpc.interfaces';
 import {MediaInfo} from './media-channel';
 import {RtcClientBase} from './rtc-client.base';
+import {OutgoingCallPayload, MediaRequestPayload} from './verto.base';
 
 export class RtcClientHandlers extends RtcClientBase {
 
