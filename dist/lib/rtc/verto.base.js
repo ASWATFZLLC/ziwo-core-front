@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const json_rpc_parser_1 = require("./json-rpc.parser");
 const events_1 = require("../events");
-class JsonRpcBase {
+const verto_parser_1 = require("./verto.parser");
+class VertoBase {
     constructor(debug) {
         /**
          * Callback functions - register using `addListener`
@@ -11,7 +11,7 @@ class JsonRpcBase {
         this.debug = debug || false;
     }
     /**
-     * addListener allows to listener for incoming Socket Event
+     * addListener allows to listen for incoming Socket Event
      */
     addListener(call) {
         this.listeners.push(call);
@@ -37,7 +37,7 @@ class JsonRpcBase {
                     if (!this.isJsonRpcValid) {
                         throw new Error('Invalid Incoming JSON RPC');
                     }
-                    this.listeners.forEach(fn => fn(json_rpc_parser_1.JsonRpcParser.parse(data)));
+                    this.listeners.forEach(fn => fn(verto_parser_1.VertoParser.parse(data)));
                 }
                 catch (err) {
                     console.warn('Invalid Message', msg);
@@ -78,5 +78,5 @@ class JsonRpcBase {
             && data.jsonrpc === '2.0';
     }
 }
-exports.JsonRpcBase = JsonRpcBase;
-//# sourceMappingURL=json-rpc.base.js.map
+exports.VertoBase = VertoBase;
+//# sourceMappingURL=verto.base.js.map

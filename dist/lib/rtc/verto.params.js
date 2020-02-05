@@ -1,18 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var JsonRpcMethod;
-(function (JsonRpcMethod) {
-    JsonRpcMethod["login"] = "login";
-    JsonRpcMethod["invite"] = "verto.invite";
-    JsonRpcMethod["modify"] = "verto.modify";
-    JsonRpcMethod["bye"] = "verto.bye";
-})(JsonRpcMethod = exports.JsonRpcMethod || (exports.JsonRpcMethod = {}));
-var JsonRpcActionId;
-(function (JsonRpcActionId) {
-    JsonRpcActionId[JsonRpcActionId["login"] = 3] = "login";
-    JsonRpcActionId[JsonRpcActionId["invite"] = 4] = "invite";
-})(JsonRpcActionId = exports.JsonRpcActionId || (exports.JsonRpcActionId = {}));
-class JsonRpcParams {
+var VertoMethod;
+(function (VertoMethod) {
+    VertoMethod["login"] = "login";
+    VertoMethod["invite"] = "verto.invite";
+    VertoMethod["modify"] = "verto.modify";
+    VertoMethod["bye"] = "verto.bye";
+})(VertoMethod = exports.VertoMethod || (exports.VertoMethod = {}));
+class VertoParams {
     static wrap(method, id = 0, params = {}) {
         return {
             jsonrpc: '2.0',
@@ -22,36 +17,39 @@ class JsonRpcParams {
         };
     }
     static login(sessid, login, passwd) {
-        return this.wrap(JsonRpcMethod.login, 3, {
+        return this.wrap(VertoMethod.login, 3, {
             sessid,
             login,
             passwd
         });
     }
     static startCall(sessionId, callId, login, phoneNumber, sdp) {
-        return this.wrap(JsonRpcMethod.invite, 4, {
+        return this.wrap(VertoMethod.invite, 4, {
             sdp: sdp,
             sessid: sessionId,
             dialogParams: this.dialogParams(callId, login, phoneNumber),
         });
     }
-    static hangupCall(sessionid, callId, login, phoneNumber) {
-        return this.wrap(JsonRpcMethod.bye, 9, {
+    static hangupCall(sessionId, callId, login, phoneNumber) {
+        return this.wrap(VertoMethod.bye, 9, {
             cause: 'NORMAL_CLEARING',
             causeCode: 16,
             dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
         });
     }
-    static holdCall(sessionid, callId, login, phoneNumber) {
-        return this.wrap(JsonRpcMethod.modify, 11, {
+    static holdCall(sessionId, callId, login, phoneNumber) {
+        return this.wrap(VertoMethod.modify, 11, {
             action: 'hold',
             dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
         });
     }
-    static unholdCall(sessionid, callId, login, phoneNumber) {
-        return this.wrap(JsonRpcMethod.modify, 10, {
+    static unholdCall(sessionId, callId, login, phoneNumber) {
+        return this.wrap(VertoMethod.modify, 10, {
             action: 'unhold',
             dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
         });
     }
     static getUuid() {
@@ -91,5 +89,5 @@ class JsonRpcParams {
         };
     }
 }
-exports.JsonRpcParams = JsonRpcParams;
-//# sourceMappingURL=json-rpc.params.js.map
+exports.VertoParams = VertoParams;
+//# sourceMappingURL=verto.params.js.map

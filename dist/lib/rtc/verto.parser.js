@@ -1,48 +1,47 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const json_rpc_interfaces_1 = require("./json-rpc.interfaces");
-const json_rpc_params_1 = require("./json-rpc.params");
+const verto_event_1 = require("./verto.event");
 /**
  * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
  */
-class JsonRpcParser {
+class VertoParser {
     static parse(data) {
         if (this.isLoggedIn(data)) {
             return {
-                type: json_rpc_interfaces_1.JsonRpcEventType.LoggedIn,
+                type: verto_event_1.VertoEventType.LoggedIn,
                 raw: data,
                 payload: data.params,
             };
         }
         if (this.isOutgoingCall(data)) {
             return {
-                type: json_rpc_interfaces_1.JsonRpcEventType.OutgoingCall,
+                type: verto_event_1.VertoEventType.OutgoingCall,
                 raw: data,
                 payload: data.result,
             };
         }
         if (this.isMediaRequest(data)) {
             return {
-                type: json_rpc_interfaces_1.JsonRpcEventType.MediaRequest,
+                type: verto_event_1.VertoEventType.MediaRequest,
                 raw: data,
                 payload: data.params,
             };
         }
         return {
-            type: json_rpc_interfaces_1.JsonRpcEventType.Unknown,
+            type: verto_event_1.VertoEventType.Unknown,
             raw: data,
             payload: data
         };
     }
     static isLoggedIn(data) {
-        return data.id === json_rpc_params_1.JsonRpcActionId.login;
+        return data.id === 3;
     }
     static isOutgoingCall(data) {
-        return data.id === json_rpc_params_1.JsonRpcActionId.invite;
+        return data.id === 4;
     }
     static isMediaRequest(data) {
         return data.method === 'verto.media';
     }
 }
-exports.JsonRpcParser = JsonRpcParser;
-//# sourceMappingURL=json-rpc.parser.js.map
+exports.VertoParser = VertoParser;
+//# sourceMappingURL=verto.parser.js.map
