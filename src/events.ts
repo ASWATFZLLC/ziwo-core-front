@@ -1,8 +1,7 @@
+import {Call} from './call';
 
 /**
  * TODO : documentation
- * TODO : define interface for each available type?
- * TODO : define all event type
  */
 
 export enum ErrorCode {
@@ -18,14 +17,40 @@ export interface ErrorData {
   data?:any;
 }
 
+export interface ZiwoEventHistory {
+  state:ZiwoEventDetails;
+  date:Date;
+  dateUNIX:string;
+}
+
+export interface ZiwoEventDetails {
+  type:ZiwoEventType;
+  direction:'outbound'|'inbound';
+  callID:string;
+  primaryCallID:string;
+  customerNumber:string;
+  stateFlow:ZiwoEventHistory[];
+  currentCall:Call;
+}
+
+export enum ZiwoErrorCode {
+  ProtocolError = 1001,
+}
+
 export enum ZiwoEventType {
-  Error = 'Error',
-  AgentConnected = 'AgentConnected',
-  IncomingCall = 'IncomingCall',
-  OutgoingCall = 'OutgoingCall',
-  CallStarted = 'CallStarted',
-  CallEndedByUser = 'CallEndedByUser',
-  CallEndedByPeer = 'CallEndedByPeer',
+  Error = 'error',
+  Connected = 'connected',
+  Disconnected = 'disconnected',
+  Requesting = 'requesting',
+  Trying = 'tring',
+  Early = 'early',
+  Ringing = 'ringing',
+  Answering = 'answering',
+  Active = 'active',
+  Held = 'held',
+  Hangup = 'hangup',
+  Destroy = 'destroy',
+  Recovering = 'recovering',
 }
 
 export class ZiwoEvent {
@@ -36,7 +61,16 @@ export class ZiwoEvent {
     this.listeners.push(func);
   }
 
-  public static emit(type:ZiwoEventType, data?:any):void {
+  public static emit(type:ZiwoEventType, data:ZiwoEventDetails):void {
     this.listeners.forEach(x => x(type, data));
+    window.dispatchEvent(new CustomEvent(type, {detail: data}));
   }
+
+  public static error(code:ZiwoErrorCode, data:any):void {
+    window.dispatchEvent(new CustomEvent(ZiwoEventType.Error, {detail: {
+      code: code,
+      inner: data,
+    }}));
+  }
+
 }

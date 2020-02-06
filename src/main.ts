@@ -1,9 +1,9 @@
 import {Credentials, AuthenticationService, AgentInfo} from './authentication.service';
-import {RtcClient} from './rtc/rtc-client';
 import {ApiService} from './api.service';
 import {ZiwoEvent, ZiwoEventType} from './events';
-import {MediaInfo} from './rtc/media-channel';
-import {Call} from './rtc/call';
+import {MediaInfo} from './media-channel';
+import {Call} from './call';
+import {Verto} from './verto/verto';
 
 /**
  * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
@@ -40,13 +40,18 @@ export class ZiwoClient {
 
   public readonly options:ZiwoClientOptions;
 
+  private connectedAgent?:AgentInfo;
   private apiService:ApiService;
-  private rtcClient:RtcClient;
+  private verto:Verto;
+  private readonly debug:boolean ;
+  // private rtcClient:RtcClient;
 
   constructor(options:ZiwoClientOptions) {
     this.options = options;
+    this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
-    this.rtcClient = new RtcClient(options.tags, options.debug);
+    this.verto = new Verto(this.debug);
+
     if (options.autoConnect) {
       this.connect().then(r => {
       }).catch(err => { throw err; });
@@ -57,7 +62,7 @@ export class ZiwoClient {
     return new Promise<any>((onRes, onErr) => {
       AuthenticationService.authenticate(this.apiService, this.options.credentials)
         .then(res => {
-          this.rtcClient.connectAgent(res);
+          this.verto.connectAgent(res);
           onRes(res);
         }).catch(err => onErr(err));
     });
@@ -68,7 +73,7 @@ export class ZiwoClient {
   }
 
   public startCall(phoneNumber:string):Call|undefined {
-    return this.rtcClient.startCall(phoneNumber);
+    return this.verto.startCall(phoneNumber);
   }
 
 }

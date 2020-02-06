@@ -18,7 +18,20 @@ export declare enum ZiwoEventType {
     Error = "Error",
     AgentConnected = "AgentConnected",
     IncomingCall = "IncomingCall",
+    IncomingCallAnswered = "IncomingCallAnswered",
     OutgoingCall = "OutgoingCall",
+    OutgoingCallAnsweredByRemote = "OutgoingCallAnsweredByRemote",
+    CallStarted = "CallStarted",
+    CallEndedByUser = "CallEndedByUser",
+    CallEndedByPeer = "CallEndedByPeer",
+    CallRecovering = "CallRecovering"
+}
+export declare enum JorelEvent {
+    IncomingCall = "IncomingCall",
+    IncomingCallAnswered = "IncomingCallAnswered",
+    OutgoingCall = "requesting",
+    OutgoingCallRinging = "trying",
+    OutgoingCallAnsweredByRemote = "OutgoingCallAnsweredByRemote",
     CallStarted = "CallStarted",
     CallEndedByUser = "CallEndedByUser",
     CallEndedByPeer = "CallEndedByPeer"

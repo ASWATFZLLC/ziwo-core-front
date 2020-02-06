@@ -1,5 +1,5 @@
 import {MediaChannel} from './media-channel';
-import {Verto} from './verto';
+import {Verto} from './verto/verto';
 
 export enum CallStatus {
   Stopped = 'stopped',

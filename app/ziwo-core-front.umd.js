@@ -200,6 +200,7 @@
         Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
         return Md5;
     }());
+    //# sourceMappingURL=index.js.map
 
     const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
     const MESSAGES = {
@@ -207,6 +208,7 @@
         INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
         AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
     };
+    //# sourceMappingURL=messages.js.map
 
     var UserStatus;
     (function (UserStatus) {
@@ -316,6 +318,7 @@
             });
         }
     }
+    //# sourceMappingURL=authentication.service.js.map
 
     /**
      * TODO : documentation
@@ -334,11 +337,28 @@
         ZiwoEventType["Error"] = "Error";
         ZiwoEventType["AgentConnected"] = "AgentConnected";
         ZiwoEventType["IncomingCall"] = "IncomingCall";
+        ZiwoEventType["IncomingCallAnswered"] = "IncomingCallAnswered";
         ZiwoEventType["OutgoingCall"] = "OutgoingCall";
+        ZiwoEventType["OutgoingCallAnsweredByRemote"] = "OutgoingCallAnsweredByRemote";
         ZiwoEventType["CallStarted"] = "CallStarted";
         ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
         ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
+        ZiwoEventType["CallRecovering"] = "CallRecovering";
     })(ZiwoEventType || (ZiwoEventType = {}));
+    // Commented row are not existing in Jorel
+    var JorelEvent;
+    (function (JorelEvent) {
+        // Error = 'error',
+        // AgentConnected = 'AgentConnected',
+        JorelEvent["IncomingCall"] = "IncomingCall";
+        JorelEvent["IncomingCallAnswered"] = "IncomingCallAnswered";
+        JorelEvent["OutgoingCall"] = "requesting";
+        JorelEvent["OutgoingCallRinging"] = "trying";
+        JorelEvent["OutgoingCallAnsweredByRemote"] = "OutgoingCallAnsweredByRemote";
+        JorelEvent["CallStarted"] = "CallStarted";
+        JorelEvent["CallEndedByUser"] = "CallEndedByUser";
+        JorelEvent["CallEndedByPeer"] = "CallEndedByPeer";
+    })(JorelEvent || (JorelEvent = {}));
     class ZiwoEvent {
         static subscribe(func) {
             this.listeners.push(func);
@@ -397,6 +417,7 @@
             return audioContext;
         }
     }
+    //# sourceMappingURL=media-channel.js.map
 
     /**
      * RtcClientBase handles authentication and holds core properties
@@ -447,10 +468,12 @@
             // call.answer();
         }
     }
+    //# sourceMappingURL=rtc-client.handlers.js.map
 
     const PATTERNS = {
         phoneNumber: /^\+?\d+$/,
     };
+    //# sourceMappingURL=regex.js.map
 
     var CallStatus;
     (function (CallStatus) {
@@ -506,6 +529,7 @@
             });
         }
     }
+    //# sourceMappingURL=call.js.map
 
     var VertoEventType;
     (function (VertoEventType) {
@@ -514,6 +538,7 @@
         VertoEventType["OutgoingCall"] = "OutgoingCall";
         VertoEventType["MediaRequest"] = "MediaRequest";
     })(VertoEventType || (VertoEventType = {}));
+    //# sourceMappingURL=verto.event.js.map
 
     /**
      * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
@@ -557,6 +582,7 @@
             return data.method === 'verto.media';
         }
     }
+    //# sourceMappingURL=verto.parser.js.map
 
     class VertoBase {
         constructor(debug) {
@@ -724,6 +750,7 @@
             };
         }
     }
+    //# sourceMappingURL=verto.params.js.map
 
     var ZiwoSocketEvent;
     (function (ZiwoSocketEvent) {
@@ -820,6 +847,7 @@
             this.send(VertoParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
         }
     }
+    //# sourceMappingURL=verto.js.map
 
     /**
      * RtcClient wraps all interaction with WebRTC
@@ -988,6 +1016,7 @@
             });
         }
     }
+    //# sourceMappingURL=api.service.js.map
 
     class ZiwoClient {
         constructor(options) {
