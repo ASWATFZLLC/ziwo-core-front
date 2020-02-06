@@ -1,7 +1,7 @@
 import { AgentPosition } from '../authentication.service';
 import { MediaChannel, MediaInfo } from './media-channel';
 import { Call } from './call';
-import { JsonRpcBase } from './json-rpc.base';
+import { VertoBase } from './verto.base';
 export declare enum ZiwoSocketEvent {
     LoggedIn = "LoggedIn",
     CallCreated = "CallCreated"
@@ -18,7 +18,7 @@ export declare enum ZiwoSocketEvent {
  *      });
  *
  */
-export declare class JsonRpcClient extends JsonRpcBase {
+export declare class Verto extends VertoBase {
     private readonly ICE_SERVER;
     constructor(debug?: boolean);
     /**

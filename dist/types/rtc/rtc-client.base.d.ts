@@ -1,7 +1,7 @@
 import { AgentInfo } from '../authentication.service';
 import { MediaChannel, MediaInfo } from './media-channel';
-import { JsonRpcClient } from './json-rpc';
 import { Call } from './call';
+import { Verto } from './verto';
 /**
  * RtcClientBase handles authentication and holds core properties
  */
@@ -9,7 +9,7 @@ export declare class RtcClientBase {
     connectedAgent?: AgentInfo;
     channel?: MediaChannel;
     tags: MediaInfo;
-    jsonRpcClient?: JsonRpcClient;
+    verto?: Verto;
     currentCall?: Call;
     calls: Call[];
     protected readonly debug: boolean;

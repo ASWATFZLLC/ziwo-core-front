@@ -1,9 +1,9 @@
 import {AgentInfo} from '../authentication.service';
 import {MediaChannel, MediaInfo} from './media-channel';
-import {JsonRpcClient} from './json-rpc';
 import {Call} from './call';
 import {ZiwoEventType, ZiwoEvent, ErrorCode} from '../events';
 import {MESSAGES} from '../messages';
+import {Verto} from './verto';
 
 /**
  * RtcClientBase handles authentication and holds core properties
@@ -13,7 +13,7 @@ export class RtcClientBase {
   public connectedAgent?:AgentInfo;
   public channel?:MediaChannel;
   public tags:MediaInfo;
-  public jsonRpcClient?:JsonRpcClient;
+  public verto?:Verto;
   public currentCall?:Call;
   public calls:Call[] = [];
   protected readonly debug:boolean;

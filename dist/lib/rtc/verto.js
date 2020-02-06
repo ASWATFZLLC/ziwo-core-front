@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const json_rpc_params_1 = require("./json-rpc.params");
 const call_1 = require("./call");
-const json_rpc_base_1 = require("./json-rpc.base");
+const verto_base_1 = require("./verto.base");
+const verto_params_1 = require("./verto.params");
 var ZiwoSocketEvent;
 (function (ZiwoSocketEvent) {
     ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
@@ -20,7 +20,7 @@ var ZiwoSocketEvent;
  *      });
  *
  */
-class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
+class Verto extends verto_base_1.VertoBase {
     constructor(debug) {
         super(debug);
         this.ICE_SERVER = 'stun:stun.l.google.com:19302';
@@ -38,8 +38,8 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
             if (!this.socket) {
                 return onErr();
             }
-            this.sessid = json_rpc_params_1.JsonRpcParams.getUuid();
-            this.send(json_rpc_params_1.JsonRpcParams.login(this.sessid, agentPosition.name, agentPosition.password));
+            this.sessid = verto_params_1.VertoParams.getUuid();
+            this.send(verto_params_1.VertoParams.login(this.sessid, agentPosition.name, agentPosition.password));
         });
     }
     /**
@@ -71,7 +71,7 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
         call.rtcPeerConnection.onicecandidate = (candidate) => {
             var _a;
             if (!candidate.candidate) {
-                this.send(json_rpc_params_1.JsonRpcParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                this.send(verto_params_1.VertoParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
             }
         };
         call.rtcPeerConnection.createOffer().then(offer => {
@@ -83,20 +83,20 @@ class JsonRpcClient extends json_rpc_base_1.JsonRpcBase {
      * Hang up a specific call
      */
     hangupCall(callId, phoneNumber) {
-        this.send(json_rpc_params_1.JsonRpcParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(verto_params_1.VertoParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
     /**
      * Hold a specific call
      */
     holdCall(callId, phoneNumber) {
-        this.send(json_rpc_params_1.JsonRpcParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(verto_params_1.VertoParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
     /**
      * Hang up a specific call
      */
     unholdCall(callId, phoneNumber) {
-        this.send(json_rpc_params_1.JsonRpcParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(verto_params_1.VertoParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
     }
 }
-exports.JsonRpcClient = JsonRpcClient;
-//# sourceMappingURL=json-rpc.js.map
+exports.Verto = Verto;
+//# sourceMappingURL=verto.js.map

@@ -1,5 +1,18 @@
 import { AgentPosition } from '../authentication.service';
-export declare class JsonRpcBase {
+export interface BasePayload {
+    sessid: string;
+}
+export interface LoggedInPayload extends BasePayload {
+}
+export interface OutgoingCallPayload extends BasePayload {
+    callID: string;
+    message: string;
+}
+export interface MediaRequestPayload extends BasePayload {
+    callID: string;
+    sdp: string;
+}
+export declare class VertoBase {
     /**
      * Our communication channel
      */
@@ -19,7 +32,7 @@ export declare class JsonRpcBase {
     protected readonly debug: boolean;
     constructor(debug?: boolean);
     /**
-     * addListener allows to listener for incoming Socket Event
+     * addListener allows to listen for incoming Socket Event
      */
     addListener(call: Function): void;
     /**

@@ -1,13 +1,13 @@
 import {AgentInfo} from '../authentication.service';
 import {ZiwoEvent, ZiwoEventType, ErrorCode} from '../events';
 import {MediaInfo, MediaChannel} from './media-channel';
-import {JsonRpcClient} from './json-rpc';
-import {JsonRpcEvent, JsonRpcEventType} from './json-rpc.interfaces';
 import {RtcClientHandlers} from './rtc-client.handlers';
 import {PATTERNS} from '../regex';
 import {MESSAGES} from '../messages';
-import {JsonRpcParams} from './json-rpc.params';
 import {Call} from './call';
+import {Verto} from './verto';
+import {VertoEvent, VertoEventType} from './verto.event';
+import {VertoParams} from './verto.params';
 
 export interface MediaConstraint {
   audio:boolean;
@@ -31,16 +31,16 @@ export class RtcClient extends RtcClientHandlers {
   public connectAgent(agent:AgentInfo):Promise<void> {
     return new Promise<void>((onRes, onErr) => {
       this.connectedAgent = agent;
-      this.jsonRpcClient = new JsonRpcClient(this.debug);
+      this.verto = new Verto(this.debug);
       // First we make ensure access to microphone &| camera
       // And wait for the socket to open
       Promise.all([
         MediaChannel.getUserMediaAsChannel({audio: true, video: false}),
-        this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+        this.verto.openSocket(this.connectedAgent.webRtc.socket),
       ]).then(res => {
         this.channel = res[0];
-        this.jsonRpcClient?.addListener((ev:JsonRpcEvent) => {
-          if (ev.type === JsonRpcEventType.LoggedIn) {
+        this.verto?.addListener((ev:VertoEvent) => {
+          if (ev.type === VertoEventType.LoggedIn) {
             ZiwoEvent.emit(ZiwoEventType.AgentConnected);
             onRes();
             return;
@@ -48,7 +48,7 @@ export class RtcClient extends RtcClientHandlers {
           // This is our global handler for incoming message
           this.processIncomingSocketMessage(ev);
         });
-        this.jsonRpcClient?.login(agent.position);
+        this.verto?.login(agent.position);
       }).catch(err => {
         onErr(err);
       });
@@ -59,7 +59,7 @@ export class RtcClient extends RtcClientHandlers {
    * Start a phone call and return a Call or undefined if an error occured
    */
   public startCall(phoneNumber:string):Call|undefined {
-    if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
+    if (!this.isAgentConnected() || !this.channel || !this.verto) {
       this.sendNotConnectedEvent('start call');
       return;
     }
@@ -74,7 +74,7 @@ export class RtcClient extends RtcClientHandlers {
       return;
     }
     this.channel?.startMicrophone();
-    const call = this.jsonRpcClient.startCall(phoneNumber, JsonRpcParams.getUuid(), this.channel, this.tags);
+    const call = this.verto.startCall(phoneNumber, VertoParams.getUuid(), this.channel, this.tags);
     this.calls.push(call);
     return call;
   }
@@ -82,15 +82,15 @@ export class RtcClient extends RtcClientHandlers {
   /**
    * Process message
    */
-  private processIncomingSocketMessage(ev:JsonRpcEvent):void {
+  private processIncomingSocketMessage(ev:VertoEvent):void {
     if (this.debug) {
       console.log('New incoming message', ev);
     }
     switch (ev.type) {
-      case JsonRpcEventType.OutgoingCall:
+      case VertoEventType.OutgoingCall:
         this.outgoingCall(ev.payload);
         break;
-      case JsonRpcEventType.MediaRequest:
+      case VertoEventType.MediaRequest:
         this.acceptMediaRequest(ev.payload);
         break;
     }
