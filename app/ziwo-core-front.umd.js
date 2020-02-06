@@ -207,6 +207,7 @@
         EMAIL_PASSWORD_AUTHTOKEN_MISSING: `${MESSAGE_PREFIX}Email or password are missing and no authentication token were provided.`,
         INVALID_PHONE_NUMBER: (phoneNumber) => `${phoneNumber} is not a valid phone number`,
         AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
+        MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
     };
     //# sourceMappingURL=messages.js.map
 
@@ -321,616 +322,6 @@
     //# sourceMappingURL=authentication.service.js.map
 
     /**
-     * TODO : documentation
-     * TODO : define interface for each available type?
-     * TODO : define all event type
-     */
-    var ErrorCode;
-    (function (ErrorCode) {
-        ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
-        ErrorCode[ErrorCode["UserMediaError"] = 3] = "UserMediaError";
-        ErrorCode[ErrorCode["AgentNotConnected"] = 1] = "AgentNotConnected";
-        ErrorCode[ErrorCode["ProtocolError"] = 4] = "ProtocolError";
-    })(ErrorCode || (ErrorCode = {}));
-    var ZiwoEventType;
-    (function (ZiwoEventType) {
-        ZiwoEventType["Error"] = "Error";
-        ZiwoEventType["AgentConnected"] = "AgentConnected";
-        ZiwoEventType["IncomingCall"] = "IncomingCall";
-        ZiwoEventType["IncomingCallAnswered"] = "IncomingCallAnswered";
-        ZiwoEventType["OutgoingCall"] = "OutgoingCall";
-        ZiwoEventType["OutgoingCallAnsweredByRemote"] = "OutgoingCallAnsweredByRemote";
-        ZiwoEventType["CallStarted"] = "CallStarted";
-        ZiwoEventType["CallEndedByUser"] = "CallEndedByUser";
-        ZiwoEventType["CallEndedByPeer"] = "CallEndedByPeer";
-        ZiwoEventType["CallRecovering"] = "CallRecovering";
-    })(ZiwoEventType || (ZiwoEventType = {}));
-    // Commented row are not existing in Jorel
-    var JorelEvent;
-    (function (JorelEvent) {
-        // Error = 'error',
-        // AgentConnected = 'AgentConnected',
-        JorelEvent["IncomingCall"] = "IncomingCall";
-        JorelEvent["IncomingCallAnswered"] = "IncomingCallAnswered";
-        JorelEvent["OutgoingCall"] = "requesting";
-        JorelEvent["OutgoingCallRinging"] = "trying";
-        JorelEvent["OutgoingCallAnsweredByRemote"] = "OutgoingCallAnsweredByRemote";
-        JorelEvent["CallStarted"] = "CallStarted";
-        JorelEvent["CallEndedByUser"] = "CallEndedByUser";
-        JorelEvent["CallEndedByPeer"] = "CallEndedByPeer";
-    })(JorelEvent || (JorelEvent = {}));
-    class ZiwoEvent {
-        static subscribe(func) {
-            this.listeners.push(func);
-        }
-        static emit(type, data) {
-            this.listeners.forEach(x => x(type, data));
-        }
-    }
-    ZiwoEvent.listeners = [];
-
-    class MediaChannel {
-        constructor(stream) {
-            this.stream = stream;
-            this.audioContext = this.getAudioContext();
-        }
-        static getUserMediaAsChannel(mediaRequested) {
-            return new Promise((onRes, onErr) => {
-                try {
-                    navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
-                        onRes(new MediaChannel(stream));
-                    });
-                }
-                catch (e) {
-                    onErr(e);
-                }
-            });
-        }
-        startMicrophone() {
-            // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
-            const filterNode = this.audioContext.createBiquadFilter();
-            filterNode.type = 'highpass';
-            // cutoff frequency: for highpass, audio is attenuated below this frequency
-            filterNode.frequency.value = 10000;
-            // create a gain node (to change audio volume)
-            const gainNode = this.audioContext.createGain();
-            // default is 1 (no change); less than 1 means audio is attenuated and vice versa
-            gainNode.gain.value = 0.5;
-            const source = this.audioContext.createMediaStreamSource(this.stream);
-            this.microphone = {
-                filterNode,
-                gainNode,
-                source,
-            };
-        }
-        bindVideo(el) {
-            el.srcObject = this.stream;
-        }
-        getAudioContext() {
-            let audioContext;
-            if (typeof AudioContext === 'function') {
-                audioContext = new AudioContext();
-            }
-            else {
-                throw new Error('Web audio not supported');
-            }
-            return audioContext;
-        }
-    }
-    //# sourceMappingURL=media-channel.js.map
-
-    /**
-     * RtcClientBase handles authentication and holds core properties
-     */
-    class RtcClientBase {
-        constructor(tags, debug) {
-            this.calls = [];
-            this.debug = debug || false;
-            this.tags = tags;
-        }
-        /**
-         * Get connected Agent returns the Info of the current agent
-         */
-        getConnectedAgent() {
-            return this.connectedAgent;
-        }
-        /**
-         * Return true if an agent is connected
-         */
-        isAgentConnected() {
-            return !!this.connectedAgent && !!this.channel;
-        }
-        sendNotConnectedEvent(action) {
-            return ZiwoEvent.emit(ZiwoEventType.Error, {
-                code: ErrorCode.InvalidPhoneNumber,
-                message: MESSAGES.AGENT_NOT_CONNECTED(action),
-            });
-        }
-    }
-
-    class RtcClientHandlers extends RtcClientBase {
-        constructor(tags, debug) {
-            super(tags, debug);
-        }
-        outgoingCall(data) {
-            if (this.currentCall) {
-                return console.warn('Outgoing Call - but there is already a call in progress');
-            }
-        }
-        acceptMediaRequest(data) {
-            const call = this.calls.find(x => x.callId === data.callID);
-            if (!call) {
-                return; // invalid call id?
-            }
-            call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
-                .then(() => console.log('Remote media connected'))
-                .catch(() => console.warn('fail to attach remote media'));
-            // call.answer();
-        }
-    }
-    //# sourceMappingURL=rtc-client.handlers.js.map
-
-    const PATTERNS = {
-        phoneNumber: /^\+?\d+$/,
-    };
-    //# sourceMappingURL=regex.js.map
-
-    var CallStatus;
-    (function (CallStatus) {
-        CallStatus["Stopped"] = "stopped";
-        CallStatus["Running"] = "running";
-        CallStatus["OnHold"] = "onHold";
-    })(CallStatus || (CallStatus = {}));
-    /**
-     * Call holds a call information and provide helpers
-     */
-    class Call {
-        constructor(callId, jsonRpcClient, rtcPeerConnection, channel, phoneNumber) {
-            this.status = {
-                call: CallStatus.Running,
-                microphone: CallStatus.Running,
-                camera: CallStatus.Stopped,
-            };
-            this.jsonRpcClient = jsonRpcClient;
-            this.callId = callId;
-            this.rtcPeerConnection = rtcPeerConnection;
-            this.channel = channel;
-            this.phoneNumber = phoneNumber;
-        }
-        getCallStatus() {
-            return this.status;
-        }
-        answer() {
-            console.warn('Answer not implemented');
-        }
-        hangup() {
-            this.jsonRpcClient.hangupCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.Stopped;
-        }
-        hold() {
-            this.jsonRpcClient.holdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.OnHold;
-        }
-        unhold() {
-            this.jsonRpcClient.unholdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.Running;
-        }
-        mute() {
-            this.toggleSelfStream(true);
-            this.status.microphone = CallStatus.OnHold;
-        }
-        unmute() {
-            this.toggleSelfStream(false);
-            this.status.microphone = CallStatus.Running;
-        }
-        toggleSelfStream(enabled) {
-            this.channel.stream.getAudioTracks().forEach((tr) => {
-                tr.enabled = enabled;
-            });
-        }
-    }
-    //# sourceMappingURL=call.js.map
-
-    var VertoEventType;
-    (function (VertoEventType) {
-        VertoEventType["Unknown"] = "Unknown";
-        VertoEventType["LoggedIn"] = "LoggedIn";
-        VertoEventType["OutgoingCall"] = "OutgoingCall";
-        VertoEventType["MediaRequest"] = "MediaRequest";
-    })(VertoEventType || (VertoEventType = {}));
-    //# sourceMappingURL=verto.event.js.map
-
-    /**
-     * JsonRpcParser parse an incoming message and will target a specific element to determine its type.
-     */
-    class VertoParser {
-        static parse(data) {
-            if (this.isLoggedIn(data)) {
-                return {
-                    type: VertoEventType.LoggedIn,
-                    raw: data,
-                    payload: data.params,
-                };
-            }
-            if (this.isOutgoingCall(data)) {
-                return {
-                    type: VertoEventType.OutgoingCall,
-                    raw: data,
-                    payload: data.result,
-                };
-            }
-            if (this.isMediaRequest(data)) {
-                return {
-                    type: VertoEventType.MediaRequest,
-                    raw: data,
-                    payload: data.params,
-                };
-            }
-            return {
-                type: VertoEventType.Unknown,
-                raw: data,
-                payload: data
-            };
-        }
-        static isLoggedIn(data) {
-            return data.id === 3;
-        }
-        static isOutgoingCall(data) {
-            return data.id === 4;
-        }
-        static isMediaRequest(data) {
-            return data.method === 'verto.media';
-        }
-    }
-    //# sourceMappingURL=verto.parser.js.map
-
-    class VertoBase {
-        constructor(debug) {
-            /**
-             * Callback functions - register using `addListener`
-             */
-            this.listeners = [];
-            this.debug = debug || false;
-        }
-        /**
-         * addListener allows to listen for incoming Socket Event
-         */
-        addListener(call) {
-            this.listeners.push(call);
-        }
-        /**
-         * openSocket should be called directly after the constructor
-         * It initializate the socket and set the handlers
-         */
-        openSocket(socketUrl) {
-            return new Promise((onRes, onErr) => {
-                this.socket = new WebSocket(socketUrl);
-                this.socket.onclose = () => {
-                    if (this.debug) {
-                        console.warn('Socket closed');
-                    }
-                };
-                this.socket.onopen = () => {
-                    onRes();
-                };
-                this.socket.onmessage = (msg) => {
-                    try {
-                        const data = JSON.parse(msg.data);
-                        if (!this.isJsonRpcValid) {
-                            throw new Error('Invalid Incoming JSON RPC');
-                        }
-                        this.listeners.forEach(fn => fn(VertoParser.parse(data)));
-                    }
-                    catch (err) {
-                        console.warn('Invalid Message', msg);
-                        // NOTE : not sure if we should throw an error here -- need live testing to enable/disable
-                        ZiwoEvent.emit(ZiwoEventType.Error, {
-                            code: ErrorCode.ProtocolError,
-                            message: err,
-                        });
-                    }
-                };
-            });
-        }
-        /**
-         * Send data to socket and log in case of debug
-         */
-        send(data) {
-            if (this.debug) {
-                console.log('Write message > ', data);
-            }
-            if (!this.socket) {
-                return;
-            }
-            this.socket.send(JSON.stringify(data));
-        }
-        /**
-         * Concat position to return the login used in Json RTC request
-         */
-        getLogin() {
-            var _a, _b;
-            return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
-        }
-        /**
-         * Validate the JSON RPC headersx
-         */
-        isJsonRpcValid(data) {
-            return typeof data === 'object'
-                && 'jsonrpc' in data
-                && data.jsonrpc === '2.0';
-        }
-    }
-
-    var VertoMethod;
-    (function (VertoMethod) {
-        VertoMethod["login"] = "login";
-        VertoMethod["invite"] = "verto.invite";
-        VertoMethod["modify"] = "verto.modify";
-        VertoMethod["bye"] = "verto.bye";
-    })(VertoMethod || (VertoMethod = {}));
-    class VertoParams {
-        static wrap(method, id = 0, params = {}) {
-            return {
-                jsonrpc: '2.0',
-                method: method,
-                id: id,
-                params: params,
-            };
-        }
-        static login(sessid, login, passwd) {
-            return this.wrap(VertoMethod.login, 3, {
-                sessid,
-                login,
-                passwd
-            });
-        }
-        static startCall(sessionId, callId, login, phoneNumber, sdp) {
-            return this.wrap(VertoMethod.invite, 4, {
-                sdp: sdp,
-                sessid: sessionId,
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-            });
-        }
-        static hangupCall(sessionId, callId, login, phoneNumber) {
-            return this.wrap(VertoMethod.bye, 9, {
-                cause: 'NORMAL_CLEARING',
-                causeCode: 16,
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-                sessid: sessionId,
-            });
-        }
-        static holdCall(sessionId, callId, login, phoneNumber) {
-            return this.wrap(VertoMethod.modify, 11, {
-                action: 'hold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-                sessid: sessionId,
-            });
-        }
-        static unholdCall(sessionId, callId, login, phoneNumber) {
-            return this.wrap(VertoMethod.modify, 10, {
-                action: 'unhold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-                sessid: sessionId,
-            });
-        }
-        static getUuid() {
-            /* tslint:disable */
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-                /* tslint:enable */
-            });
-        }
-        static dialogParams(callId, login, phoneNumber) {
-            return {
-                callID: callId,
-                caller_id_name: '',
-                caller_id_number: '',
-                dedEnc: false,
-                destination_number: phoneNumber,
-                incomingBandwidth: 'default',
-                localTag: null,
-                login: login,
-                outgoingBandwidth: 'default',
-                remote_caller_id_name: 'Outbound Call',
-                remote_caller_id_number: phoneNumber,
-                screenShare: false,
-                tag: this.getUuid(),
-                useCamera: false,
-                useMic: true,
-                useSpeak: true,
-                useStereo: true,
-                useVideo: undefined,
-                videoParams: {},
-                audioParams: {
-                    googAutoGainControl: false,
-                    googNoiseSuppression: false,
-                    googHighpassFilter: false
-                },
-            };
-        }
-    }
-    //# sourceMappingURL=verto.params.js.map
-
-    var ZiwoSocketEvent;
-    (function (ZiwoSocketEvent) {
-        ZiwoSocketEvent["LoggedIn"] = "LoggedIn";
-        ZiwoSocketEvent["CallCreated"] = "CallCreated";
-    })(ZiwoSocketEvent || (ZiwoSocketEvent = {}));
-    /**
-     * JsonRpcClient implements Verto protocol using JSON RPC
-     *
-     * Usage:
-     *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
-     *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
-     *      .then(() => {
-     *        this.login() // REQUIRED: log the agent into the web socket
-     *        // You can now proceed with any requests
-     *      });
-     *
-     */
-    class Verto extends VertoBase {
-        constructor(debug) {
-            super(debug);
-            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
-        }
-        /**
-         * Following functions send a request to the opened socket. They do not return the result of the request
-         * Instead, you should use `addListener` and use the Socket events to follow the status of the request.
-         */
-        /**
-         * login log the agent in the newly created socket
-         */
-        login(agentPosition) {
-            this.position = agentPosition;
-            return new Promise((onRes, onErr) => {
-                if (!this.socket) {
-                    return onErr();
-                }
-                this.sessid = VertoParams.getUuid();
-                this.send(VertoParams.login(this.sessid, agentPosition.name, agentPosition.password));
-            });
-        }
-        /**
-         * send a start call request
-         */
-        startCall(phoneNumber, callId, channel, tags) {
-            if (!channel.stream) {
-                throw new Error('Error in User Media');
-            }
-            // Create Call and its PeerConnection
-            const call = new Call(callId, this, new RTCPeerConnection({
-                iceServers: [{ urls: this.ICE_SERVER }],
-            }), channel, phoneNumber);
-            call.rtcPeerConnection.ontrack = (tr) => {
-                const track = tr.track;
-                if (track.kind !== 'audio') {
-                    return;
-                }
-                const stream = new MediaStream();
-                stream.addTrack(track);
-                channel.remoteStream = stream;
-                tags.peerTag.srcObject = stream;
-            };
-            // Attach our media stream to the call's PeerConnection
-            channel.stream.getTracks().forEach((track) => {
-                call.rtcPeerConnection.addTrack(track);
-            });
-            // We wait for candidate to be null to make sure all candidates have been processed
-            call.rtcPeerConnection.onicecandidate = (candidate) => {
-                var _a;
-                if (!candidate.candidate) {
-                    this.send(VertoParams.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
-                }
-            };
-            call.rtcPeerConnection.createOffer().then(offer => {
-                call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
-            });
-            return call;
-        }
-        /**
-         * Hang up a specific call
-         */
-        hangupCall(callId, phoneNumber) {
-            this.send(VertoParams.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
-        }
-        /**
-         * Hold a specific call
-         */
-        holdCall(callId, phoneNumber) {
-            this.send(VertoParams.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
-        }
-        /**
-         * Hang up a specific call
-         */
-        unholdCall(callId, phoneNumber) {
-            this.send(VertoParams.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
-        }
-    }
-    //# sourceMappingURL=verto.js.map
-
-    /**
-     * RtcClient wraps all interaction with WebRTC
-     * It holds the validation & all properties required for usage of Web RTC
-     */
-    class RtcClient extends RtcClientHandlers {
-        constructor(tags, debug) {
-            super(tags, debug);
-        }
-        /**
-         * User Agent Info to authenticate on the socket
-         * Also requests access to User Media (audio &| video)
-         */
-        connectAgent(agent) {
-            return new Promise((onRes, onErr) => {
-                this.connectedAgent = agent;
-                this.verto = new Verto(this.debug);
-                // First we make ensure access to microphone &| camera
-                // And wait for the socket to open
-                Promise.all([
-                    MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
-                    this.verto.openSocket(this.connectedAgent.webRtc.socket),
-                ]).then(res => {
-                    var _a, _b;
-                    this.channel = res[0];
-                    (_a = this.verto) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
-                        if (ev.type === VertoEventType.LoggedIn) {
-                            ZiwoEvent.emit(ZiwoEventType.AgentConnected);
-                            onRes();
-                            return;
-                        }
-                        // This is our global handler for incoming message
-                        this.processIncomingSocketMessage(ev);
-                    });
-                    (_b = this.verto) === null || _b === void 0 ? void 0 : _b.login(agent.position);
-                }).catch(err => {
-                    onErr(err);
-                });
-            });
-        }
-        /**
-         * Start a phone call and return a Call or undefined if an error occured
-         */
-        startCall(phoneNumber) {
-            var _a;
-            if (!this.isAgentConnected() || !this.channel || !this.verto) {
-                this.sendNotConnectedEvent('start call');
-                return;
-            }
-            if (!PATTERNS.phoneNumber.test(phoneNumber)) {
-                ZiwoEvent.emit(ZiwoEventType.Error, {
-                    code: ErrorCode.InvalidPhoneNumber,
-                    message: MESSAGES.INVALID_PHONE_NUMBER(phoneNumber),
-                    data: {
-                        phoneNumber: phoneNumber,
-                    }
-                });
-                return;
-            }
-            (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-            const call = this.verto.startCall(phoneNumber, VertoParams.getUuid(), this.channel, this.tags);
-            this.calls.push(call);
-            return call;
-        }
-        /**
-         * Process message
-         */
-        processIncomingSocketMessage(ev) {
-            if (this.debug) {
-                console.log('New incoming message', ev);
-            }
-            switch (ev.type) {
-                case VertoEventType.OutgoingCall:
-                    this.outgoingCall(ev.payload);
-                    break;
-                case VertoEventType.MediaRequest:
-                    this.acceptMediaRequest(ev.payload);
-                    break;
-            }
-        }
-    }
-
-    /**
      * ApiService provide functions for GET, POST, PUT and DELETE query
      *
      * Usage:
@@ -1018,22 +409,511 @@
     }
     //# sourceMappingURL=api.service.js.map
 
+    /**
+     * TODO : documentation
+     */
+    var ErrorCode;
+    (function (ErrorCode) {
+        ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
+        ErrorCode[ErrorCode["UserMediaError"] = 3] = "UserMediaError";
+        ErrorCode[ErrorCode["AgentNotConnected"] = 1] = "AgentNotConnected";
+        ErrorCode[ErrorCode["ProtocolError"] = 4] = "ProtocolError";
+    })(ErrorCode || (ErrorCode = {}));
+    var ZiwoErrorCode;
+    (function (ZiwoErrorCode) {
+        ZiwoErrorCode[ZiwoErrorCode["ProtocolError"] = 1001] = "ProtocolError";
+        ZiwoErrorCode[ZiwoErrorCode["MediaError"] = 1002] = "MediaError";
+    })(ZiwoErrorCode || (ZiwoErrorCode = {}));
+    var ZiwoEventType;
+    (function (ZiwoEventType) {
+        ZiwoEventType["Error"] = "error";
+        ZiwoEventType["Connected"] = "connected";
+        ZiwoEventType["Disconnected"] = "disconnected";
+        ZiwoEventType["Requesting"] = "requesting";
+        ZiwoEventType["Trying"] = "tring";
+        ZiwoEventType["Early"] = "early";
+        ZiwoEventType["Ringing"] = "ringing";
+        ZiwoEventType["Answering"] = "answering";
+        ZiwoEventType["Active"] = "active";
+        ZiwoEventType["Held"] = "held";
+        ZiwoEventType["Hangup"] = "hangup";
+        ZiwoEventType["Destroy"] = "destroy";
+        ZiwoEventType["Recovering"] = "recovering";
+    })(ZiwoEventType || (ZiwoEventType = {}));
+    class ZiwoEvent {
+        constructor(type, data) {
+            this.type = type;
+            this.data = data;
+        }
+        static subscribe(func) {
+            this.listeners.push(func);
+        }
+        static emit(type, data) {
+            this.listeners.forEach(x => x(type, data));
+            window.dispatchEvent(new CustomEvent(type, { detail: data }));
+        }
+        static error(code, data) {
+            window.dispatchEvent(new CustomEvent(ZiwoEventType.Error, { detail: {
+                    code: code,
+                    inner: data,
+                } }));
+        }
+        emit() {
+            ZiwoEvent.emit(this.type, this.data);
+        }
+    }
+    ZiwoEvent.listeners = [];
+
+    class MediaChannel {
+        constructor(stream) {
+            this.stream = stream;
+            this.audioContext = this.getAudioContext();
+        }
+        static getUserMediaAsChannel(mediaRequested) {
+            return new Promise((onRes, onErr) => {
+                try {
+                    navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+                        onRes(new MediaChannel(stream));
+                    });
+                }
+                catch (e) {
+                    onErr(e);
+                }
+            });
+        }
+        startMicrophone() {
+            // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
+            const filterNode = this.audioContext.createBiquadFilter();
+            filterNode.type = 'highpass';
+            // cutoff frequency: for highpass, audio is attenuated below this frequency
+            filterNode.frequency.value = 10000;
+            // create a gain node (to change audio volume)
+            const gainNode = this.audioContext.createGain();
+            // default is 1 (no change); less than 1 means audio is attenuated and vice versa
+            gainNode.gain.value = 0.5;
+            const source = this.audioContext.createMediaStreamSource(this.stream);
+            this.microphone = {
+                filterNode,
+                gainNode,
+                source,
+            };
+        }
+        bindVideo(el) {
+            el.srcObject = this.stream;
+        }
+        getAudioContext() {
+            let audioContext;
+            if (typeof AudioContext === 'function') {
+                audioContext = new AudioContext();
+            }
+            else {
+                throw new Error('Web audio not supported');
+            }
+            return audioContext;
+        }
+    }
+    //# sourceMappingURL=media-channel.js.map
+
+    var CallStatus;
+    (function (CallStatus) {
+        CallStatus["Stopped"] = "stopped";
+        CallStatus["Running"] = "running";
+        CallStatus["OnHold"] = "onHold";
+    })(CallStatus || (CallStatus = {}));
+    /**
+     * Call holds a call information and provide helpers
+     */
+    class Call {
+        constructor(callId, jsonRpcClient, rtcPeerConnection, channel, phoneNumber) {
+            this.status = {
+                call: CallStatus.Running,
+                microphone: CallStatus.Running,
+                camera: CallStatus.Stopped,
+            };
+            this.jsonRpcClient = jsonRpcClient;
+            this.callId = callId;
+            this.rtcPeerConnection = rtcPeerConnection;
+            this.channel = channel;
+            this.phoneNumber = phoneNumber;
+        }
+        getCallStatus() {
+            return this.status;
+        }
+        answer() {
+            console.warn('Answer not implemented');
+        }
+        hangup() {
+            this.jsonRpcClient.hangupCall(this.callId, this.phoneNumber);
+            this.status.call = CallStatus.Stopped;
+        }
+        hold() {
+            this.jsonRpcClient.holdCall(this.callId, this.phoneNumber);
+            this.status.call = CallStatus.OnHold;
+        }
+        unhold() {
+            this.jsonRpcClient.unholdCall(this.callId, this.phoneNumber);
+            this.status.call = CallStatus.Running;
+        }
+        mute() {
+            this.toggleSelfStream(true);
+            this.status.microphone = CallStatus.OnHold;
+        }
+        unmute() {
+            this.toggleSelfStream(false);
+            this.status.microphone = CallStatus.Running;
+        }
+        toggleSelfStream(enabled) {
+            this.channel.stream.getAudioTracks().forEach((tr) => {
+                tr.enabled = enabled;
+            });
+        }
+    }
+
+    var VertoMethod;
+    (function (VertoMethod) {
+        VertoMethod["Login"] = "login";
+        VertoMethod["ClientReady"] = "verto.clientReady";
+        VertoMethod["Invite"] = "verto.invite";
+        VertoMethod["Modify"] = "verto.modify";
+        VertoMethod["Bye"] = "verto.bye";
+    })(VertoMethod || (VertoMethod = {}));
+    class VertoParams {
+        constructor() {
+            this.id = 0;
+        }
+        wrap(method, params = {}, id = 0) {
+            return {
+                jsonrpc: '2.0',
+                method: method,
+                id: !id ? id : this.id++,
+                params: params,
+            };
+        }
+        login(sessid, login, passwd) {
+            return this.wrap(VertoMethod.Login, {
+                sessid,
+                login,
+                passwd
+            });
+        }
+        startCall(sessionId, callId, login, phoneNumber, sdp) {
+            return this.wrap(VertoMethod.Invite, {
+                sdp: sdp,
+                sessid: sessionId,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+            });
+        }
+        hangupCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.Bye, {
+                cause: 'NORMAL_CLEARING',
+                causeCode: 16,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        holdCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.Modify, {
+                action: 'hold',
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        unholdCall(sessionId, callId, login, phoneNumber) {
+            return this.wrap(VertoMethod.Modify, {
+                action: 'unhold',
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        getUuid() {
+            /* tslint:disable */
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+                /* tslint:enable */
+            });
+        }
+        dialogParams(callId, login, phoneNumber) {
+            return {
+                callID: callId,
+                caller_id_name: '',
+                caller_id_number: '',
+                dedEnc: false,
+                destination_number: phoneNumber,
+                incomingBandwidth: 'default',
+                localTag: null,
+                login: login,
+                outgoingBandwidth: 'default',
+                remote_caller_id_name: 'Outbound Call',
+                remote_caller_id_number: phoneNumber,
+                screenShare: false,
+                tag: this.getUuid(),
+                useCamera: false,
+                useMic: true,
+                useSpeak: true,
+                useStereo: true,
+                useVideo: undefined,
+                videoParams: {},
+                audioParams: {
+                    googAutoGainControl: false,
+                    googNoiseSuppression: false,
+                    googHighpassFilter: false
+                },
+            };
+        }
+    }
+    //# sourceMappingURL=verto.params.js.map
+
+    class VertoOrchestrator {
+        constructor(debug) {
+            this.debug = debug;
+        }
+        handleMessage(message) {
+            if (this.debug) {
+                console.log('Handle incoming message ', message);
+            }
+            if (!message.method) {
+                // Message with no methods are nofitications. We ignore them for now
+                return;
+            }
+            switch (message.method) {
+                case VertoMethod.ClientReady:
+                    return this.onClientReady(message);
+                case VertoMethod.Invite:
+                    return this.onInvite(message);
+                case VertoMethod.Modify:
+                    return this.onModify(message);
+                case VertoMethod.Bye:
+                    return this.onBye(message);
+            }
+        }
+        onClientReady(message) {
+            return new ZiwoEvent(ZiwoEventType.Connected, {});
+        }
+        onInvite(message) {
+            console.log('Invite', message);
+            return new ZiwoEvent(ZiwoEventType.Error, {});
+        }
+        onModify(message) {
+            console.log('Modify', message);
+            return new ZiwoEvent(ZiwoEventType.Error, {});
+        }
+        onBye(message) {
+            console.log('Bye', message);
+            return new ZiwoEvent(ZiwoEventType.Error, {});
+        }
+    }
+
+    /**
+     * JsonRpcClient implements Verto protocol using JSON RPC
+     *
+     * Usage:
+     *  - const client = new JsonRpcClient(@debug); // Instantiate a new Json Rpc Client
+     *  - client.openSocket(@socketUrl) // REQUIRED: Promise opening the web socket
+     *      .then(() => {
+     *        this.login() // REQUIRED: log the agent into the web socket
+     *        // You can now proceed with any requests
+     *      });
+     *
+     */
+    class Verto {
+        constructor(debug, tags) {
+            /**
+             * Callback functions - register using `addListener`
+             */
+            this.listeners = [];
+            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
+            this.debug = debug;
+            this.tags = tags;
+            this.orchestrator = new VertoOrchestrator(this.debug);
+            this.params = new VertoParams();
+        }
+        /**
+         * addListener allows to listen for incoming Socket Event
+         */
+        addListener(call) {
+            this.listeners.push(call);
+        }
+        connectAgent(agent) {
+            return new Promise((onRes, onErr) => {
+                // First we make ensure access to microphone &| camera
+                // And wait for the socket to open
+                Promise.all([
+                    MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
+                    this.openSocket(agent.webRtc.socket),
+                ]).then(res => {
+                    this.channel = res[0];
+                    this.login(agent.position);
+                }).catch(err => {
+                    onErr(err);
+                });
+            });
+        }
+        /**
+         * send a start call request
+         */
+        startCall(phoneNumber) {
+            if (!this.channel || !this.channel.stream) {
+                // TODO : throw Ziwo Error Event
+                throw new Error('Error in User Media');
+            }
+            // Create Call and its PeerConnection
+            const call = new Call(this.params.getUuid(), this, new RTCPeerConnection({
+                iceServers: [{ urls: this.ICE_SERVER }],
+            }), this.channel, phoneNumber);
+            call.rtcPeerConnection.ontrack = (tr) => {
+                const track = tr.track;
+                if (track.kind !== 'audio') {
+                    return;
+                }
+                const stream = new MediaStream();
+                stream.addTrack(track);
+                this.ensureMediaChannelIsValid();
+                this.channel.remoteStream = stream;
+                this.tags.peerTag.srcObject = stream;
+            };
+            // Attach our media stream to the call's PeerConnection
+            this.channel.stream.getTracks().forEach((track) => {
+                call.rtcPeerConnection.addTrack(track);
+            });
+            // We wait for candidate to be null to make sure all candidates have been processed
+            call.rtcPeerConnection.onicecandidate = (candidate) => {
+                var _a;
+                if (!candidate.candidate) {
+                    this.send(this.params.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                }
+            };
+            call.rtcPeerConnection.createOffer().then((offer) => {
+                call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
+            });
+            return call;
+        }
+        /**
+         * Hang up a specific call
+         */
+        hangupCall(callId, phoneNumber) {
+            this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        }
+        /**
+         * Hold a specific call
+         */
+        holdCall(callId, phoneNumber) {
+            this.send(this.params.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        }
+        /**
+         * Hang up a specific call
+         */
+        unholdCall(callId, phoneNumber) {
+            this.send(this.params.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        }
+        /**
+         * Send data to socket and log in case of debug
+         */
+        send(data) {
+            if (this.debug) {
+                console.log('Write message > ', data);
+            }
+            if (!this.socket) {
+                return;
+            }
+            this.socket.send(JSON.stringify(data));
+        }
+        /**
+         * login log the agent in the newly created socket
+         */
+        login(agentPosition) {
+            this.position = agentPosition;
+            return new Promise((onRes, onErr) => {
+                if (!this.socket) {
+                    return onErr();
+                }
+                this.sessid = this.params.getUuid();
+                this.send(this.params.login(this.sessid, agentPosition.name, agentPosition.password));
+            });
+        }
+        /**
+         * openSocket should be called directly after the constructor
+         * It initializate the socket and set the handlers
+         */
+        openSocket(socketUrl) {
+            return new Promise((onRes, onErr) => {
+                this.socket = new WebSocket(socketUrl);
+                this.socket.onclose = () => {
+                    if (this.debug) {
+                        console.log('Socket closed');
+                    }
+                };
+                this.socket.onopen = () => {
+                    onRes();
+                };
+                this.socket.onmessage = (msg) => {
+                    try {
+                        const data = JSON.parse(msg.data);
+                        if (!this.isJsonRpcValid) {
+                            ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
+                            throw new Error('Message is not a valid format');
+                        }
+                        const ev = this.orchestrator.handleMessage(data);
+                        if (ev) {
+                            ev.emit();
+                        }
+                    }
+                    catch (err) {
+                        ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
+                        if (this.debug) {
+                            console.warn('Invalid message. See logs for futher information');
+                        }
+                    }
+                };
+            });
+        }
+        /**
+         * Concat position to return the login used in Json RTC request
+         */
+        getLogin() {
+            var _a, _b;
+            return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
+        }
+        ensureMediaChannelIsValid() {
+            if (!this.channel || !this.channel.stream) {
+                ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
+                return false;
+            }
+            return true;
+        }
+        /**
+         * Validate the JSON RPC headersx
+         */
+        isJsonRpcValid(data) {
+            return typeof data === 'object'
+                && 'jsonrpc' in data
+                && data.jsonrpc === '2.0';
+        }
+    }
+
     class ZiwoClient {
         constructor(options) {
+            this.calls = [];
             this.options = options;
+            this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
-            this.rtcClient = new RtcClient(options.tags, options.debug);
+            this.verto = new Verto(this.debug, options.tags);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });
             }
         }
+        /**
+         * connect authenticate the user over Ziwo & our communication socket
+         * This function is required before proceeding with calls
+         */
         connect() {
             return new Promise((onRes, onErr) => {
                 AuthenticationService.authenticate(this.apiService, this.options.credentials)
                     .then(res => {
-                    this.rtcClient.connectAgent(res);
-                    onRes(res);
+                    this.connectedAgent = res;
+                    this.verto.connectAgent(this.connectedAgent);
+                    onRes();
                 }).catch(err => onErr(err));
             });
         }
@@ -1041,7 +921,7 @@
             return ZiwoEvent.subscribe(func);
         }
         startCall(phoneNumber) {
-            return this.rtcClient.startCall(phoneNumber);
+            return this.verto.startCall(phoneNumber);
         }
     }
 

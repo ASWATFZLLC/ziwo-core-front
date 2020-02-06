@@ -35,6 +35,7 @@ export interface ZiwoEventDetails {
 
 export enum ZiwoErrorCode {
   ProtocolError = 1001,
+  MediaError = 1002,
 }
 
 export enum ZiwoEventType {
@@ -57,6 +58,15 @@ export class ZiwoEvent {
 
   public static listeners:Function[] = [];
 
+  private type:ZiwoEventType;
+  private data:ZiwoEventDetails;
+
+
+  constructor(type:ZiwoEventType, data:ZiwoEventDetails) {
+    this.type = type;
+    this.data = data;
+  }
+
   public static subscribe(func:Function):void {
     this.listeners.push(func);
   }
@@ -71,6 +81,10 @@ export class ZiwoEvent {
       code: code,
       inner: data,
     }}));
+  }
+
+  public emit():void {
+    ZiwoEvent.emit(this.type, this.data);
   }
 
 }

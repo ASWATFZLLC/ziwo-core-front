@@ -22,7 +22,7 @@ export interface Credentials {
 
   /**
    * @authenticationToken is the token provided by the /login API
-   * If not provided, please provide @authenticationToken
+   * If not provided, please provide @email and @password
    */
   authenticationToken?:string;
 }

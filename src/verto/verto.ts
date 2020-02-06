@@ -4,6 +4,7 @@ import {Call} from '../call';
 import {VertoParams} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
 import { ZiwoEvent, ZiwoErrorCode } from '../events';
+import { MESSAGES } from '../messages';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -45,14 +46,21 @@ export class Verto {
   private channel?:MediaChannel;
 
   /**
+   * Media video tags
+   */
+  private tags:MediaInfo;
+
+  /**
    *
    */
   private orchestrator:VertoOrchestrator;
 
-  private tags:MediaInfo;
+  /**
+   *
+   */
+  private params:VertoParams;
 
-
-  protected readonly debug:boolean;
+  private readonly debug:boolean;
 
   private readonly ICE_SERVER = 'stun:stun.l.google.com:19302';
 
@@ -60,6 +68,7 @@ export class Verto {
     this.debug = debug;
     this.tags = tags;
     this.orchestrator = new VertoOrchestrator(this.debug);
+    this.params = new VertoParams();
   }
 
 
@@ -97,7 +106,7 @@ export class Verto {
 
     // Create Call and its PeerConnection
     const call = new Call(
-      VertoParams.getUuid(),
+      this.params.getUuid(),
       this,
       new RTCPeerConnection({
         iceServers: [{urls: this.ICE_SERVER}],
@@ -126,7 +135,7 @@ export class Verto {
     // We wait for candidate to be null to make sure all candidates have been processed
     call.rtcPeerConnection.onicecandidate = (candidate:any) => {
       if (!candidate.candidate) {
-        this.send(VertoParams.startCall(
+        this.send(this.params.startCall(
           this.sessid,
           call.callId,
           this.getLogin(),
@@ -147,21 +156,21 @@ export class Verto {
    * Hang up a specific call
    */
   public hangupCall(callId:string, phoneNumber:string):void {
-    this.send(VertoParams.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
   /**
    * Hold a specific call
    */
   public holdCall(callId:string, phoneNumber:string):void {
-    this.send(VertoParams.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(this.params.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
   /**
    * Hang up a specific call
    */
   public unholdCall(callId:string, phoneNumber:string):void {
-    this.send(VertoParams.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(this.params.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
   }
 
   /**
@@ -186,8 +195,8 @@ export class Verto {
       if (!this.socket) {
         return onErr();
       }
-      this.sessid = VertoParams.getUuid();
-      this.send(VertoParams.login(this.sessid, agentPosition.name, agentPosition.password));
+      this.sessid = this.params.getUuid();
+      this.send(this.params.login(this.sessid, agentPosition.name, agentPosition.password));
     });
   }
 
@@ -213,8 +222,10 @@ export class Verto {
             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
             throw new Error('Message is not a valid format');
           }
-          this.listeners.forEach(fn => fn(msg));
-          this.orchestrator.handleMessage(msg);
+          const ev = this.orchestrator.handleMessage(data);
+          if (ev) {
+            ev.emit();
+          }
         } catch (err) {
           ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
           if (this.debug) {
@@ -234,8 +245,7 @@ export class Verto {
 
   protected ensureMediaChannelIsValid():boolean {
     if (!this.channel || !this.channel.stream) {
-      // TODO : throw Ziwo Error Event
-      throw new Error('Error in User Media');
+      ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
       return false;
     }
     return true;

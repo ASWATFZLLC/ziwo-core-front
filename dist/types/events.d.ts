@@ -1,7 +1,6 @@
+import { Call } from './call';
 /**
  * TODO : documentation
- * TODO : define interface for each available type?
- * TODO : define all event type
  */
 export declare enum ErrorCode {
     InvalidPhoneNumber = 2,
@@ -14,30 +13,46 @@ export interface ErrorData {
     message: string;
     data?: any;
 }
-export declare enum ZiwoEventType {
-    Error = "Error",
-    AgentConnected = "AgentConnected",
-    IncomingCall = "IncomingCall",
-    IncomingCallAnswered = "IncomingCallAnswered",
-    OutgoingCall = "OutgoingCall",
-    OutgoingCallAnsweredByRemote = "OutgoingCallAnsweredByRemote",
-    CallStarted = "CallStarted",
-    CallEndedByUser = "CallEndedByUser",
-    CallEndedByPeer = "CallEndedByPeer",
-    CallRecovering = "CallRecovering"
+export interface ZiwoEventHistory {
+    state: ZiwoEventDetails;
+    date: Date;
+    dateUNIX: string;
 }
-export declare enum JorelEvent {
-    IncomingCall = "IncomingCall",
-    IncomingCallAnswered = "IncomingCallAnswered",
-    OutgoingCall = "requesting",
-    OutgoingCallRinging = "trying",
-    OutgoingCallAnsweredByRemote = "OutgoingCallAnsweredByRemote",
-    CallStarted = "CallStarted",
-    CallEndedByUser = "CallEndedByUser",
-    CallEndedByPeer = "CallEndedByPeer"
+export interface ZiwoEventDetails {
+    type: ZiwoEventType;
+    direction: 'outbound' | 'inbound';
+    callID: string;
+    primaryCallID: string;
+    customerNumber: string;
+    stateFlow: ZiwoEventHistory[];
+    currentCall: Call;
+}
+export declare enum ZiwoErrorCode {
+    ProtocolError = 1001,
+    MediaError = 1002
+}
+export declare enum ZiwoEventType {
+    Error = "error",
+    Connected = "connected",
+    Disconnected = "disconnected",
+    Requesting = "requesting",
+    Trying = "tring",
+    Early = "early",
+    Ringing = "ringing",
+    Answering = "answering",
+    Active = "active",
+    Held = "held",
+    Hangup = "hangup",
+    Destroy = "destroy",
+    Recovering = "recovering"
 }
 export declare class ZiwoEvent {
     static listeners: Function[];
+    private type;
+    private data;
+    constructor(type: ZiwoEventType, data: ZiwoEventDetails);
     static subscribe(func: Function): void;
-    static emit(type: ZiwoEventType, data?: any): void;
+    static emit(type: ZiwoEventType, data: ZiwoEventDetails): void;
+    static error(code: ZiwoErrorCode, data: any): void;
+    emit(): void;
 }

@@ -1,8 +1,9 @@
 export enum VertoMethod {
-  login = 'login',
-  invite = 'verto.invite',
-  modify = 'verto.modify',
-  bye = 'verto.bye',
+  Login = 'login',
+  ClientReady = 'verto.clientReady',
+  Invite = 'verto.invite',
+  Modify = 'verto.modify',
+  Bye = 'verto.bye',
 }
 
 export interface VertoMessage<T> {
@@ -12,35 +13,39 @@ export interface VertoMessage<T> {
   params:T;
 }
 
+export interface VertoLogin {}
+
 export class VertoParams {
 
-  public static wrap(method:string, id:number = 0, params:any = {}):VertoMessage<any> {
+  private id = 0;
+
+  public wrap(method:string, params:any = {}, id:number = 0,):VertoMessage<any> {
     return {
       jsonrpc: '2.0',
       method: method as VertoMethod,
-      id: id,
+      id: !id ? id : this.id++,
       params: params,
     };
   }
 
-  public static login(sessid:string, login:string, passwd:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.login, 3, {
+  public login(sessid:string, login:string, passwd:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Login, {
       sessid,
       login,
       passwd
     });
   }
 
-  public static startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.invite, 4, {
+  public startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Invite, {
         sdp: sdp,
         sessid: sessionId,
         dialogParams: this.dialogParams(callId, login, phoneNumber),
     });
   }
 
-  public static hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.bye, 9, {
+  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Bye, {
       cause: 'NORMAL_CLEARING',
       causeCode: 16,
       dialogParams: this.dialogParams(callId, login, phoneNumber),
@@ -48,23 +53,23 @@ export class VertoParams {
     });
   }
 
-  public static holdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.modify, 11, {
+  public holdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Modify, {
       action: 'hold',
       dialogParams: this.dialogParams(callId, login, phoneNumber),
       sessid: sessionId,
     });
   }
 
-  public static unholdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.modify, 10, {
+  public unholdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Modify, {
       action: 'unhold',
       dialogParams: this.dialogParams(callId, login, phoneNumber),
       sessid: sessionId,
     });
   }
 
-  public static getUuid():string {
+  public getUuid():string {
     /* tslint:disable */
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0,
@@ -74,7 +79,7 @@ export class VertoParams {
     });
   }
 
-  private static dialogParams(callId:string, login:string, phoneNumber:string):any {
+  private dialogParams(callId:string, login:string, phoneNumber:string):any {
     return {
       callID: callId,
       caller_id_name: '',
