@@ -24,7 +24,7 @@ function start() {
     console.log(`[Ziwo Event] ${type}`, data);
     this.pushMessage( `[${type}] ${ JSON.stringify(data) || ''}`)
     switch (type) {
-      case 'AgentConnected':
+      case 'connected':
         this.connected();
     }
   })

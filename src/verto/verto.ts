@@ -64,11 +64,17 @@ export class Verto {
 
   private readonly ICE_SERVER = 'stun:stun.l.google.com:19302';
 
-  constructor(debug:boolean, tags:MediaInfo) {
+  /**
+   * Reference to list of running calls
+   */
+  private readonly calls:Call[];
+
+  constructor(calls:Call[], debug:boolean, tags:MediaInfo) {
     this.debug = debug;
     this.tags = tags;
     this.orchestrator = new VertoOrchestrator(this.debug);
     this.params = new VertoParams();
+    this.calls = calls;
   }
 
 
@@ -222,14 +228,15 @@ export class Verto {
             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
             throw new Error('Message is not a valid format');
           }
-          const ev = this.orchestrator.handleMessage(data);
+          const relatedCall = data.params && data.params.callID ? this.calls.find(c => c.callId === data.params.callID) : undefined;
+          const ev = this.orchestrator.handleMessage(data, relatedCall);
           if (ev) {
             ev.emit();
           }
         } catch (err) {
           ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
           if (this.debug) {
-            console.warn('Invalid message. See logs for futher information');
+            console.warn('Invalid incoming message', err);
           }
         }
       };

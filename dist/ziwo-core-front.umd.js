@@ -423,6 +423,7 @@
     (function (ZiwoErrorCode) {
         ZiwoErrorCode[ZiwoErrorCode["ProtocolError"] = 1001] = "ProtocolError";
         ZiwoErrorCode[ZiwoErrorCode["MediaError"] = 1002] = "MediaError";
+        ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
     })(ZiwoErrorCode || (ZiwoErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -463,6 +464,7 @@
         }
     }
     ZiwoEvent.listeners = [];
+    //# sourceMappingURL=events.js.map
 
     class MediaChannel {
         constructor(stream) {
@@ -568,11 +570,13 @@
             });
         }
     }
+    //# sourceMappingURL=call.js.map
 
     var VertoMethod;
     (function (VertoMethod) {
         VertoMethod["Login"] = "login";
         VertoMethod["ClientReady"] = "verto.clientReady";
+        VertoMethod["Media"] = "verto.media";
         VertoMethod["Invite"] = "verto.invite";
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Bye"] = "verto.bye";
@@ -581,11 +585,12 @@
         constructor() {
             this.id = 0;
         }
-        wrap(method, params = {}, id = 0) {
+        wrap(method, params = {}, id = -1) {
+            this.id += 1;
             return {
                 jsonrpc: '2.0',
                 method: method,
-                id: !id ? id : this.id++,
+                id: id > 0 ? id : this.id,
                 params: params,
             };
         }
@@ -668,17 +673,25 @@
         constructor(debug) {
             this.debug = debug;
         }
-        handleMessage(message) {
-            if (this.debug) {
-                console.log('Handle incoming message ', message);
-            }
+        handleMessage(message, call) {
             if (!message.method) {
-                // Message with no methods are nofitications. We ignore them for now
+                // Message with no methods are simple nofitications. We ignore them for now
+                if (this.debug) {
+                    console.log('Incoming notification', message);
+                }
                 return;
+            }
+            if (this.debug) {
+                console.log('Incoming message ', message);
             }
             switch (message.method) {
                 case VertoMethod.ClientReady:
                     return this.onClientReady(message);
+                case VertoMethod.Media:
+                    if (!this.ensureCallIsExisting(call)) {
+                        return undefined;
+                    }
+                    return this.onMedia(message, call);
                 case VertoMethod.Invite:
                     return this.onInvite(message);
                 case VertoMethod.Modify:
@@ -689,6 +702,19 @@
         }
         onClientReady(message) {
             return new ZiwoEvent(ZiwoEventType.Connected, {});
+        }
+        onMedia(message, call) {
+            call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: message.params.sdp }))
+                .then(() => {
+                if (this.debug) {
+                    console.log('Remote media connected');
+                }
+            }).catch(() => {
+                if (this.debug) {
+                    console.warn('fail to attach remote media');
+                }
+            });
+            return new ZiwoEvent(ZiwoEventType.Error, {});
         }
         onInvite(message) {
             console.log('Invite', message);
@@ -701,6 +727,17 @@
         onBye(message) {
             console.log('Bye', message);
             return new ZiwoEvent(ZiwoEventType.Error, {});
+        }
+        /**
+         * ensulteCallIsExisting makes sure the call is not undefined.
+         * If it is undefined, throw a meaningful error message
+         */
+        ensureCallIsExisting(call) {
+            if (!call) {
+                ZiwoEvent.error(ZiwoErrorCode.MissingCall, 'Received event from unknown callID');
+                return false;
+            }
+            return true;
         }
     }
 
@@ -717,7 +754,7 @@
      *
      */
     class Verto {
-        constructor(debug, tags) {
+        constructor(calls, debug, tags) {
             /**
              * Callback functions - register using `addListener`
              */
@@ -727,6 +764,7 @@
             this.tags = tags;
             this.orchestrator = new VertoOrchestrator(this.debug);
             this.params = new VertoParams();
+            this.calls = calls;
         }
         /**
          * addListener allows to listen for incoming Socket Event
@@ -853,7 +891,8 @@
                             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
                             throw new Error('Message is not a valid format');
                         }
-                        const ev = this.orchestrator.handleMessage(data);
+                        const relatedCall = data.params && data.params.callID ? this.calls.find(c => c.callId === data.params.callID) : undefined;
+                        const ev = this.orchestrator.handleMessage(data, relatedCall);
                         if (ev) {
                             ev.emit();
                         }
@@ -861,7 +900,7 @@
                     catch (err) {
                         ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
                         if (this.debug) {
-                            console.warn('Invalid message. See logs for futher information');
+                            console.warn('Invalid incoming message', err);
                         }
                     }
                 };
@@ -897,7 +936,7 @@
             this.options = options;
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
-            this.verto = new Verto(this.debug, options.tags);
+            this.verto = new Verto(this.calls, this.debug, options.tags);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });
@@ -921,9 +960,12 @@
             return ZiwoEvent.subscribe(func);
         }
         startCall(phoneNumber) {
-            return this.verto.startCall(phoneNumber);
+            const call = this.verto.startCall(phoneNumber);
+            this.calls.push(call);
+            return call;
         }
     }
+    //# sourceMappingURL=main.js.map
 
     exports.ZiwoClient = ZiwoClient;
 

@@ -29,7 +29,8 @@ export interface ZiwoEventDetails {
 }
 export declare enum ZiwoErrorCode {
     ProtocolError = 1001,
-    MediaError = 1002
+    MediaError = 1002,
+    MissingCall = 1003
 }
 export declare enum ZiwoEventType {
     Error = "error",

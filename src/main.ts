@@ -49,7 +49,7 @@ export class ZiwoClient {
     this.options = options;
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
-    this.verto = new Verto(this.debug, options.tags);
+    this.verto = new Verto(this.calls, this.debug, options.tags);
 
     if (options.autoConnect) {
       this.connect().then(r => {
@@ -77,7 +77,9 @@ export class ZiwoClient {
   }
 
   public startCall(phoneNumber:string):Call|undefined {
-    return this.verto.startCall(phoneNumber);
+    const call = this.verto.startCall(phoneNumber);
+    this.calls.push(call);
+    return call;
   }
 
 }

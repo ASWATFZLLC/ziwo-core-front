@@ -48,7 +48,11 @@ export declare class Verto {
     private params;
     private readonly debug;
     private readonly ICE_SERVER;
-    constructor(debug: boolean, tags: MediaInfo);
+    /**
+     * Reference to list of running calls
+     */
+    private readonly calls;
+    constructor(calls: Call[], debug: boolean, tags: MediaInfo);
     /**
      * addListener allows to listen for incoming Socket Event
      */
