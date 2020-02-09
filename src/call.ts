@@ -1,5 +1,6 @@
 import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
+import {ZiwoEventType} from './events';
 
 export enum CallStatus {
   Stopped = 'stopped',
@@ -13,6 +14,12 @@ export interface CallComponentsStatus {
   camera:CallStatus;
 }
 
+export interface CallState {
+  state:ZiwoEventType;
+  date:Date;
+  dateUNIX:number;
+}
+
 /**
  * Call holds a call information and provide helpers
  */
@@ -23,6 +30,7 @@ export class Call {
   public readonly channel:MediaChannel;
   public readonly jsonRpcClient:Verto;
   public readonly phoneNumber:string;
+  public readonly states:CallState[] = [];
   private status:CallComponentsStatus = {
     call: CallStatus.Running,
     microphone: CallStatus.Running,
@@ -68,6 +76,15 @@ export class Call {
   public unmute():void {
     this.toggleSelfStream(false);
     this.status.microphone = CallStatus.Running;
+  }
+
+  public pushState(type:ZiwoEventType):void {
+    const d = new Date();
+    this.states.push({
+      state: type,
+      date: d,
+      dateUNIX: d.getTime() / 1000
+    })
   }
 
   private toggleSelfStream(enabled:boolean):void {

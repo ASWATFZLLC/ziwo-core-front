@@ -17,20 +17,10 @@ export interface ErrorData {
   data?:any;
 }
 
-export interface ZiwoEventHistory {
-  state:ZiwoEventDetails;
-  date:Date;
-  dateUNIX:string;
-}
-
 export interface ZiwoEventDetails {
   type:ZiwoEventType;
-  direction:'outbound'|'inbound';
-  callID:string;
-  primaryCallID:string;
-  customerNumber:string;
-  stateFlow:ZiwoEventHistory[];
-  currentCall:Call;
+  direction:'self'|'remote';
+  call:Call;
 }
 
 export enum ZiwoErrorCode {

@@ -6,8 +6,16 @@ export declare class VertoOrchestrator {
     constructor(debug: boolean);
     handleMessage(message: VertoMessage<any, any>, call: Call | undefined): ZiwoEvent | undefined;
     private onClientReady;
+    /**
+     * OnMedia requires to bind incoming Stream to our call's RtcPeerConnection
+     * It should be transparent to users. No need to broadcast the event
+     */
     private onMedia;
     private onInvite;
+    /**
+     * Call has been answered by remote. Broadcast the event
+     */
+    private onAnswer;
     private onModify;
     private onBye;
     /**
@@ -15,4 +23,5 @@ export declare class VertoOrchestrator {
      * If it is undefined, throw a meaningful error message
      */
     private ensureCallIsExisting;
+    private pushState;
 }

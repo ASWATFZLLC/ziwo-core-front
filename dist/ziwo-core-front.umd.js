@@ -527,6 +527,7 @@
      */
     class Call {
         constructor(callId, jsonRpcClient, rtcPeerConnection, channel, phoneNumber) {
+            this.states = [];
             this.status = {
                 call: CallStatus.Running,
                 microphone: CallStatus.Running,
@@ -564,6 +565,14 @@
             this.toggleSelfStream(false);
             this.status.microphone = CallStatus.Running;
         }
+        pushState(type) {
+            const d = new Date();
+            this.states.push({
+                state: type,
+                date: d,
+                dateUNIX: d.getTime() / 1000
+            });
+        }
         toggleSelfStream(enabled) {
             this.channel.stream.getAudioTracks().forEach((tr) => {
                 tr.enabled = enabled;
@@ -578,6 +587,7 @@
         VertoMethod["ClientReady"] = "verto.clientReady";
         VertoMethod["Media"] = "verto.media";
         VertoMethod["Invite"] = "verto.invite";
+        VertoMethod["Answer"] = "verto.answer";
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Bye"] = "verto.bye";
     })(VertoMethod || (VertoMethod = {}));
@@ -688,12 +698,15 @@
                 case VertoMethod.ClientReady:
                     return this.onClientReady(message);
                 case VertoMethod.Media:
-                    if (!this.ensureCallIsExisting(call)) {
-                        return undefined;
-                    }
-                    return this.onMedia(message, call);
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onMedia(message, call);
                 case VertoMethod.Invite:
+                    this.pushState(call, ZiwoEventType.Trying);
                     return this.onInvite(message);
+                case VertoMethod.Answer:
+                    this.pushState(call, ZiwoEventType.Answering);
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onAnswer(message, call);
                 case VertoMethod.Modify:
                     return this.onModify(message);
                 case VertoMethod.Bye:
@@ -703,6 +716,10 @@
         onClientReady(message) {
             return new ZiwoEvent(ZiwoEventType.Connected, {});
         }
+        /**
+         * OnMedia requires to bind incoming Stream to our call's RtcPeerConnection
+         * It should be transparent to users. No need to broadcast the event
+         */
         onMedia(message, call) {
             call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: message.params.sdp }))
                 .then(() => {
@@ -719,6 +736,16 @@
         onInvite(message) {
             console.log('Invite', message);
             return new ZiwoEvent(ZiwoEventType.Error, {});
+        }
+        /**
+         * Call has been answered by remote. Broadcast the event
+         */
+        onAnswer(message, call) {
+            return new ZiwoEvent(ZiwoEventType.Answering, {
+                type: ZiwoEventType.Answering,
+                direction: 'remote',
+                call: call,
+            });
         }
         onModify(message) {
             console.log('Modify', message);
@@ -738,6 +765,11 @@
                 return false;
             }
             return true;
+        }
+        pushState(call, state) {
+            if (call) {
+                call.pushState(state);
+            }
         }
     }
 

@@ -11,7 +11,6 @@ export class VertoOrchestrator {
   }
 
   public handleMessage(message:VertoMessage<any, any>, call:Call|undefined):ZiwoEvent|undefined {
-
     if (!message.method) {
       // Message with no methods are simple nofitications. We ignore them for now
       if (this.debug) {
@@ -25,15 +24,23 @@ export class VertoOrchestrator {
     switch (message.method) {
       case VertoMethod.ClientReady:
         return this.onClientReady(message);
+
       case VertoMethod.Media:
-        if (!this.ensureCallIsExisting(call)) {
-          return undefined;
-        }
-        return this.onMedia(message, call as Call);
+        return !this.ensureCallIsExisting(call) ? undefined
+          : this.onMedia(message, call as Call);
+
       case VertoMethod.Invite:
+        this.pushState(call, ZiwoEventType.Trying);
         return this.onInvite(message);
+
+      case VertoMethod.Answer:
+        this.pushState(call, ZiwoEventType.Answering);
+        return !this.ensureCallIsExisting(call) ? undefined
+          : this.onAnswer(message, call as Call);
+
       case VertoMethod.Modify:
         return this.onModify(message);
+
       case VertoMethod.Bye:
         return this.onBye(message);
     }
@@ -43,6 +50,10 @@ export class VertoOrchestrator {
     return new ZiwoEvent(ZiwoEventType.Connected, {} as ZiwoEventDetails);
   }
 
+  /**
+   * OnMedia requires to bind incoming Stream to our call's RtcPeerConnection
+   * It should be transparent to users. No need to broadcast the event
+   */
   private onMedia(message:VertoMessage<any, any>, call:Call):ZiwoEvent {
     call.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: message.params.sdp}))
       .then(() => {
@@ -60,6 +71,17 @@ export class VertoOrchestrator {
   private onInvite(message:VertoMessage<any, any>):ZiwoEvent {
     console.log('Invite', message);
     return new ZiwoEvent(ZiwoEventType.Error, {} as ZiwoEventDetails);
+  }
+
+  /**
+   * Call has been answered by remote. Broadcast the event
+   */
+  private onAnswer(message:VertoMessage<any, any>, call:Call):ZiwoEvent {
+    return new ZiwoEvent(ZiwoEventType.Answering, {
+      type: ZiwoEventType.Answering,
+      direction: 'remote',
+      call: call,
+    });
   }
 
   private onModify(message:VertoMessage<any, any>):ZiwoEvent {
@@ -82,6 +104,12 @@ export class VertoOrchestrator {
       return false;
     }
     return true;
+  }
+
+  private pushState(call:Call|undefined, state:ZiwoEventType):void {
+    if (call) {
+      call.pushState(state);
+    }
   }
 
 }

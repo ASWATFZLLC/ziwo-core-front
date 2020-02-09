@@ -3,6 +3,7 @@ export enum VertoMethod {
   ClientReady = 'verto.clientReady',
   Media = 'verto.media',
   Invite = 'verto.invite',
+  Answer = 'verto.answer',
   Modify = 'verto.modify',
   Bye = 'verto.bye',
 }
@@ -14,12 +15,12 @@ export interface VertoRequest<T> {
   params:T;
 }
 
-export interface VertoMessage<T, P> {
+export interface VertoMessage<P, R> {
   jsonrpc:'2.0';
   method:VertoMethod;
   id:number;
   params:P;
-  result:T;
+  result?:R;
 }
 
 export interface VertoLogin {}
