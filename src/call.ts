@@ -1,6 +1,6 @@
 import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
-import {ZiwoEventType} from './events';
+import {ZiwoEventType, ZiwoEvent} from './events';
 
 export enum CallStatus {
   Stopped = 'stopped',
@@ -71,20 +71,30 @@ export class Call {
   public mute():void {
     this.toggleSelfStream(true);
     this.status.microphone = CallStatus.OnHold;
+    // Because mute is not send/received over the socket, we throw the event manually from
+    this.pushState(ZiwoEventType.Mute, true);
   }
 
   public unmute():void {
     this.toggleSelfStream(false);
     this.status.microphone = CallStatus.Running;
+    this.pushState(ZiwoEventType.Unmute, true);
+    // Because unmute is not send/received over the socket, we throw the event manually from
   }
 
-  public pushState(type:ZiwoEventType):void {
+  public pushState(type:ZiwoEventType, broadcast = false):void {
     const d = new Date();
     this.states.push({
       state: type,
       date: d,
       dateUNIX: d.getTime() / 1000
-    })
+    });
+    if (broadcast) {
+      ZiwoEvent.emit(type, {
+        type,
+        call: this,
+      });
+    }
   }
 
   private toggleSelfStream(enabled:boolean):void {

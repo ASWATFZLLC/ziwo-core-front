@@ -35,6 +35,6 @@ export declare class Call {
     unhold(): void;
     mute(): void;
     unmute(): void;
-    pushState(type: ZiwoEventType): void;
+    pushState(type: ZiwoEventType, broadcast?: boolean): void;
     private toggleSelfStream;
 }

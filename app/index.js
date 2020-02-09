@@ -21,6 +21,9 @@ function start() {
   );
 
   ziwoClient.addListener((type, data) => {
+    if (data.call) {
+        delete data.call;
+    }
     console.log(`[Ziwo Event] ${type}`, data);
     this.pushMessage( `[${type}] ${ JSON.stringify(data) || ''}`)
     switch (type) {
@@ -33,7 +36,6 @@ function start() {
 
 function startCall() {
     call = ziwoClient.startCall(document.getElementById('phonenumber').value);
-    console.log(call);
 }
 
 function startVideoCall() {

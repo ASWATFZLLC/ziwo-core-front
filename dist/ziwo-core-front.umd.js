@@ -432,12 +432,13 @@
         ZiwoEventType["Disconnected"] = "disconnected";
         ZiwoEventType["Requesting"] = "requesting";
         ZiwoEventType["Trying"] = "tring";
-        ZiwoEventType["Early"] = "early";
         ZiwoEventType["Ringing"] = "ringing";
         ZiwoEventType["Answering"] = "answering";
         ZiwoEventType["Active"] = "active";
         ZiwoEventType["Held"] = "held";
         ZiwoEventType["Hangup"] = "hangup";
+        ZiwoEventType["Mute"] = "mute";
+        ZiwoEventType["Unmute"] = "unmute";
         ZiwoEventType["Destroy"] = "destroy";
         ZiwoEventType["Recovering"] = "recovering";
     })(ZiwoEventType || (ZiwoEventType = {}));
@@ -560,18 +561,28 @@
         mute() {
             this.toggleSelfStream(true);
             this.status.microphone = CallStatus.OnHold;
+            // Because mute is not send/received over the socket, we throw the event manually from
+            this.pushState(ZiwoEventType.Mute, true);
         }
         unmute() {
             this.toggleSelfStream(false);
             this.status.microphone = CallStatus.Running;
+            this.pushState(ZiwoEventType.Unmute, true);
+            // Because unmute is not send/received over the socket, we throw the event manually from
         }
-        pushState(type) {
+        pushState(type, broadcast = false) {
             const d = new Date();
             this.states.push({
                 state: type,
                 date: d,
                 dateUNIX: d.getTime() / 1000
             });
+            if (broadcast) {
+                ZiwoEvent.emit(type, {
+                    type,
+                    call: this,
+                });
+            }
         }
         toggleSelfStream(enabled) {
             this.channel.stream.getAudioTracks().forEach((tr) => {
@@ -589,8 +600,14 @@
         VertoMethod["Invite"] = "verto.invite";
         VertoMethod["Answer"] = "verto.answer";
         VertoMethod["Modify"] = "verto.modify";
+        VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
     })(VertoMethod || (VertoMethod = {}));
+    var VertoAction;
+    (function (VertoAction) {
+        VertoAction["Hold"] = "hold";
+        VertoAction["Unhold"] = "unhold";
+    })(VertoAction || (VertoAction = {}));
     class VertoParams {
         constructor() {
             this.id = 0;
@@ -679,18 +696,26 @@
     }
     //# sourceMappingURL=verto.params.js.map
 
+    /**
+     * Verto Orchestrator can be seen as the core component of our Verto implemented
+     * Its role is to read all incoming message and act appropriately:
+     *  - broadcast important messages as ZiwoEvent (incoming call, call set on hold, call answered, ...)
+     *  - run appropriate commands if required by verto protocol (bind stream on verto.mediaRequest, clear call if verto.callDestroyed, ...)
+     */
     class VertoOrchestrator {
         constructor(debug) {
+            this.CALL_ENDED_NOTIFICATION = 'CALL ENDED';
             this.debug = debug;
         }
+        /**
+         * We can identify 2 types of inputs:
+         *  - message (or request): contains a `method` and usually requires further actions
+         *  - notication: does not contain a `method` and does not require further actions. Provide call's update (hold, unhold, ...)
+         */
+        onInput(message, call) {
+            return message.method ? this.handleMessage(message, call) : this.handleNotification(message, call);
+        }
         handleMessage(message, call) {
-            if (!message.method) {
-                // Message with no methods are simple nofitications. We ignore them for now
-                if (this.debug) {
-                    console.log('Incoming notification', message);
-                }
-                return;
-            }
             if (this.debug) {
                 console.log('Incoming message ', message);
             }
@@ -707,15 +732,47 @@
                     this.pushState(call, ZiwoEventType.Answering);
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onAnswer(message, call);
-                case VertoMethod.Modify:
-                    return this.onModify(message);
-                case VertoMethod.Bye:
-                    return this.onBye(message);
+                case VertoMethod.Display:
+                    // Not sure what is the purpose of this
+                    return undefined;
             }
+            return undefined;
+        }
+        handleNotification(message, call) {
+            if (this.debug) {
+                console.log('Incoming notification ', message);
+            }
+            if (!message.result || !message.result.action) {
+                // Call ended does not have action but message 'CALL ENDED' only
+                if (message.result.message === this.CALL_ENDED_NOTIFICATION && this.ensureCallIsExisting(call)) {
+                    return this.handleCallEnded(message, call);
+                }
+                return undefined;
+            }
+            switch (message.result.action) {
+                case VertoAction.Hold:
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onHold(call);
+                case VertoAction.Unhold:
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onUnhold(call);
+            }
+            return undefined;
+        }
+        handleCallEnded(message, call) {
+            call.pushState(ZiwoEventType.Hangup);
+            return new ZiwoEvent(ZiwoEventType.Hangup, {
+                type: ZiwoEventType.Hangup,
+                call: call,
+                reason: message.result.cause,
+            });
         }
         onClientReady(message) {
             return new ZiwoEvent(ZiwoEventType.Connected, {});
         }
+        /***
+         *** MESSAGE SECTION
+         ***/
         /**
          * OnMedia requires to bind incoming Stream to our call's RtcPeerConnection
          * It should be transparent to users. No need to broadcast the event
@@ -731,11 +788,12 @@
                     console.warn('fail to attach remote media');
                 }
             });
-            return new ZiwoEvent(ZiwoEventType.Error, {});
+            return undefined;
         }
         onInvite(message) {
-            console.log('Invite', message);
-            return new ZiwoEvent(ZiwoEventType.Error, {});
+            return new ZiwoEvent(ZiwoEventType.Ringing, {
+                type: ZiwoEventType.Ringing,
+            });
         }
         /**
          * Call has been answered by remote. Broadcast the event
@@ -743,20 +801,31 @@
         onAnswer(message, call) {
             return new ZiwoEvent(ZiwoEventType.Answering, {
                 type: ZiwoEventType.Answering,
-                direction: 'remote',
                 call: call,
             });
         }
-        onModify(message) {
-            console.log('Modify', message);
-            return new ZiwoEvent(ZiwoEventType.Error, {});
+        /***
+         *** NOTIFICATION SECTION
+         ***/
+        onHold(call) {
+            call.pushState(ZiwoEventType.Held);
+            return new ZiwoEvent(ZiwoEventType.Held, {
+                type: ZiwoEventType.Held,
+                call: call,
+            });
         }
-        onBye(message) {
-            console.log('Bye', message);
-            return new ZiwoEvent(ZiwoEventType.Error, {});
+        onUnhold(call) {
+            call.pushState(ZiwoEventType.Active);
+            return new ZiwoEvent(ZiwoEventType.Active, {
+                type: ZiwoEventType.Active,
+                call: call,
+            });
         }
+        /***
+         *** OTHERS
+         ***/
         /**
-         * ensulteCallIsExisting makes sure the call is not undefined.
+         * ensureCallIsExisting makes sure the call is not undefined.
          * If it is undefined, throw a meaningful error message
          */
         ensureCallIsExisting(call) {
@@ -914,6 +983,9 @@
                     }
                 };
                 this.socket.onopen = () => {
+                    if (this.debug) {
+                        console.log('Socket opened');
+                    }
                     onRes();
                 };
                 this.socket.onmessage = (msg) => {
@@ -923,8 +995,10 @@
                             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
                             throw new Error('Message is not a valid format');
                         }
-                        const relatedCall = data.params && data.params.callID ? this.calls.find(c => c.callId === data.params.callID) : undefined;
-                        const ev = this.orchestrator.handleMessage(data, relatedCall);
+                        const callId = data.params && data.params.callID ? data.params.callID :
+                            (data.result && data.result.callID ? data.result.callID : undefined);
+                        const relatedCall = callId ? this.calls.find(c => c.callId === callId) : undefined;
+                        const ev = this.orchestrator.onInput(data, relatedCall);
                         if (ev) {
                             ev.emit();
                         }

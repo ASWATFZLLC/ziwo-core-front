@@ -5,22 +5,27 @@ export enum VertoMethod {
   Invite = 'verto.invite',
   Answer = 'verto.answer',
   Modify = 'verto.modify',
+  Display = 'verto.display',
   Bye = 'verto.bye',
 }
 
-export interface VertoRequest<T> {
+export enum VertoAction {
+  Hold = 'hold',
+  Unhold = 'unhold',
+}
+
+export interface VertoMessage<T> {
   jsonrpc:'2.0';
   method:VertoMethod;
   id:number;
   params:T;
 }
 
-export interface VertoMessage<P, R> {
+export interface VertoNotification<T> {
   jsonrpc:'2.0';
   method:VertoMethod;
   id:number;
-  params:P;
-  result?:R;
+  result:T;
 }
 
 export interface VertoLogin {}
@@ -29,7 +34,7 @@ export class VertoParams {
 
   private id = 0;
 
-  public wrap(method:string, params:any = {}, id:number = -1):VertoRequest<any> {
+  public wrap(method:string, params:any = {}, id:number = -1):VertoMessage<any> {
     this.id += 1;
     return {
       jsonrpc: '2.0',
@@ -39,7 +44,7 @@ export class VertoParams {
     };
   }
 
-  public login(sessid:string, login:string, passwd:string):VertoRequest<any> {
+  public login(sessid:string, login:string, passwd:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Login, {
       sessid,
       login,
@@ -47,7 +52,7 @@ export class VertoParams {
     });
   }
 
-  public startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoRequest<any> {
+  public startCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Invite, {
         sdp: sdp,
         sessid: sessionId,
@@ -55,7 +60,7 @@ export class VertoParams {
     });
   }
 
-  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoRequest<any> {
+  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Bye, {
       cause: 'NORMAL_CLEARING',
       causeCode: 16,
@@ -64,7 +69,7 @@ export class VertoParams {
     });
   }
 
-  public holdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoRequest<any> {
+  public holdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Modify, {
       action: 'hold',
       dialogParams: this.dialogParams(callId, login, phoneNumber),
@@ -72,7 +77,7 @@ export class VertoParams {
     });
   }
 
-  public unholdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoRequest<any> {
+  public unholdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Modify, {
       action: 'unhold',
       dialogParams: this.dialogParams(callId, login, phoneNumber),

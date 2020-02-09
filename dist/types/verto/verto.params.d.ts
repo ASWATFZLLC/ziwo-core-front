@@ -5,31 +5,35 @@ export declare enum VertoMethod {
     Invite = "verto.invite",
     Answer = "verto.answer",
     Modify = "verto.modify",
+    Display = "verto.display",
     Bye = "verto.bye"
 }
-export interface VertoRequest<T> {
+export declare enum VertoAction {
+    Hold = "hold",
+    Unhold = "unhold"
+}
+export interface VertoMessage<T> {
     jsonrpc: '2.0';
     method: VertoMethod;
     id: number;
     params: T;
 }
-export interface VertoMessage<P, R> {
+export interface VertoNotification<T> {
     jsonrpc: '2.0';
     method: VertoMethod;
     id: number;
-    params: P;
-    result?: R;
+    result: T;
 }
 export interface VertoLogin {
 }
 export declare class VertoParams {
     private id;
-    wrap(method: string, params?: any, id?: number): VertoRequest<any>;
-    login(sessid: string, login: string, passwd: string): VertoRequest<any>;
-    startCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoRequest<any>;
-    hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoRequest<any>;
-    holdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoRequest<any>;
-    unholdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoRequest<any>;
+    wrap(method: string, params?: any, id?: number): VertoMessage<any>;
+    login(sessid: string, login: string, passwd: string): VertoMessage<any>;
+    startCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoMessage<any>;
+    hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
+    holdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
+    unholdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     getUuid(): string;
     private dialogParams;
 }

@@ -19,8 +19,8 @@ export interface ErrorData {
 
 export interface ZiwoEventDetails {
   type:ZiwoEventType;
-  direction:'self'|'remote';
   call:Call;
+  [key:string]:any; // allow additional information
 }
 
 export enum ZiwoErrorCode {
@@ -35,12 +35,13 @@ export enum ZiwoEventType {
   Disconnected = 'disconnected',
   Requesting = 'requesting',
   Trying = 'tring',
-  Early = 'early',
   Ringing = 'ringing',
   Answering = 'answering',
   Active = 'active',
   Held = 'held',
   Hangup = 'hangup',
+  Mute = 'mute',
+  Unmute = 'unmute',
   Destroy = 'destroy',
   Recovering = 'recovering',
 }
@@ -51,7 +52,6 @@ export class ZiwoEvent {
 
   private type:ZiwoEventType;
   private data:ZiwoEventDetails;
-
 
   constructor(type:ZiwoEventType, data:ZiwoEventDetails) {
     this.type = type;

@@ -15,8 +15,8 @@ export interface ErrorData {
 }
 export interface ZiwoEventDetails {
     type: ZiwoEventType;
-    direction: 'self' | 'remote';
     call: Call;
+    [key: string]: any;
 }
 export declare enum ZiwoErrorCode {
     ProtocolError = 1001,
@@ -29,12 +29,13 @@ export declare enum ZiwoEventType {
     Disconnected = "disconnected",
     Requesting = "requesting",
     Trying = "tring",
-    Early = "early",
     Ringing = "ringing",
     Answering = "answering",
     Active = "active",
     Held = "held",
     Hangup = "hangup",
+    Mute = "mute",
+    Unmute = "unmute",
     Destroy = "destroy",
     Recovering = "recovering"
 }

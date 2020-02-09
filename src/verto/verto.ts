@@ -3,8 +3,8 @@ import {MediaChannel, MediaInfo} from '../media-channel';
 import {Call} from '../call';
 import {VertoParams} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
-import { ZiwoEvent, ZiwoErrorCode } from '../events';
-import { MESSAGES } from '../messages';
+import {ZiwoEvent, ZiwoErrorCode} from '../events';
+import {MESSAGES} from '../messages';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -219,6 +219,9 @@ export class Verto {
         }
       };
       this.socket.onopen = () => {
+        if (this.debug) {
+          console.log('Socket opened');
+        }
         onRes();
       };
       this.socket.onmessage = (msg) => {
@@ -228,8 +231,10 @@ export class Verto {
             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
             throw new Error('Message is not a valid format');
           }
-          const relatedCall = data.params && data.params.callID ? this.calls.find(c => c.callId === data.params.callID) : undefined;
-          const ev = this.orchestrator.handleMessage(data, relatedCall);
+          const callId = data.params && data.params.callID ? data.params.callID :
+            (data.result && data.result.callID ? data.result.callID : undefined);
+          const relatedCall = callId ? this.calls.find(c => c.callId === callId) : undefined;
+          const ev = this.orchestrator.onInput(data, relatedCall);
           if (ev) {
             ev.emit();
           }
