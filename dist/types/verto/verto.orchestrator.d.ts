@@ -1,5 +1,6 @@
 import { ZiwoEvent } from '../events';
 import { Call } from '../call';
+import { Verto } from './verto';
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
  * Its role is to read all incoming message and act appropriately:
@@ -8,8 +9,9 @@ import { Call } from '../call';
  */
 export declare class VertoOrchestrator {
     private readonly debug;
+    private readonly verto;
     private readonly CALL_ENDED_NOTIFICATION;
-    constructor(debug: boolean);
+    constructor(verto: Verto, debug: boolean);
     /**
      * We can identify 2 types of inputs:
      *  - message (or request): contains a `method` and usually requires further actions

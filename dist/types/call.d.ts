@@ -23,13 +23,15 @@ export declare class Call {
     readonly callId: string;
     readonly rtcPeerConnection: RTCPeerConnection;
     readonly channel: MediaChannel;
-    readonly jsonRpcClient: Verto;
+    readonly verto: Verto;
     readonly phoneNumber: string;
+    readonly direction: 'outbound' | 'inbound';
     readonly states: CallState[];
     private status;
-    constructor(callId: string, jsonRpcClient: Verto, rtcPeerConnection: RTCPeerConnection, channel: MediaChannel, phoneNumber: string);
+    private readonly outboundDetails?;
+    constructor(callId: string, verto: Verto, phoneNumber: string, login: string, direction: 'outbound' | 'inbound', outboundDetails?: any);
     getCallStatus(): CallComponentsStatus;
-    answer(): void;
+    answer(): Promise<void>;
     hangup(): void;
     hold(): void;
     unhold(): void;

@@ -511,6 +511,87 @@ class MediaChannel {
 }
 //# sourceMappingURL=media-channel.js.map
 
+class RTCPeerConnectionFactory {
+    /**
+     * We initiate the call
+     */
+    static outbound(verto, callId, login, phoneNumber) {
+        const rtcPeerConnection = new RTCPeerConnection();
+        rtcPeerConnection.ontrack = (tr) => {
+            const track = tr.track;
+            if (track.kind !== 'audio') {
+                return;
+            }
+            const stream = new MediaStream();
+            stream.addTrack(track);
+            if (!verto.channel) {
+                return;
+            }
+            verto.channel.remoteStream = stream;
+            verto.tags.peerTag.srcObject = stream;
+        };
+        if (!verto.channel) {
+            return rtcPeerConnection;
+        }
+        // Attach our media stream to the call's PeerConnection
+        verto.channel.stream.getTracks().forEach((track) => {
+            rtcPeerConnection.addTrack(track);
+        });
+        // We wait for candidate to be null to make sure all candidates have been processed
+        rtcPeerConnection.onicecandidate = (candidate) => {
+            var _a;
+            if (!candidate.candidate) {
+                verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+            }
+        };
+        rtcPeerConnection.createOffer().then((offer) => {
+            rtcPeerConnection.setLocalDescription(offer).then(() => { });
+        });
+        return rtcPeerConnection;
+    }
+    /**
+     * We receive the call
+     */
+    static inbound(verto, callId, login, sdp) {
+        const rtcPeerConnection = new RTCPeerConnection();
+        console.log('1');
+        rtcPeerConnection.ontrack = (tr) => {
+            console.log('6');
+            const track = tr.track;
+            if (track.kind !== 'audio') {
+                return;
+            }
+            console.log('7');
+            const stream = new MediaStream();
+            stream.addTrack(track);
+            if (!verto.channel) {
+                return;
+            }
+            console.log('8');
+            verto.channel.remoteStream = stream;
+            verto.tags.peerTag.srcObject = stream;
+        };
+        console.log('2');
+        if (!verto.channel) {
+            return rtcPeerConnection;
+        }
+        console.log('3');
+        // Attach our media stream to the call's PeerConnection
+        verto.channel.stream.getTracks().forEach((track) => {
+            console.log('9');
+            rtcPeerConnection.addTrack(track);
+        });
+        console.log('4');
+        // rtcPeerConnection.createOffer().then((offer:any) => {
+        // console.log('10');
+        // rtcPeerConnection.setLocalDescription(offer).then(() => {});
+        // });
+        rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: sdp }));
+        console.log('5');
+        return rtcPeerConnection;
+    }
+}
+
 var CallStatus;
 (function (CallStatus) {
     CallStatus["Stopped"] = "stopped";
@@ -521,35 +602,48 @@ var CallStatus;
  * Call holds a call information and provide helpers
  */
 class Call {
-    constructor(callId, jsonRpcClient, rtcPeerConnection, channel, phoneNumber) {
+    constructor(callId, verto, phoneNumber, login, direction, outboundDetails) {
         this.states = [];
         this.status = {
             call: CallStatus.Running,
             microphone: CallStatus.Running,
             camera: CallStatus.Stopped,
         };
-        this.jsonRpcClient = jsonRpcClient;
+        this.verto = verto;
         this.callId = callId;
-        this.rtcPeerConnection = rtcPeerConnection;
-        this.channel = channel;
+        this.verto = verto;
+        this.rtcPeerConnection = direction === 'outbound' ?
+            RTCPeerConnectionFactory.outbound(verto, callId, login, phoneNumber) :
+            RTCPeerConnectionFactory.inbound(verto, callId, login, outboundDetails.sdp);
+        this.channel = verto.channel;
         this.phoneNumber = phoneNumber;
+        this.direction = direction;
+        this.outboundDetails = outboundDetails;
     }
     getCallStatus() {
         return this.status;
     }
     answer() {
-        console.warn('Answer not implemented');
+        return new Promise((onRes, onErr) => {
+            if (!this.outboundDetails) {
+                return onErr('Invalid SDP');
+            }
+            this.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: this.outboundDetails.sdp }))
+                .then(r => {
+                return onRes();
+            }).catch(e => onErr(e));
+        });
     }
     hangup() {
-        this.jsonRpcClient.hangupCall(this.callId, this.phoneNumber);
+        this.verto.hangupCall(this.callId, this.phoneNumber);
         this.status.call = CallStatus.Stopped;
     }
     hold() {
-        this.jsonRpcClient.holdCall(this.callId, this.phoneNumber);
+        this.verto.holdCall(this.callId, this.phoneNumber);
         this.status.call = CallStatus.OnHold;
     }
     unhold() {
-        this.jsonRpcClient.unholdCall(this.callId, this.phoneNumber);
+        this.verto.unholdCall(this.callId, this.phoneNumber);
         this.status.call = CallStatus.Running;
     }
     mute() {
@@ -584,7 +678,6 @@ class Call {
         });
     }
 }
-//# sourceMappingURL=call.js.map
 
 var VertoMethod;
 (function (VertoMethod) {
@@ -651,6 +744,12 @@ class VertoParams {
             sessid: sessionId,
         });
     }
+    answerCall(sessionId, callId, sdp) {
+        return this.wrap(VertoMethod.Invite, {
+            sdp: sdp,
+            sessid: sessionId,
+        });
+    }
     getUuid() {
         /* tslint:disable */
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -697,9 +796,10 @@ class VertoParams {
  *  - run appropriate commands if required by verto protocol (bind stream on verto.mediaRequest, clear call if verto.callDestroyed, ...)
  */
 class VertoOrchestrator {
-    constructor(debug) {
+    constructor(verto, debug) {
         this.CALL_ENDED_NOTIFICATION = 'CALL ENDED';
         this.debug = debug;
+        this.verto = verto;
     }
     /**
      * We can identify 2 types of inputs:
@@ -787,6 +887,7 @@ class VertoOrchestrator {
     onInvite(message) {
         return new ZiwoEvent(ZiwoEventType.Ringing, {
             type: ZiwoEventType.Ringing,
+            call: new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), 'inbound', message.params),
         });
     }
     /**
@@ -835,6 +936,7 @@ class VertoOrchestrator {
         }
     }
 }
+//# sourceMappingURL=verto.orchestrator.js.map
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -857,7 +959,7 @@ class Verto {
         this.ICE_SERVER = 'stun:stun.l.google.com:19302';
         this.debug = debug;
         this.tags = tags;
-        this.orchestrator = new VertoOrchestrator(this.debug);
+        this.orchestrator = new VertoOrchestrator(this, this.debug);
         this.params = new VertoParams();
         this.calls = calls;
     }
@@ -890,36 +992,13 @@ class Verto {
             // TODO : throw Ziwo Error Event
             throw new Error('Error in User Media');
         }
-        // Create Call and its PeerConnection
-        const call = new Call(this.params.getUuid(), this, new RTCPeerConnection({
-            iceServers: [{ urls: this.ICE_SERVER }],
-        }), this.channel, phoneNumber);
-        call.rtcPeerConnection.ontrack = (tr) => {
-            const track = tr.track;
-            if (track.kind !== 'audio') {
-                return;
-            }
-            const stream = new MediaStream();
-            stream.addTrack(track);
-            this.ensureMediaChannelIsValid();
-            this.channel.remoteStream = stream;
-            this.tags.peerTag.srcObject = stream;
-        };
-        // Attach our media stream to the call's PeerConnection
-        this.channel.stream.getTracks().forEach((track) => {
-            call.rtcPeerConnection.addTrack(track);
-        });
-        // We wait for candidate to be null to make sure all candidates have been processed
-        call.rtcPeerConnection.onicecandidate = (candidate) => {
-            var _a;
-            if (!candidate.candidate) {
-                this.send(this.params.startCall(this.sessid, call.callId, this.getLogin(), phoneNumber, (_a = call.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
-            }
-        };
-        call.rtcPeerConnection.createOffer().then((offer) => {
-            call.rtcPeerConnection.setLocalDescription(offer).then(() => { });
-        });
-        return call;
+        return new Call(this.params.getUuid(), this, phoneNumber, this.getLogin(), 'outbound');
+    }
+    /**
+     * Answer a call
+     */
+    answerCall(callId, sdp) {
+        this.send(this.params.answerCall(this.sessid, callId, sdp));
     }
     /**
      * Hang up a specific call
@@ -1006,6 +1085,12 @@ class Verto {
             };
         });
     }
+    getNewRTCPeerConnection() {
+        const rtcPeerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: this.ICE_SERVER }],
+        });
+        return rtcPeerConnection;
+    }
     /**
      * Concat position to return the login used in Json RTC request
      */
@@ -1029,6 +1114,7 @@ class Verto {
             && data.jsonrpc === '2.0';
     }
 }
+//# sourceMappingURL=verto.js.map
 
 class ZiwoClient {
     constructor(options) {

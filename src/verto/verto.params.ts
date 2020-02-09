@@ -85,6 +85,14 @@ export class VertoParams {
     });
   }
 
+  public answerCall(sessionId:string|undefined, callId:string, sdp:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Invite, {
+        sdp: sdp,
+        sessid: sessionId,
+        // dialogParams: this.dialogParams(callId, login, phoneNumber),
+    });
+  }
+
   public getUuid():string {
     /* tslint:disable */
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

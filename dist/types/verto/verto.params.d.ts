@@ -34,6 +34,7 @@ export declare class VertoParams {
     hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     holdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     unholdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
+    answerCall(sessionId: string | undefined, callId: string, sdp: string): VertoMessage<any>;
     getUuid(): string;
     private dialogParams;
 }

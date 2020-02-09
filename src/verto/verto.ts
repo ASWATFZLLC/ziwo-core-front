@@ -21,14 +21,29 @@ import {MESSAGES} from '../messages';
 export class Verto {
 
   /**
-   * Our communication channel
+   * Media video tags
    */
-  private socket?:WebSocket;
+  public tags:MediaInfo;
+
+  /**
+   *
+   */
+  public params:VertoParams;
 
   /**
    * Session ID used with the current socket
    */
-  private sessid?:string;
+  public sessid?:string;
+
+  /**
+   * User Media Channel
+   */
+  public channel?:MediaChannel;
+
+  /**
+   * Our communication channel
+   */
+  private socket?:WebSocket;
 
   /**
    * Information about agent
@@ -41,24 +56,10 @@ export class Verto {
   private listeners:Function[] = [];
 
   /**
-   * User Media Channel
-   */
-  private channel?:MediaChannel;
-
-  /**
-   * Media video tags
-   */
-  private tags:MediaInfo;
-
-  /**
    *
    */
   private orchestrator:VertoOrchestrator;
 
-  /**
-   *
-   */
-  private params:VertoParams;
 
   private readonly debug:boolean;
 
@@ -72,7 +73,7 @@ export class Verto {
   constructor(calls:Call[], debug:boolean, tags:MediaInfo) {
     this.debug = debug;
     this.tags = tags;
-    this.orchestrator = new VertoOrchestrator(this.debug);
+    this.orchestrator = new VertoOrchestrator(this, this.debug);
     this.params = new VertoParams();
     this.calls = calls;
   }
@@ -110,52 +111,20 @@ export class Verto {
       throw new Error('Error in User Media');
     }
 
-    // Create Call and its PeerConnection
-    const call = new Call(
+    return new Call(
       this.params.getUuid(),
       this,
-      new RTCPeerConnection({
-        iceServers: [{urls: this.ICE_SERVER}],
-      }),
-      this.channel,
-      phoneNumber
+      phoneNumber,
+      this.getLogin(),
+      'outbound'
     );
+  }
 
-    call.rtcPeerConnection.ontrack = (tr:any) => {
-      const track = tr.track;
-      if (track.kind !== 'audio') {
-        return;
-      }
-      const stream = new MediaStream();
-      stream.addTrack(track);
-      this.ensureMediaChannelIsValid();
-      (this.channel as MediaChannel).remoteStream = stream;
-      this.tags.peerTag.srcObject = stream;
-    };
-
-    // Attach our media stream to the call's PeerConnection
-    this.channel.stream.getTracks().forEach((track:any) => {
-      call.rtcPeerConnection.addTrack(track);
-    });
-
-    // We wait for candidate to be null to make sure all candidates have been processed
-    call.rtcPeerConnection.onicecandidate = (candidate:any) => {
-      if (!candidate.candidate) {
-        this.send(this.params.startCall(
-          this.sessid,
-          call.callId,
-          this.getLogin(),
-          phoneNumber,
-          call.rtcPeerConnection.localDescription?.sdp as string)
-        );
-      }
-    };
-
-    call.rtcPeerConnection.createOffer().then((offer:any) => {
-      call.rtcPeerConnection.setLocalDescription(offer).then(() => {});
-    });
-
-    return call;
+  /**
+   * Answer a call
+   */
+  public answerCall(callId:string, sdp:string):void {
+    this.send(this.params.answerCall(this.sessid as string, callId, sdp));
   }
 
   /**
@@ -248,10 +217,18 @@ export class Verto {
     });
   }
 
+  public getNewRTCPeerConnection():RTCPeerConnection {
+    const rtcPeerConnection = new RTCPeerConnection({
+      iceServers: [{urls: this.ICE_SERVER}],
+    });
+
+    return rtcPeerConnection;
+  }
+
   /**
    * Concat position to return the login used in Json RTC request
    */
-  protected getLogin():string {
+  public getLogin():string {
     return `${this.position?.name}@${this.position?.hostname}`;
   }
 

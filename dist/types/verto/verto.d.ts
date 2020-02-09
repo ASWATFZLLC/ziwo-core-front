@@ -1,6 +1,7 @@
 import { AgentInfo } from '../authentication.service';
-import { MediaInfo } from '../media-channel';
+import { MediaChannel, MediaInfo } from '../media-channel';
 import { Call } from '../call';
+import { VertoParams } from './verto.params';
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
  *
@@ -15,13 +16,25 @@ import { Call } from '../call';
  */
 export declare class Verto {
     /**
-     * Our communication channel
+     * Media video tags
      */
-    private socket?;
+    tags: MediaInfo;
+    /**
+     *
+     */
+    params: VertoParams;
     /**
      * Session ID used with the current socket
      */
-    private sessid?;
+    sessid?: string;
+    /**
+     * User Media Channel
+     */
+    channel?: MediaChannel;
+    /**
+     * Our communication channel
+     */
+    private socket?;
     /**
      * Information about agent
      */
@@ -31,21 +44,9 @@ export declare class Verto {
      */
     private listeners;
     /**
-     * User Media Channel
-     */
-    private channel?;
-    /**
-     * Media video tags
-     */
-    private tags;
-    /**
      *
      */
     private orchestrator;
-    /**
-     *
-     */
-    private params;
     private readonly debug;
     private readonly ICE_SERVER;
     /**
@@ -62,6 +63,10 @@ export declare class Verto {
      * send a start call request
      */
     startCall(phoneNumber: string): Call;
+    /**
+     * Answer a call
+     */
+    answerCall(callId: string, sdp: string): void;
     /**
      * Hang up a specific call
      */
@@ -87,10 +92,11 @@ export declare class Verto {
      * It initializate the socket and set the handlers
      */
     private openSocket;
+    getNewRTCPeerConnection(): RTCPeerConnection;
     /**
      * Concat position to return the login used in Json RTC request
      */
-    protected getLogin(): string;
+    getLogin(): string;
     protected ensureMediaChannelIsValid(): boolean;
     /**
      * Validate the JSON RPC headersx

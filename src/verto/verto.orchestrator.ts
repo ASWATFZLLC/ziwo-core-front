@@ -1,6 +1,7 @@
 import {VertoMessage, VertoMethod, VertoLogin, VertoNotification, VertoAction} from './verto.params';
 import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../events';
 import {Call} from '../call';
+import { Verto } from './verto';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -11,10 +12,12 @@ import {Call} from '../call';
 export class VertoOrchestrator {
 
   private readonly debug:boolean;
+  private readonly verto:Verto;
   private readonly CALL_ENDED_NOTIFICATION = 'CALL ENDED';
 
-  constructor(debug:boolean) {
+  constructor(verto:Verto, debug:boolean) {
     this.debug = debug;
+    this.verto = verto;
   }
 
   /**
@@ -111,8 +114,15 @@ export class VertoOrchestrator {
   private onInvite(message:VertoMessage<any>):ZiwoEvent {
     return new ZiwoEvent(ZiwoEventType.Ringing, {
       type: ZiwoEventType.Ringing,
-      // call: new Call(),
-    } as ZiwoEventDetails);
+      call: new Call(
+        message.params.callID,
+        this.verto,
+        message.params.verto_h_originalCallerIdNumber,
+        this.verto.getLogin(),
+        'inbound',
+        message.params,
+      ),
+    });
   }
 
   /**

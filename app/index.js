@@ -21,14 +21,13 @@ function start() {
   );
 
   ziwoClient.addListener((type, data) => {
-    if (data.call) {
-        delete data.call;
-    }
-    console.log(`[Ziwo Event] ${type}`, data);
-    this.pushMessage( `[${type}] ${ JSON.stringify(data) || ''}`)
+    console.log(`[Ziwo Event] ${type}`);
+    this.pushMessage( `[${type}]`);
     switch (type) {
       case 'connected':
         this.connected();
+      case 'ringing':
+        call = data.call;
     }
   })
 
@@ -40,6 +39,12 @@ function startCall() {
 
 function startVideoCall() {
     ziwoClient.startVideoCall(document.getElementById('phonenumber').value);
+}
+
+function answer() {
+    if (call) {
+        call.answer();
+    }
 }
 
 function hangup() {
