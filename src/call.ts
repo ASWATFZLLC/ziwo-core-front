@@ -88,17 +88,17 @@ export class Call {
     this.toggleSelfStream(true);
     this.status.microphone = CallStatus.OnHold;
     // Because mute is not send/received over the socket, we throw the event manually from
-    this.pushState(ZiwoEventType.Mute, true);
+    this.pushState(ZiwoEventType.Mute);
   }
 
   public unmute():void {
     this.toggleSelfStream(false);
     this.status.microphone = CallStatus.Running;
-    this.pushState(ZiwoEventType.Unmute, true);
+    this.pushState(ZiwoEventType.Unmute);
     // Because unmute is not send/received over the socket, we throw the event manually from
   }
 
-  public pushState(type:ZiwoEventType, broadcast = false):void {
+  public pushState(type:ZiwoEventType, broadcast = true):void {
     const d = new Date();
     this.states.push({
       state: type,

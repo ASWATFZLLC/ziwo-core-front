@@ -78,6 +78,9 @@ export class ZiwoClient {
 
   public startCall(phoneNumber:string):Call|undefined {
     const call = this.verto.startCall(phoneNumber);
+    if (!call) {
+      return undefined;
+    }
     this.calls.push(call);
     return call;
   }

@@ -418,6 +418,7 @@ var ZiwoErrorCode;
     ZiwoErrorCode[ZiwoErrorCode["ProtocolError"] = 1001] = "ProtocolError";
     ZiwoErrorCode[ZiwoErrorCode["MediaError"] = 1002] = "MediaError";
     ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
+    ZiwoErrorCode[ZiwoErrorCode["CannotCreateCall"] = 1004] = "CannotCreateCall";
 })(ZiwoErrorCode || (ZiwoErrorCode = {}));
 var ZiwoEventType;
 (function (ZiwoEventType) {
@@ -426,6 +427,7 @@ var ZiwoEventType;
     ZiwoEventType["Disconnected"] = "disconnected";
     ZiwoEventType["Requesting"] = "requesting";
     ZiwoEventType["Trying"] = "tring";
+    ZiwoEventType["Early"] = "early";
     ZiwoEventType["Ringing"] = "ringing";
     ZiwoEventType["Answering"] = "answering";
     ZiwoEventType["Active"] = "active";
@@ -591,6 +593,7 @@ class RTCPeerConnectionFactory {
         return rtcPeerConnection;
     }
 }
+//# sourceMappingURL=RTCPeerConnection.factory.js.map
 
 var CallStatus;
 (function (CallStatus) {
@@ -650,15 +653,15 @@ class Call {
         this.toggleSelfStream(true);
         this.status.microphone = CallStatus.OnHold;
         // Because mute is not send/received over the socket, we throw the event manually from
-        this.pushState(ZiwoEventType.Mute, true);
+        this.pushState(ZiwoEventType.Mute);
     }
     unmute() {
         this.toggleSelfStream(false);
         this.status.microphone = CallStatus.Running;
-        this.pushState(ZiwoEventType.Unmute, true);
+        this.pushState(ZiwoEventType.Unmute);
         // Because unmute is not send/received over the socket, we throw the event manually from
     }
-    pushState(type, broadcast = false) {
+    pushState(type, broadcast = true) {
         const d = new Date();
         this.states.push({
             state: type,
@@ -678,6 +681,7 @@ class Call {
         });
     }
 }
+//# sourceMappingURL=call.js.map
 
 var VertoMethod;
 (function (VertoMethod) {
@@ -695,6 +699,11 @@ var VertoAction;
     VertoAction["Hold"] = "hold";
     VertoAction["Unhold"] = "unhold";
 })(VertoAction || (VertoAction = {}));
+var VertoNotificationMessage;
+(function (VertoNotificationMessage) {
+    VertoNotificationMessage["CallCreated"] = "CALL CREATED";
+    VertoNotificationMessage["CallEnded"] = "CALL ENDED";
+})(VertoNotificationMessage || (VertoNotificationMessage = {}));
 class VertoParams {
     constructor() {
         this.id = 0;
@@ -797,7 +806,6 @@ class VertoParams {
  */
 class VertoOrchestrator {
     constructor(verto, debug) {
-        this.CALL_ENDED_NOTIFICATION = 'CALL ENDED';
         this.debug = debug;
         this.verto = verto;
     }
@@ -836,33 +844,36 @@ class VertoOrchestrator {
         if (this.debug) {
             console.log('Incoming notification ', message);
         }
-        if (!message.result || !message.result.action) {
-            // Call ended does not have action but message 'CALL ENDED' only
-            if (message.result.message === this.CALL_ENDED_NOTIFICATION && this.ensureCallIsExisting(call)) {
-                return this.handleCallEnded(message, call);
+        if (message.result && message.result.message) {
+            switch (message.result.message) {
+                case VertoNotificationMessage.CallCreated:
+                    if (this.ensureCallIsExisting(call)) {
+                        call.pushState(ZiwoEventType.Early);
+                    }
+                    break;
+                case VertoNotificationMessage.CallEnded:
+                    if (this.ensureCallIsExisting(call)) {
+                        call.pushState(ZiwoEventType.Hangup);
+                    }
             }
-            return undefined;
         }
-        switch (message.result.action) {
-            case VertoAction.Hold:
-                return !this.ensureCallIsExisting(call) ? undefined
-                    : this.onHold(call);
-            case VertoAction.Unhold:
-                return !this.ensureCallIsExisting(call) ? undefined
-                    : this.onUnhold(call);
+        if (message.result && message.result.action) {
+            switch (message.result.action) {
+                case VertoAction.Hold:
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onHold(call);
+                case VertoAction.Unhold:
+                    return !this.ensureCallIsExisting(call) ? undefined
+                        : this.onUnhold(call);
+            }
         }
         return undefined;
     }
     handleCallEnded(message, call) {
         call.pushState(ZiwoEventType.Hangup);
-        return new ZiwoEvent(ZiwoEventType.Hangup, {
-            type: ZiwoEventType.Hangup,
-            call: call,
-            reason: message.result.cause,
-        });
     }
     onClientReady(message) {
-        return new ZiwoEvent(ZiwoEventType.Connected, {});
+        ZiwoEvent.emit(ZiwoEventType.Connected, {});
     }
     /***
      *** MESSAGE SECTION
@@ -882,39 +893,25 @@ class VertoOrchestrator {
                 console.warn('fail to attach remote media');
             }
         });
-        return undefined;
     }
     onInvite(message) {
-        return new ZiwoEvent(ZiwoEventType.Ringing, {
-            type: ZiwoEventType.Ringing,
-            call: new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), 'inbound', message.params),
-        });
+        const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), 'inbound', message.params);
+        call.pushState(ZiwoEventType.Ringing);
     }
     /**
      * Call has been answered by remote. Broadcast the event
      */
     onAnswer(message, call) {
-        return new ZiwoEvent(ZiwoEventType.Answering, {
-            type: ZiwoEventType.Answering,
-            call: call,
-        });
+        call.pushState(ZiwoEventType.Answering);
     }
     /***
      *** NOTIFICATION SECTION
      ***/
     onHold(call) {
         call.pushState(ZiwoEventType.Held);
-        return new ZiwoEvent(ZiwoEventType.Held, {
-            type: ZiwoEventType.Held,
-            call: call,
-        });
     }
     onUnhold(call) {
         call.pushState(ZiwoEventType.Active);
-        return new ZiwoEvent(ZiwoEventType.Active, {
-            type: ZiwoEventType.Active,
-            call: call,
-        });
     }
     /***
      *** OTHERS
@@ -936,7 +933,6 @@ class VertoOrchestrator {
         }
     }
 }
-//# sourceMappingURL=verto.orchestrator.js.map
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -992,7 +988,16 @@ class Verto {
             // TODO : throw Ziwo Error Event
             throw new Error('Error in User Media');
         }
-        return new Call(this.params.getUuid(), this, phoneNumber, this.getLogin(), 'outbound');
+        try {
+            const call = new Call(this.params.getUuid(), this, phoneNumber, this.getLogin(), 'outbound');
+            call.pushState(ZiwoEventType.Requesting, true);
+            call.pushState(ZiwoEventType.Trying, true);
+            return call;
+        }
+        catch (e) {
+            ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
+            return undefined;
+        }
     }
     /**
      * Answer a call
@@ -1071,10 +1076,10 @@ class Verto {
                     const callId = data.params && data.params.callID ? data.params.callID :
                         (data.result && data.result.callID ? data.result.callID : undefined);
                     const relatedCall = callId ? this.calls.find(c => c.callId === callId) : undefined;
-                    const ev = this.orchestrator.onInput(data, relatedCall);
-                    if (ev) {
-                        ev.emit();
-                    }
+                    this.orchestrator.onInput(data, relatedCall);
+                    // if (ev) {
+                    //   ev.emit();
+                    // }
                 }
                 catch (err) {
                     ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
@@ -1114,7 +1119,6 @@ class Verto {
             && data.jsonrpc === '2.0';
     }
 }
-//# sourceMappingURL=verto.js.map
 
 class ZiwoClient {
     constructor(options) {
@@ -1147,6 +1151,9 @@ class ZiwoClient {
     }
     startCall(phoneNumber) {
         const call = this.verto.startCall(phoneNumber);
+        if (!call) {
+            return undefined;
+        }
         this.calls.push(call);
         return call;
     }

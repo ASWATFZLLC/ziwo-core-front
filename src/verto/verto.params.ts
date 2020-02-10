@@ -14,6 +14,11 @@ export enum VertoAction {
   Unhold = 'unhold',
 }
 
+export enum VertoNotificationMessage {
+  CallCreated = 'CALL CREATED',
+  CallEnded = 'CALL ENDED',
+}
+
 export interface VertoMessage<T> {
   jsonrpc:'2.0';
   method:VertoMethod;

@@ -1,4 +1,3 @@
-import { ZiwoEvent } from '../events';
 import { Call } from '../call';
 import { Verto } from './verto';
 /**
@@ -10,14 +9,13 @@ import { Verto } from './verto';
 export declare class VertoOrchestrator {
     private readonly debug;
     private readonly verto;
-    private readonly CALL_ENDED_NOTIFICATION;
     constructor(verto: Verto, debug: boolean);
     /**
      * We can identify 2 types of inputs:
      *  - message (or request): contains a `method` and usually requires further actions
      *  - notication: does not contain a `method` and does not require further actions. Provide call's update (hold, unhold, ...)
      */
-    onInput(message: any, call: Call | undefined): ZiwoEvent | undefined;
+    onInput(message: any, call: Call | undefined): void;
     private handleMessage;
     private handleNotification;
     private handleCallEnded;

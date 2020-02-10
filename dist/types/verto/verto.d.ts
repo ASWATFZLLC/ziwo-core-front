@@ -62,7 +62,7 @@ export declare class Verto {
     /**
      * send a start call request
      */
-    startCall(phoneNumber: string): Call;
+    startCall(phoneNumber: string): Call | undefined;
     /**
      * Answer a call
      */

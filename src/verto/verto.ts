@@ -3,7 +3,7 @@ import {MediaChannel, MediaInfo} from '../media-channel';
 import {Call} from '../call';
 import {VertoParams} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
-import {ZiwoEvent, ZiwoErrorCode} from '../events';
+import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
 
 /**
@@ -105,19 +105,20 @@ export class Verto {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string):Call {
+  public startCall(phoneNumber:string):Call|undefined {
     if (!this.channel || !this.channel.stream) {
       // TODO : throw Ziwo Error Event
       throw new Error('Error in User Media');
     }
-
-    return new Call(
-      this.params.getUuid(),
-      this,
-      phoneNumber,
-      this.getLogin(),
-      'outbound'
-    );
+    try {
+      const call = new Call(this.params.getUuid(), this, phoneNumber, this.getLogin(), 'outbound');
+      call.pushState(ZiwoEventType.Requesting, true);
+      call.pushState(ZiwoEventType.Trying, true);
+      return call;
+    } catch (e) {
+      ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
+      return undefined;
+    }
   }
 
   /**
@@ -203,10 +204,10 @@ export class Verto {
           const callId = data.params && data.params.callID ? data.params.callID :
             (data.result && data.result.callID ? data.result.callID : undefined);
           const relatedCall = callId ? this.calls.find(c => c.callId === callId) : undefined;
-          const ev = this.orchestrator.onInput(data, relatedCall);
-          if (ev) {
-            ev.emit();
-          }
+          this.orchestrator.onInput(data, relatedCall);
+          // if (ev) {
+          //   ev.emit();
+          // }
         } catch (err) {
           ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
           if (this.debug) {

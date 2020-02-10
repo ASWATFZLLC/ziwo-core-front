@@ -21,7 +21,8 @@ export interface ZiwoEventDetails {
 export declare enum ZiwoErrorCode {
     ProtocolError = 1001,
     MediaError = 1002,
-    MissingCall = 1003
+    MissingCall = 1003,
+    CannotCreateCall = 1004
 }
 export declare enum ZiwoEventType {
     Error = "error",
@@ -29,6 +30,7 @@ export declare enum ZiwoEventType {
     Disconnected = "disconnected",
     Requesting = "requesting",
     Trying = "tring",
+    Early = "early",
     Ringing = "ringing",
     Answering = "answering",
     Active = "active",
