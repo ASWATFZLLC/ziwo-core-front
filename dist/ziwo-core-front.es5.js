@@ -194,7 +194,6 @@ var Md5 = /** @class */ (function () {
     Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
     return Md5;
 }());
-//# sourceMappingURL=index.js.map
 
 const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
 const MESSAGES = {
@@ -203,7 +202,6 @@ const MESSAGES = {
     AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
     MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
 };
-//# sourceMappingURL=messages.js.map
 
 var UserStatus;
 (function (UserStatus) {
@@ -313,7 +311,6 @@ class AuthenticationService {
         });
     }
 }
-//# sourceMappingURL=authentication.service.js.map
 
 /**
  * ApiService provide functions for GET, POST, PUT and DELETE query
@@ -401,7 +398,6 @@ class ApiService {
         });
     }
 }
-//# sourceMappingURL=api.service.js.map
 
 /**
  * TODO : documentation
@@ -514,7 +510,6 @@ class MediaChannel {
         return audioContext;
     }
 }
-//# sourceMappingURL=media-channel.js.map
 
 var CallStatus;
 (function (CallStatus) {
@@ -711,7 +706,6 @@ class VertoParams {
         };
     }
 }
-//# sourceMappingURL=verto.params.js.map
 
 class RTCPeerConnectionFactory {
     /**
@@ -758,17 +752,21 @@ class RTCPeerConnectionFactory {
         return new Promise((onRes, onErr) => {
             const rtcPeerConnection = new RTCPeerConnection();
             rtcPeerConnection.ontrack = (tr) => {
+                console.log('on track!!');
                 const track = tr.track;
                 if (track.kind !== 'audio') {
                     return;
                 }
                 const stream = new MediaStream();
+                console.log('STREAM ', stream);
                 stream.addTrack(track);
                 if (!verto.channel) {
                     return;
                 }
+                console.log('haaa');
                 verto.channel.remoteStream = stream;
                 verto.tags.peerTag.srcObject = stream;
+                console.log(verto.tags.peerTag);
             };
             if (!verto.channel) {
                 onRes(rtcPeerConnection);
@@ -886,7 +884,7 @@ class VertoOrchestrator {
     }
     onInvite(message) {
         RTCPeerConnectionFactory
-            .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params.verto_h_originalCallerIdNumber)
+            .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
             .then(pc => {
             const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
             call.pushState(ZiwoEventType.Ringing);

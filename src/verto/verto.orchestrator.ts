@@ -112,7 +112,7 @@ export class VertoOrchestrator {
 
   private onInvite(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory
-      .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params.verto_h_originalCallerIdNumber)
+      .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
       .then(pc => {
         const call = new Call(
           message.params.callID,

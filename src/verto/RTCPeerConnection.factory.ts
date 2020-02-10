@@ -59,18 +59,16 @@ export class RTCPeerConnectionFactory {
 
       const rtcPeerConnection = new RTCPeerConnection();
       rtcPeerConnection.ontrack = (tr:any) => {
-
         const track = tr.track;
         if (track.kind !== 'audio') {
           return;
         }
-
         const stream = new MediaStream();
+
         stream.addTrack(track);
         if (!verto.channel) {
           return;
         }
-
         verto.channel.remoteStream = stream;
         verto.tags.peerTag.srcObject = stream;
       };
