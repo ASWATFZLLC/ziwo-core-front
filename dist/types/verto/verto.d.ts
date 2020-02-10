@@ -66,7 +66,7 @@ export declare class Verto {
     /**
      * Answer a call
      */
-    answerCall(callId: string, sdp: string): void;
+    answerCall(callId: string, phoneNumber: string, sdp: string): void;
     /**
      * Hang up a specific call
      */

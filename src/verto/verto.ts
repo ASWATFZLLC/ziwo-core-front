@@ -5,6 +5,7 @@ import {VertoParams} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
 import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
+import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -111,7 +112,9 @@ export class Verto {
       throw new Error('Error in User Media');
     }
     try {
-      const call = new Call(this.params.getUuid(), this, phoneNumber, this.getLogin(), 'outbound');
+      const callId = this.params.getUuid();
+      const pc = RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
+      const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
       call.pushState(ZiwoEventType.Requesting, true);
       call.pushState(ZiwoEventType.Trying, true);
       return call;
@@ -124,8 +127,16 @@ export class Verto {
   /**
    * Answer a call
    */
-  public answerCall(callId:string, sdp:string):void {
-    this.send(this.params.answerCall(this.sessid as string, callId, sdp));
+  public answerCall(callId:string, phoneNumber:string, sdp:string):void {
+    try {
+      this.send(this.params.answerCall(this.sessid as string, callId, this.getLogin(), phoneNumber, sdp));
+      const c = this.calls.find(x => x.callId === callId);
+      if (c) {
+        c.pushState(ZiwoEventType.Active);
+      }
+    } catch (e) {
+      ZiwoEvent.error(ZiwoErrorCode.MissingCall, e);
+    }
   }
 
   /**
@@ -205,9 +216,6 @@ export class Verto {
             (data.result && data.result.callID ? data.result.callID : undefined);
           const relatedCall = callId ? this.calls.find(c => c.callId === callId) : undefined;
           this.orchestrator.onInput(data, relatedCall);
-          // if (ev) {
-          //   ev.emit();
-          // }
         } catch (err) {
           ZiwoEvent.error(ZiwoErrorCode.ProtocolError, err);
           if (this.debug) {

@@ -90,11 +90,11 @@ export class VertoParams {
     });
   }
 
-  public answerCall(sessionId:string|undefined, callId:string, sdp:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.Invite, {
+  public answerCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Answer, {
         sdp: sdp,
         sessid: sessionId,
-        // dialogParams: this.dialogParams(callId, login, phoneNumber),
+        dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
     });
   }
 
@@ -108,7 +108,7 @@ export class VertoParams {
     });
   }
 
-  private dialogParams(callId:string, login:string, phoneNumber:string):any {
+  private dialogParams(callId:string, login:string, phoneNumber:string, callName = 'Outbound Call'):any {
     return {
       callID: callId,
       caller_id_name: '',
