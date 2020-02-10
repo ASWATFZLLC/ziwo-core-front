@@ -54,45 +54,47 @@ export class RTCPeerConnectionFactory {
   /**
    * We receive the call
    */
-  public static inbound(verto:Verto, callId:string, login:string, sdp:string):RTCPeerConnection {
-    const rtcPeerConnection = new RTCPeerConnection();
-    console.log('1');
-    rtcPeerConnection.ontrack = (tr:any) => {
-      console.log('6');
-      const track = tr.track;
-      if (track.kind !== 'audio') {
-        return;
-      }
-      console.log('7');
-      const stream = new MediaStream();
-      stream.addTrack(track);
+  public static inbound(verto:Verto, callId:string, login:string, inboudParams:any):Promise<RTCPeerConnection> {
+    return new Promise<RTCPeerConnection>((onRes, onErr) => {
+
+      const rtcPeerConnection = new RTCPeerConnection();
+      rtcPeerConnection.ontrack = (tr:any) => {
+
+        const track = tr.track;
+        if (track.kind !== 'audio') {
+          return;
+        }
+
+        const stream = new MediaStream();
+        stream.addTrack(track);
+        if (!verto.channel) {
+          return;
+        }
+
+        verto.channel.remoteStream = stream;
+        verto.tags.peerTag.srcObject = stream;
+      };
+
+
       if (!verto.channel) {
+        onRes(rtcPeerConnection);
         return;
       }
-      console.log('8');
-      verto.channel.remoteStream = stream;
-      verto.tags.peerTag.srcObject = stream;
-    };
 
-    console.log('2');
-    if (!verto.channel) {
-      return rtcPeerConnection;
-    }
-    console.log('3');
-    // Attach our media stream to the call's PeerConnection
-    verto.channel.stream.getTracks().forEach((track:any) => {
-      console.log('9');
-      rtcPeerConnection.addTrack(track);
+      // Attach our media stream to the call's PeerConnection
+      verto.channel.stream.getTracks().forEach((track:any) => {
+        rtcPeerConnection.addTrack(track);
+      });
+
+      rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'offer', sdp: inboudParams.sdp}))
+        .then(() => {
+          rtcPeerConnection.createAnswer().then(d => {
+            rtcPeerConnection.setLocalDescription(d);
+          });
+        });
+
+      onRes(rtcPeerConnection);
     });
-    console.log('4');
-    // rtcPeerConnection.createOffer().then((offer:any) => {
-      // console.log('10');
-      // rtcPeerConnection.setLocalDescription(offer).then(() => {});
-    // });
-
-    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: sdp}));
-    console.log('5');
-    return rtcPeerConnection;
   }
 
 }

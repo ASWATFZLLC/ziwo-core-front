@@ -7,5 +7,5 @@ export declare class RTCPeerConnectionFactory {
     /**
      * We receive the call
      */
-    static inbound(verto: Verto, callId: string, login: string, sdp: string): RTCPeerConnection;
+    static inbound(verto: Verto, callId: string, login: string, inboudParams: any): Promise<RTCPeerConnection>;
 }

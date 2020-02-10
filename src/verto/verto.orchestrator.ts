@@ -2,6 +2,7 @@ import {VertoMessage, VertoMethod, VertoLogin, VertoNotification, VertoAction, V
 import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../events';
 import {Call} from '../call';
 import {Verto} from './verto';
+import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -46,8 +47,9 @@ export class VertoOrchestrator {
         return !this.ensureCallIsExisting(call) ? undefined
           : this.onAnswer(message, call as Call);
       case VertoMethod.Display:
-        // Not sure what is the purpose of this
-        return undefined;
+        if (this.ensureCallIsExisting(call)) {
+          (call as Call).pushState(ZiwoEventType.Active);
+        }
     }
     return undefined;
   }
@@ -82,10 +84,6 @@ export class VertoOrchestrator {
     return undefined;
   }
 
-  private handleCallEnded(message:VertoNotification<any>, call:Call):void {
-    call.pushState(ZiwoEventType.Hangup);
-  }
-
   private onClientReady(message:VertoMessage<any>):void {
     ZiwoEvent.emit(ZiwoEventType.Connected, {} as ZiwoEventDetails);
   }
@@ -104,6 +102,7 @@ export class VertoOrchestrator {
         if (this.debug) {
           console.log('Remote media connected');
         }
+        call.pushState(ZiwoEventType.Active);
       }).catch(() => {
         if (this.debug) {
           console.warn('fail to attach remote media');
@@ -112,15 +111,20 @@ export class VertoOrchestrator {
   }
 
   private onInvite(message:VertoMessage<any>):void {
-    const call = new Call(
-      message.params.callID,
-      this.verto,
-      message.params.verto_h_originalCallerIdNumber,
-      this.verto.getLogin(),
-      'inbound',
-      message.params,
-    );
-    call.pushState(ZiwoEventType.Ringing);
+    RTCPeerConnectionFactory
+      .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params.verto_h_originalCallerIdNumber)
+      .then(pc => {
+        const call = new Call(
+          message.params.callID,
+          this.verto,
+          message.params.verto_h_originalCallerIdNumber,
+          this.verto.getLogin(),
+          pc,
+          'inbound',
+          message.params,
+        );
+        call.pushState(ZiwoEventType.Ringing);
+      });
   }
 
   /**

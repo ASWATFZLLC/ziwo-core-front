@@ -27,6 +27,7 @@ export interface CallState {
 export class Call {
 
   public readonly callId:string;
+  public readonly primaryCallId?:string;
   public readonly rtcPeerConnection:RTCPeerConnection;
   public readonly channel:MediaChannel;
   public readonly verto:Verto;
@@ -40,33 +41,26 @@ export class Call {
   };
   private readonly outboundDetails?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, direction:'outbound'|'inbound', outboundDetails?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', outboundDetails?:any) {
     this.verto = verto;
     this.callId = callId;
     this.verto = verto;
-    this.rtcPeerConnection = direction === 'outbound' ?
-      RTCPeerConnectionFactory.outbound(verto, callId, login, phoneNumber) :
-      RTCPeerConnectionFactory.inbound(verto, callId, login, outboundDetails.sdp);
+    this.rtcPeerConnection = rtcPeerConnection;
     this.channel = verto.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
     this.outboundDetails = outboundDetails;
+    if (this.direction === 'inbound') {
+      this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+    }
   }
 
   public getCallStatus():CallComponentsStatus {
     return this.status;
   }
 
-  public answer():Promise<void> {
-    return new Promise<void>((onRes, onErr) => {
-      if (!this.outboundDetails) {
-        return onErr('Invalid SDP');
-      }
-      this.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: this.outboundDetails.sdp}))
-        .then(r => {
-          return onRes();
-        }).catch(e => onErr(e));
-    });
+  public answer():void {
+    return this.verto.answerCall(this.callId, this.phoneNumber, this.rtcPeerConnection.localDescription?.sdp as string);
   }
 
   public hangup():void {
@@ -87,7 +81,7 @@ export class Call {
   public mute():void {
     this.toggleSelfStream(true);
     this.status.microphone = CallStatus.OnHold;
-    // Because mute is not send/received over the socket, we throw the event manually from
+    // Because mute is not sent/received over the socket, we throw the event manually
     this.pushState(ZiwoEventType.Mute);
   }
 
@@ -95,7 +89,7 @@ export class Call {
     this.toggleSelfStream(false);
     this.status.microphone = CallStatus.Running;
     this.pushState(ZiwoEventType.Unmute);
-    // Because unmute is not send/received over the socket, we throw the event manually from
+    // Because unmute is not sent/received over the socket, we throw the event manually
   }
 
   public pushState(type:ZiwoEventType, broadcast = true):void {

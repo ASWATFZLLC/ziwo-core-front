@@ -21,6 +21,7 @@ export interface CallState {
  */
 export declare class Call {
     readonly callId: string;
+    readonly primaryCallId?: string;
     readonly rtcPeerConnection: RTCPeerConnection;
     readonly channel: MediaChannel;
     readonly verto: Verto;
@@ -29,9 +30,9 @@ export declare class Call {
     readonly states: CallState[];
     private status;
     private readonly outboundDetails?;
-    constructor(callId: string, verto: Verto, phoneNumber: string, login: string, direction: 'outbound' | 'inbound', outboundDetails?: any);
+    constructor(callId: string, verto: Verto, phoneNumber: string, login: string, rtcPeerConnection: RTCPeerConnection, direction: 'outbound' | 'inbound', outboundDetails?: any);
     getCallStatus(): CallComponentsStatus;
-    answer(): Promise<void>;
+    answer(): void;
     hangup(): void;
     hold(): void;
     unhold(): void;

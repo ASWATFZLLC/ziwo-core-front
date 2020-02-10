@@ -18,7 +18,6 @@ export declare class VertoOrchestrator {
     onInput(message: any, call: Call | undefined): void;
     private handleMessage;
     private handleNotification;
-    private handleCallEnded;
     private onClientReady;
     /***
      *** MESSAGE SECTION
