@@ -38,7 +38,7 @@ Everything else is managed through the events.
 
 ### Events
 
-The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use to perform actions.
+The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use. (todo: link to Docs/Call)
 
 See below the list of events:
 
