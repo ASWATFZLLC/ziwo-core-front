@@ -1,8 +1,7 @@
+import {Call} from './call';
 
 /**
  * TODO : documentation
- * TODO : define interface for each available type?
- * TODO : define all event type
  */
 
 export enum ErrorCode {
@@ -18,25 +17,73 @@ export interface ErrorData {
   data?:any;
 }
 
+export interface ZiwoEventDetails {
+  type:ZiwoEventType;
+  call:Call;
+  [key:string]:any; // allow additional information
+}
+
+export enum ZiwoErrorCode {
+  ProtocolError = 1001,
+  MediaError = 1002,
+  MissingCall = 1003,
+  CannotCreateCall = 1004,
+}
+
 export enum ZiwoEventType {
-  Error = 'Error',
-  AgentConnected = 'AgentConnected',
-  IncomingCall = 'IncomingCall',
-  OutgoingCall = 'OutgoingCall',
-  CallStarted = 'CallStarted',
-  CallEndedByUser = 'CallEndedByUser',
-  CallEndedByPeer = 'CallEndedByPeer',
+  Error = 'error',
+  Connected = 'connected',
+  Disconnected = 'disconnected',
+  Requesting = 'requesting',
+  Trying = 'tring',
+  Early = 'early',
+  Ringing = 'ringing',
+  Answering = 'answering',
+  Active = 'active',
+  Held = 'held',
+  Hangup = 'hangup',
+  Mute = 'mute',
+  Unmute = 'unmute',
+  Destroy = 'destroy',
+  Recovering = 'recovering',
 }
 
 export class ZiwoEvent {
 
   public static listeners:Function[] = [];
+  private static prefixes = ['_jorel-dialog-state-', 'ziwo-'];
+
+  private type:ZiwoEventType;
+  private data:ZiwoEventDetails;
+
+
+  constructor(type:ZiwoEventType, data:ZiwoEventDetails) {
+    this.type = type;
+    this.data = data;
+  }
 
   public static subscribe(func:Function):void {
     this.listeners.push(func);
   }
 
-  public static emit(type:ZiwoEventType, data?:any):void {
+  public static emit(type:ZiwoEventType, data:ZiwoEventDetails):void {
     this.listeners.forEach(x => x(type, data));
+    this.dispatchEvents(type, data);
   }
+
+  public static error(code:ZiwoErrorCode, data:any):void {
+    this.dispatchEvents(ZiwoEventType.Error, {
+      code: code,
+      inner: data,
+    });
+  }
+
+  private static dispatchEvents(type:ZiwoEventType, data:any):void {
+    this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, {detail: data})));
+  }
+
+  public emit():void {
+    ZiwoEvent.emit(this.type, this.data);
+  }
+
 }
