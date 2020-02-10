@@ -15,8 +15,9 @@
 
 ## V0.2
 
- * Whole new Event system
+ * Whole new Event system (see README#Usage#Events)
  * Event sent when new incoming phone call
  * User can answer a phone call
  * [MILESTONE] Complete flow for outbound call
  * [MILESTONE] Complete flow for inbound call
+ * First tests implemented

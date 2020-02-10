@@ -35,7 +35,7 @@ export enum ZiwoEventType {
   Connected = 'connected',
   Disconnected = 'disconnected',
   Requesting = 'requesting',
-  Trying = 'tring',
+  Trying = 'trying',
   Early = 'early',
   Ringing = 'ringing',
   Answering = 'answering',
