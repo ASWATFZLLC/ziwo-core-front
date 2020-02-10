@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("../events");
 const media_channel_1 = require("./media-channel");
-const json_rpc_1 = require("./json-rpc");
-const json_rpc_interfaces_1 = require("./json-rpc.interfaces");
 const rtc_client_handlers_1 = require("./rtc-client.handlers");
 const regex_1 = require("../regex");
 const messages_1 = require("../messages");
-const json_rpc_params_1 = require("./json-rpc.params");
+const verto_1 = require("./verto");
+const verto_event_1 = require("./verto.event");
+const verto_params_1 = require("./verto.params");
 /**
  * RtcClient wraps all interaction with WebRTC
  * It holds the validation & all properties required for usage of Web RTC
@@ -23,17 +23,17 @@ class RtcClient extends rtc_client_handlers_1.RtcClientHandlers {
     connectAgent(agent) {
         return new Promise((onRes, onErr) => {
             this.connectedAgent = agent;
-            this.jsonRpcClient = new json_rpc_1.JsonRpcClient(this.debug);
+            this.verto = new verto_1.Verto(this.debug);
             // First we make ensure access to microphone &| camera
             // And wait for the socket to open
             Promise.all([
                 media_channel_1.MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
-                this.jsonRpcClient.openSocket(this.connectedAgent.webRtc.socket),
+                this.verto.openSocket(this.connectedAgent.webRtc.socket),
             ]).then(res => {
                 var _a, _b;
                 this.channel = res[0];
-                (_a = this.jsonRpcClient) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
-                    if (ev.type === json_rpc_interfaces_1.JsonRpcEventType.LoggedIn) {
+                (_a = this.verto) === null || _a === void 0 ? void 0 : _a.addListener((ev) => {
+                    if (ev.type === verto_event_1.VertoEventType.LoggedIn) {
                         events_1.ZiwoEvent.emit(events_1.ZiwoEventType.AgentConnected);
                         onRes();
                         return;
@@ -41,7 +41,7 @@ class RtcClient extends rtc_client_handlers_1.RtcClientHandlers {
                     // This is our global handler for incoming message
                     this.processIncomingSocketMessage(ev);
                 });
-                (_b = this.jsonRpcClient) === null || _b === void 0 ? void 0 : _b.login(agent.position);
+                (_b = this.verto) === null || _b === void 0 ? void 0 : _b.login(agent.position);
             }).catch(err => {
                 onErr(err);
             });
@@ -52,7 +52,7 @@ class RtcClient extends rtc_client_handlers_1.RtcClientHandlers {
      */
     startCall(phoneNumber) {
         var _a;
-        if (!this.isAgentConnected() || !this.channel || !this.jsonRpcClient) {
+        if (!this.isAgentConnected() || !this.channel || !this.verto) {
             this.sendNotConnectedEvent('start call');
             return;
         }
@@ -67,7 +67,7 @@ class RtcClient extends rtc_client_handlers_1.RtcClientHandlers {
             return;
         }
         (_a = this.channel) === null || _a === void 0 ? void 0 : _a.startMicrophone();
-        const call = this.jsonRpcClient.startCall(phoneNumber, json_rpc_params_1.JsonRpcParams.getUuid(), this.channel, this.tags);
+        const call = this.verto.startCall(phoneNumber, verto_params_1.VertoParams.getUuid(), this.channel, this.tags);
         this.calls.push(call);
         return call;
     }
@@ -79,10 +79,10 @@ class RtcClient extends rtc_client_handlers_1.RtcClientHandlers {
             console.log('New incoming message', ev);
         }
         switch (ev.type) {
-            case json_rpc_interfaces_1.JsonRpcEventType.OutgoingCall:
+            case verto_event_1.VertoEventType.OutgoingCall:
                 this.outgoingCall(ev.payload);
                 break;
-            case json_rpc_interfaces_1.JsonRpcEventType.MediaRequest:
+            case verto_event_1.VertoEventType.MediaRequest:
                 this.acceptMediaRequest(ev.payload);
                 break;
         }

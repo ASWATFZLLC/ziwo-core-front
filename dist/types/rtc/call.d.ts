@@ -1,5 +1,5 @@
 import { MediaChannel } from './media-channel';
-import { JsonRpcClient } from './json-rpc';
+import { Verto } from './verto';
 export declare enum CallStatus {
     Stopped = "stopped",
     Running = "running",
@@ -17,10 +17,10 @@ export declare class Call {
     readonly callId: string;
     readonly rtcPeerConnection: RTCPeerConnection;
     readonly channel: MediaChannel;
-    readonly jsonRpcClient: JsonRpcClient;
+    readonly jsonRpcClient: Verto;
     readonly phoneNumber: string;
     private status;
-    constructor(callId: string, jsonRpcClient: JsonRpcClient, rtcPeerConnection: RTCPeerConnection, channel: MediaChannel, phoneNumber: string);
+    constructor(callId: string, jsonRpcClient: Verto, rtcPeerConnection: RTCPeerConnection, channel: MediaChannel, phoneNumber: string);
     getCallStatus(): CallComponentsStatus;
     answer(): void;
     hangup(): void;

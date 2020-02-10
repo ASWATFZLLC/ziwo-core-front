@@ -2,9 +2,76 @@
 
 Provides a Ziwo Client to perform call
 
-## Demo
+## Usage
 
 You can see a live demo using `npm run start:app`. Demo app is available in `app/`
+
+This library provide you a `ziwo-client` class as well as custom events.
+
+### Ziwo Client
+
+You can easily instanciate a Ziwo Client by providing some basic information as follow:
+
+```ts
+ziwoClient = new ziwoCoreFront.ZiwoClient({
+    autoConnect: true, // Automatically connect agent to contact center. Default is true
+    contactCenterName: document.getElementById('center').value, // Contact center you are trying to connect to
+    credentials: { // User's credentials
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+    },
+    tags: { // HTML tags of <video> elements available in your DOM
+        selfTag: document.getElementById('self-video'), // `selfTag` is not required if you don't use video
+        peerTag: document.getElementById('peer-video'), // `peerTag` is mandatory. It is used to bind the incoming stream (audio or video)
+    },
+    debug: true, // Will provide additional logs as well as display incoming/outgoing Verto messages
+}
+);
+```
+
+Now, you can use the only function available in the Ziwo Client : startCall
+```ts
+ziwoClient.startCall('+3364208xxxx');
+```
+
+Everything else is managed through the events.
+
+### Events
+
+The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use. (todo: link to Docs/Call)
+
+See below the list of events:
+
+| Events       | Description                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| error        | Something wrong happened. See details for further details                                  |
+| connected    | User has been successfully authenticated                                                   |
+| disconnected | User has been disconnected                                                                 |
+| requesting   | Requesting operator to make the call                                                       |
+| trying       | Operator trying to make the call                                                           |
+| early        | Call is waiting for customer to pick up                                                    |
+| ringing      | Call is ringing agent phone                                                                |
+| answering    | Agent is answering call                                                                    |
+| active       | Agent and customer can talk to each other                                                  |
+| held         | Customer has been put on hold by the Agent                                                 |
+| hangup       | Call is being hanged up                                                                    |
+| mute         | Call has been muted by the agent                                                           |
+| unmute       | Call has been unmuted by the agent                                                         |
+| destroy      | Call is destroying                                                                         |
+| recovering   | When reconnecting to virtual phone and a call wasn't over, Jorel automatically recovers it |
+
+For retro-compability reason, events are emitted with 2 formats:
+ - `jorel-dialog-state-{EVENT_NAME}` (ex: jorel-dialog-state-held)
+ - `ziwo-{EVENT_NAME}` (ex: ziwo-held)
+
+You can use `addEventListener` to listen for ziwo event. Here is how you could simply answering an incoming call.
+
+```ts
+window.addEventListener('ziwo-ringing', (ev) => {
+    // ev holds an instance of the Call in its details
+    ev.details.call.answer();
+});
+```
 
 ## Docs
 
