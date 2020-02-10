@@ -1,7 +1,7 @@
 import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
 import {ZiwoEventType, ZiwoEvent} from './events';
-import { RTCPeerConnectionFactory } from './verto/RTCPeerConnection.factory';
+import {RTCPeerConnectionFactory} from './verto/RTCPeerConnection.factory';
 
 export enum CallStatus {
   Stopped = 'stopped',
