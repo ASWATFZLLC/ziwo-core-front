@@ -51,9 +51,11 @@ export enum ZiwoEventType {
 export class ZiwoEvent {
 
   public static listeners:Function[] = [];
+  private static prefixes = ['_jorel-dialog-state-', 'ziwo-'];
 
   private type:ZiwoEventType;
   private data:ZiwoEventDetails;
+
 
   constructor(type:ZiwoEventType, data:ZiwoEventDetails) {
     this.type = type;
@@ -66,14 +68,18 @@ export class ZiwoEvent {
 
   public static emit(type:ZiwoEventType, data:ZiwoEventDetails):void {
     this.listeners.forEach(x => x(type, data));
-    window.dispatchEvent(new CustomEvent(type, {detail: data}));
+    this.dispatchEvents(type, data);
   }
 
   public static error(code:ZiwoErrorCode, data:any):void {
-    window.dispatchEvent(new CustomEvent(ZiwoEventType.Error, {detail: {
+    this.dispatchEvents(ZiwoEventType.Error, {
       code: code,
       inner: data,
-    }}));
+    });
+  }
+
+  private static dispatchEvents(type:ZiwoEventType, data:any):void {
+    this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, {detail: data})));
   }
 
   public emit():void {

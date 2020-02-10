@@ -200,7 +200,6 @@
         Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
         return Md5;
     }());
-    //# sourceMappingURL=index.js.map
 
     const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
     const MESSAGES = {
@@ -209,7 +208,6 @@
         AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
         MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
     };
-    //# sourceMappingURL=messages.js.map
 
     var UserStatus;
     (function (UserStatus) {
@@ -319,7 +317,6 @@
             });
         }
     }
-    //# sourceMappingURL=authentication.service.js.map
 
     /**
      * ApiService provide functions for GET, POST, PUT and DELETE query
@@ -407,7 +404,6 @@
             });
         }
     }
-    //# sourceMappingURL=api.service.js.map
 
     /**
      * TODO : documentation
@@ -454,20 +450,23 @@
         }
         static emit(type, data) {
             this.listeners.forEach(x => x(type, data));
-            window.dispatchEvent(new CustomEvent(type, { detail: data }));
+            this.dispatchEvents(type, data);
         }
         static error(code, data) {
-            window.dispatchEvent(new CustomEvent(ZiwoEventType.Error, { detail: {
-                    code: code,
-                    inner: data,
-                } }));
+            this.dispatchEvents(ZiwoEventType.Error, {
+                code: code,
+                inner: data,
+            });
+        }
+        static dispatchEvents(type, data) {
+            this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, { detail: data })));
         }
         emit() {
             ZiwoEvent.emit(this.type, this.data);
         }
     }
     ZiwoEvent.listeners = [];
-    //# sourceMappingURL=events.js.map
+    ZiwoEvent.prefixes = ['_jorel-dialog-state-', 'ziwo-'];
 
     class MediaChannel {
         constructor(stream) {
@@ -517,7 +516,6 @@
             return audioContext;
         }
     }
-    //# sourceMappingURL=media-channel.js.map
 
     class RTCPeerConnectionFactory {
         /**
@@ -599,7 +597,6 @@
             return rtcPeerConnection;
         }
     }
-    //# sourceMappingURL=RTCPeerConnection.factory.js.map
 
     var CallStatus;
     (function (CallStatus) {
@@ -687,7 +684,6 @@
             });
         }
     }
-    //# sourceMappingURL=call.js.map
 
     var VertoMethod;
     (function (VertoMethod) {
@@ -802,7 +798,6 @@
             };
         }
     }
-    //# sourceMappingURL=verto.params.js.map
 
     /**
      * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -1164,7 +1159,6 @@
             return call;
         }
     }
-    //# sourceMappingURL=main.js.map
 
     exports.ZiwoClient = ZiwoClient;
 

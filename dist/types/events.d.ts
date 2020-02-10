@@ -43,11 +43,13 @@ export declare enum ZiwoEventType {
 }
 export declare class ZiwoEvent {
     static listeners: Function[];
+    private static prefixes;
     private type;
     private data;
     constructor(type: ZiwoEventType, data: ZiwoEventDetails);
     static subscribe(func: Function): void;
     static emit(type: ZiwoEventType, data: ZiwoEventDetails): void;
     static error(code: ZiwoErrorCode, data: any): void;
+    private static dispatchEvents;
     emit(): void;
 }
