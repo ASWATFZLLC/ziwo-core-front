@@ -12,3 +12,11 @@
  * User can mute his microphone
  * User can unmute his microphone
  * Event system (Error, AgentConnected, IncomingCall, OutgoingCall)
+
+## V0.2
+
+ * Whole new Event system
+ * Event sent when new incoming phone call
+ * User can answer a phone call
+ * [MILESTONE] Complete flow for outbound call
+ * [MILESTONE] Complete flow for inbound call
