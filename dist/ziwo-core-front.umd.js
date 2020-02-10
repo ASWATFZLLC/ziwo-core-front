@@ -758,21 +758,17 @@
             return new Promise((onRes, onErr) => {
                 const rtcPeerConnection = new RTCPeerConnection();
                 rtcPeerConnection.ontrack = (tr) => {
-                    console.log('on track!!');
                     const track = tr.track;
                     if (track.kind !== 'audio') {
                         return;
                     }
                     const stream = new MediaStream();
-                    console.log('STREAM ', stream);
                     stream.addTrack(track);
                     if (!verto.channel) {
                         return;
                     }
-                    console.log('haaa');
                     verto.channel.remoteStream = stream;
                     verto.tags.peerTag.srcObject = stream;
-                    console.log(verto.tags.peerTag);
                 };
                 if (!verto.channel) {
                     onRes(rtcPeerConnection);
