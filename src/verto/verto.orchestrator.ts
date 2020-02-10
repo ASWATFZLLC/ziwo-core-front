@@ -127,7 +127,7 @@ export class VertoOrchestrator {
    * Call has been answered by remote. Broadcast the event
    */
   private onAnswer(message:VertoMessage<any>, call:Call):void {
-    call.pushState(ZiwoEventType.Answering)
+    call.pushState(ZiwoEventType.Answering);
   }
 
   /***
