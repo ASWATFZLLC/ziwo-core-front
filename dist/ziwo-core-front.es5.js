@@ -422,7 +422,7 @@ var ZiwoEventType;
     ZiwoEventType["Connected"] = "connected";
     ZiwoEventType["Disconnected"] = "disconnected";
     ZiwoEventType["Requesting"] = "requesting";
-    ZiwoEventType["Trying"] = "tring";
+    ZiwoEventType["Trying"] = "trying";
     ZiwoEventType["Early"] = "early";
     ZiwoEventType["Ringing"] = "ringing";
     ZiwoEventType["Answering"] = "answering";
@@ -453,7 +453,7 @@ class ZiwoEvent {
         });
     }
     static dispatchEvents(type, data) {
-        this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, { detail: data })));
+        this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(`${p}${type}`, { detail: data })));
     }
     emit() {
         ZiwoEvent.emit(this.type, this.data);
@@ -823,6 +823,11 @@ class VertoOrchestrator {
                 if (this.ensureCallIsExisting(call)) {
                     call.pushState(ZiwoEventType.Active);
                 }
+                break;
+            case VertoMethod.Bye:
+                if (this.ensureCallIsExisting(call)) {
+                    call.pushState(ZiwoEventType.Hangup);
+                }
         }
         return undefined;
     }
@@ -883,6 +888,7 @@ class VertoOrchestrator {
             .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
             .then(pc => {
             const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
+            this.verto.calls.push(call);
             call.pushState(ZiwoEventType.Ringing);
         });
     }

@@ -79,7 +79,7 @@ export class ZiwoEvent {
   }
 
   private static dispatchEvents(type:ZiwoEventType, data:any):void {
-    this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, {detail: data})));
+    this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(`${p}${type}`, {detail: data})));
   }
 
   public emit():void {

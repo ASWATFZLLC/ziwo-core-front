@@ -69,7 +69,7 @@ export class Verto {
   /**
    * Reference to list of running calls
    */
-  private readonly calls:Call[];
+  public readonly calls:Call[];
 
   constructor(calls:Call[], debug:boolean, tags:MediaInfo) {
     this.debug = debug;
