@@ -52,7 +52,7 @@ export declare class Verto {
     /**
      * Reference to list of running calls
      */
-    private readonly calls;
+    readonly calls: Call[];
     constructor(calls: Call[], debug: boolean, tags: MediaInfo);
     /**
      * addListener allows to listen for incoming Socket Event

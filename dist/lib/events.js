@@ -23,7 +23,7 @@ var ZiwoEventType;
     ZiwoEventType["Connected"] = "connected";
     ZiwoEventType["Disconnected"] = "disconnected";
     ZiwoEventType["Requesting"] = "requesting";
-    ZiwoEventType["Trying"] = "tring";
+    ZiwoEventType["Trying"] = "trying";
     ZiwoEventType["Early"] = "early";
     ZiwoEventType["Ringing"] = "ringing";
     ZiwoEventType["Answering"] = "answering";
@@ -54,7 +54,7 @@ class ZiwoEvent {
         });
     }
     static dispatchEvents(type, data) {
-        this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(type, { detail: data })));
+        this.prefixes.forEach(p => window.dispatchEvent(new CustomEvent(`${p}${type}`, { detail: data })));
     }
     emit() {
         ZiwoEvent.emit(this.type, this.data);

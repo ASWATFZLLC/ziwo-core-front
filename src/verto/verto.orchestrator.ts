@@ -50,6 +50,11 @@ export class VertoOrchestrator {
         if (this.ensureCallIsExisting(call)) {
           (call as Call).pushState(ZiwoEventType.Active);
         }
+        break;
+      case VertoMethod.Bye:
+        if (this.ensureCallIsExisting(call)) {
+          (call as Call).pushState(ZiwoEventType.Hangup);
+        }
     }
     return undefined;
   }
@@ -123,6 +128,7 @@ export class VertoOrchestrator {
           'inbound',
           message.params,
         );
+        this.verto.calls.push(call);
         call.pushState(ZiwoEventType.Ringing);
       });
   }
