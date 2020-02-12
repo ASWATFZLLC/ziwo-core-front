@@ -44,6 +44,11 @@ class VertoOrchestrator {
                 if (this.ensureCallIsExisting(call)) {
                     call.pushState(events_1.ZiwoEventType.Active);
                 }
+                break;
+            case verto_params_1.VertoMethod.Bye:
+                if (this.ensureCallIsExisting(call)) {
+                    call.pushState(events_1.ZiwoEventType.Hangup);
+                }
         }
         return undefined;
     }
@@ -104,6 +109,7 @@ class VertoOrchestrator {
             .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
             .then(pc => {
             const call = new call_1.Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
+            this.verto.calls.push(call);
             call.pushState(events_1.ZiwoEventType.Ringing);
         });
     }
