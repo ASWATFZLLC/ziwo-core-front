@@ -1,4 +1,4 @@
-import { Call } from './call';
+import { Call, CallState } from './call';
 /**
  * TODO : documentation
  */
@@ -15,7 +15,12 @@ export interface ErrorData {
 }
 export interface ZiwoEventDetails {
     type: ZiwoEventType;
-    call: Call;
+    currentCall: Call;
+    callID: string;
+    primaryCallID?: string;
+    customerNumber: string;
+    direction: 'outbound' | 'inbound' | 'internal' | 'service';
+    stateFlow: CallState[];
     [key: string]: any;
 }
 export declare enum ZiwoErrorCode {

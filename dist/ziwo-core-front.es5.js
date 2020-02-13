@@ -581,7 +581,12 @@ class Call {
         if (broadcast) {
             ZiwoEvent.emit(type, {
                 type,
-                call: this,
+                currentCall: this,
+                primaryCallID: this.primaryCallId,
+                callID: this.callId,
+                direction: this.direction,
+                stateFlow: this.states,
+                customerNumber: this.phoneNumber,
             });
         }
     }
