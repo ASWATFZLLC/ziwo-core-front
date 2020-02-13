@@ -32,7 +32,7 @@ export class Call {
   public readonly channel:MediaChannel;
   public readonly verto:Verto;
   public readonly phoneNumber:string;
-  public readonly direction:'outbound'|'inbound';
+  public readonly direction:'outbound'|'inbound'|'internal'|'service';
   public readonly states:CallState[] = [];
   private status:CallComponentsStatus = {
     call: CallStatus.Running,
@@ -102,7 +102,12 @@ export class Call {
     if (broadcast) {
       ZiwoEvent.emit(type, {
         type,
-        call: this,
+        currentCall: this,
+        primaryCallID: this.primaryCallId,
+        callID: this.callId,
+        direction: this.direction,
+        stateFlow: this.states,
+        customerNumber: this.phoneNumber,
       });
     }
   }
