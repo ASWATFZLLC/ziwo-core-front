@@ -26,7 +26,7 @@ export declare class Call {
     readonly channel: MediaChannel;
     readonly verto: Verto;
     readonly phoneNumber: string;
-    readonly direction: 'outbound' | 'inbound';
+    readonly direction: 'outbound' | 'inbound' | 'internal' | 'service';
     readonly states: CallState[];
     private status;
     private readonly outboundDetails?;
