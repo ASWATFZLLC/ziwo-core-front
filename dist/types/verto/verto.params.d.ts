@@ -8,6 +8,11 @@ export declare enum VertoMethod {
     Display = "verto.display",
     Bye = "verto.bye"
 }
+export declare enum VertoByeReason {
+    NORMAL_CLEARING = 16,
+    CALL_REJECTED = 21,
+    ORIGINATOR_CANCEL = 487
+}
 export declare enum VertoAction {
     Hold = "hold",
     Unhold = "unhold"
@@ -35,7 +40,7 @@ export declare class VertoParams {
     wrap(method: string, params?: any, id?: number): VertoMessage<any>;
     login(sessid: string, login: string, passwd: string): VertoMessage<any>;
     startCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoMessage<any>;
-    hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
+    hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string, reason?: VertoByeReason): VertoMessage<any>;
     holdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     unholdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     answerCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoMessage<any>;

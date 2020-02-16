@@ -1,7 +1,7 @@
 import {AgentPosition, AgentInfo} from '../authentication.service';
 import {MediaChannel, MediaInfo} from '../media-channel';
 import {Call} from '../call';
-import {VertoParams} from './verto.params';
+import {VertoParams, VertoByeReason} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
 import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
@@ -142,8 +142,8 @@ export class Verto {
   /**
    * Hang up a specific call
    */
-  public hangupCall(callId:string, phoneNumber:string):void {
-    this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+  public hangupCall(callId:string, phoneNumber:string, reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):void {
+    this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
   }
 
   /**

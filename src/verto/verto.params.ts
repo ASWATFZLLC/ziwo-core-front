@@ -9,6 +9,12 @@ export enum VertoMethod {
   Bye = 'verto.bye',
 }
 
+export enum VertoByeReason {
+  NORMAL_CLEARING = 16,
+  CALL_REJECTED = 21,
+  ORIGINATOR_CANCEL = 487,
+}
+
 export enum VertoAction {
   Hold = 'hold',
   Unhold = 'unhold',
@@ -65,10 +71,10 @@ export class VertoParams {
     });
   }
 
-  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
+  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string, reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):VertoMessage<any> {
     return this.wrap(VertoMethod.Bye, {
-      cause: 'NORMAL_CLEARING',
-      causeCode: 16,
+      cause: VertoByeReason[reason],
+      causeCode: reason,
       dialogParams: this.dialogParams(callId, login, phoneNumber),
       sessid: sessionId,
     });

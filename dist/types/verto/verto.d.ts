@@ -1,7 +1,7 @@
 import { AgentInfo } from '../authentication.service';
 import { MediaChannel, MediaInfo } from '../media-channel';
 import { Call } from '../call';
-import { VertoParams } from './verto.params';
+import { VertoParams, VertoByeReason } from './verto.params';
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
  *
@@ -70,7 +70,7 @@ export declare class Verto {
     /**
      * Hang up a specific call
      */
-    hangupCall(callId: string, phoneNumber: string): void;
+    hangupCall(callId: string, phoneNumber: string, reason?: VertoByeReason): void;
     /**
      * Hold a specific call
      */

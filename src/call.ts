@@ -2,6 +2,7 @@ import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
 import {ZiwoEventType, ZiwoEvent} from './events';
 import {RTCPeerConnectionFactory} from './verto/RTCPeerConnection.factory';
+import { VertoByeReason } from './verto/verto.params';
 
 export enum CallStatus {
   Stopped = 'stopped',
@@ -64,7 +65,9 @@ export class Call {
   }
 
   public hangup():void {
-    this.verto.hangupCall(this.callId, this.phoneNumber);
+    this.verto.hangupCall(this.callId, this.phoneNumber,
+      this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
+        : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
     this.status.call = CallStatus.Stopped;
   }
 

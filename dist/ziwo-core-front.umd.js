@@ -517,92 +517,6 @@
         }
     }
 
-    var CallStatus;
-    (function (CallStatus) {
-        CallStatus["Stopped"] = "stopped";
-        CallStatus["Running"] = "running";
-        CallStatus["OnHold"] = "onHold";
-    })(CallStatus || (CallStatus = {}));
-    /**
-     * Call holds a call information and provide helpers
-     */
-    class Call {
-        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, outboundDetails) {
-            this.states = [];
-            this.status = {
-                call: CallStatus.Running,
-                microphone: CallStatus.Running,
-                camera: CallStatus.Stopped,
-            };
-            this.verto = verto;
-            this.callId = callId;
-            this.verto = verto;
-            this.rtcPeerConnection = rtcPeerConnection;
-            this.channel = verto.channel;
-            this.phoneNumber = phoneNumber;
-            this.direction = direction;
-            this.outboundDetails = outboundDetails;
-            if (this.direction === 'inbound') {
-                this.primaryCallId = outboundDetails.verto_h_primaryCallID;
-            }
-        }
-        getCallStatus() {
-            return this.status;
-        }
-        answer() {
-            var _a;
-            return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
-        }
-        hangup() {
-            this.verto.hangupCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.Stopped;
-        }
-        hold() {
-            this.verto.holdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.OnHold;
-        }
-        unhold() {
-            this.verto.unholdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.Running;
-        }
-        mute() {
-            this.toggleSelfStream(true);
-            this.status.microphone = CallStatus.OnHold;
-            // Because mute is not sent/received over the socket, we throw the event manually
-            this.pushState(ZiwoEventType.Mute);
-        }
-        unmute() {
-            this.toggleSelfStream(false);
-            this.status.microphone = CallStatus.Running;
-            this.pushState(ZiwoEventType.Unmute);
-            // Because unmute is not sent/received over the socket, we throw the event manually
-        }
-        pushState(type, broadcast = true) {
-            const d = new Date();
-            this.states.push({
-                state: type,
-                date: d,
-                dateUNIX: d.getTime() / 1000
-            });
-            if (broadcast) {
-                ZiwoEvent.emit(type, {
-                    type,
-                    currentCall: this,
-                    primaryCallID: this.primaryCallId,
-                    callID: this.callId,
-                    direction: this.direction,
-                    stateFlow: this.states,
-                    customerNumber: this.phoneNumber,
-                });
-            }
-        }
-        toggleSelfStream(enabled) {
-            this.channel.stream.getAudioTracks().forEach((tr) => {
-                tr.enabled = enabled;
-            });
-        }
-    }
-
     var VertoMethod;
     (function (VertoMethod) {
         VertoMethod["Login"] = "login";
@@ -614,6 +528,12 @@
         VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
     })(VertoMethod || (VertoMethod = {}));
+    var VertoByeReason;
+    (function (VertoByeReason) {
+        VertoByeReason[VertoByeReason["NORMAL_CLEARING"] = 16] = "NORMAL_CLEARING";
+        VertoByeReason[VertoByeReason["CALL_REJECTED"] = 21] = "CALL_REJECTED";
+        VertoByeReason[VertoByeReason["ORIGINATOR_CANCEL"] = 487] = "ORIGINATOR_CANCEL";
+    })(VertoByeReason || (VertoByeReason = {}));
     var VertoAction;
     (function (VertoAction) {
         VertoAction["Hold"] = "hold";
@@ -651,10 +571,10 @@
                 dialogParams: this.dialogParams(callId, login, phoneNumber),
             });
         }
-        hangupCall(sessionId, callId, login, phoneNumber) {
+        hangupCall(sessionId, callId, login, phoneNumber, reason = VertoByeReason.NORMAL_CLEARING) {
             return this.wrap(VertoMethod.Bye, {
-                cause: 'NORMAL_CLEARING',
-                causeCode: 16,
+                cause: VertoByeReason[reason],
+                causeCode: reason,
                 dialogParams: this.dialogParams(callId, login, phoneNumber),
                 sessid: sessionId,
             });
@@ -715,6 +635,93 @@
                     googHighpassFilter: false
                 },
             };
+        }
+    }
+
+    var CallStatus;
+    (function (CallStatus) {
+        CallStatus["Stopped"] = "stopped";
+        CallStatus["Running"] = "running";
+        CallStatus["OnHold"] = "onHold";
+    })(CallStatus || (CallStatus = {}));
+    /**
+     * Call holds a call information and provide helpers
+     */
+    class Call {
+        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, outboundDetails) {
+            this.states = [];
+            this.status = {
+                call: CallStatus.Running,
+                microphone: CallStatus.Running,
+                camera: CallStatus.Stopped,
+            };
+            this.verto = verto;
+            this.callId = callId;
+            this.verto = verto;
+            this.rtcPeerConnection = rtcPeerConnection;
+            this.channel = verto.channel;
+            this.phoneNumber = phoneNumber;
+            this.direction = direction;
+            this.outboundDetails = outboundDetails;
+            if (this.direction === 'inbound') {
+                this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+            }
+        }
+        getCallStatus() {
+            return this.status;
+        }
+        answer() {
+            var _a;
+            return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
+        }
+        hangup() {
+            this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
+                : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
+            this.status.call = CallStatus.Stopped;
+        }
+        hold() {
+            this.verto.holdCall(this.callId, this.phoneNumber);
+            this.status.call = CallStatus.OnHold;
+        }
+        unhold() {
+            this.verto.unholdCall(this.callId, this.phoneNumber);
+            this.status.call = CallStatus.Running;
+        }
+        mute() {
+            this.toggleSelfStream(true);
+            this.status.microphone = CallStatus.OnHold;
+            // Because mute is not sent/received over the socket, we throw the event manually
+            this.pushState(ZiwoEventType.Mute);
+        }
+        unmute() {
+            this.toggleSelfStream(false);
+            this.status.microphone = CallStatus.Running;
+            this.pushState(ZiwoEventType.Unmute);
+            // Because unmute is not sent/received over the socket, we throw the event manually
+        }
+        pushState(type, broadcast = true) {
+            const d = new Date();
+            this.states.push({
+                state: type,
+                date: d,
+                dateUNIX: d.getTime() / 1000
+            });
+            if (broadcast) {
+                ZiwoEvent.emit(type, {
+                    type,
+                    currentCall: this,
+                    primaryCallID: this.primaryCallId,
+                    callID: this.callId,
+                    direction: this.direction,
+                    stateFlow: this.states,
+                    customerNumber: this.phoneNumber,
+                });
+            }
+        }
+        toggleSelfStream(enabled) {
+            this.channel.stream.getAudioTracks().forEach((tr) => {
+                tr.enabled = enabled;
+            });
         }
     }
 
@@ -1024,8 +1031,8 @@
         /**
          * Hang up a specific call
          */
-        hangupCall(callId, phoneNumber) {
-            this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        hangupCall(callId, phoneNumber, reason = VertoByeReason.NORMAL_CLEARING) {
+            this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber, reason));
         }
         /**
          * Hold a specific call
