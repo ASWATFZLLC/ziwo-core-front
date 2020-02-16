@@ -71,7 +71,8 @@ export class VertoParams {
     });
   }
 
-  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string, reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):VertoMessage<any> {
+  public hangupCall(sessionId:string, callId:string, login:string, phoneNumber:string,
+    reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):VertoMessage<any> {
     return this.wrap(VertoMethod.Bye, {
       cause: VertoByeReason[reason],
       causeCode: reason,
