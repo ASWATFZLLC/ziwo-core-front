@@ -6,6 +6,7 @@ import {VertoOrchestrator} from './verto.orchestrator';
 import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
 import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
+import { VertoClear } from './verto.clear';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -56,15 +57,13 @@ export class Verto {
    */
   private listeners:Function[] = [];
 
-  /**
-   *
-   */
+  // Components
   private orchestrator:VertoOrchestrator;
-
+  private cleaner:VertoClear;
 
   private readonly debug:boolean;
 
-  private readonly ICE_SERVER = 'stun:stun.l.google.com:19302';
+  private readonly STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
 
   /**
    * Reference to list of running calls
@@ -75,6 +74,7 @@ export class Verto {
     this.debug = debug;
     this.tags = tags;
     this.orchestrator = new VertoOrchestrator(this, this.debug);
+    this.cleaner = new VertoClear(this, this.debug);
     this.params = new VertoParams();
     this.calls = calls;
   }
@@ -203,6 +203,8 @@ export class Verto {
         if (this.debug) {
           console.log('Socket opened');
         }
+        // clear.prepareUnloadEvent makes sure we clear the calls properly when user closes the tab
+        this.cleaner.prepareUnloadEvent();
         onRes();
       };
       this.socket.onmessage = (msg) => {
@@ -228,7 +230,7 @@ export class Verto {
 
   public getNewRTCPeerConnection():RTCPeerConnection {
     const rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{urls: this.ICE_SERVER}],
+      iceServers: [{urls: this.STUN_ICE_SERVER}],
     });
 
     return rtcPeerConnection;
