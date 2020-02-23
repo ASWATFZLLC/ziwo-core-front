@@ -5,8 +5,8 @@ import {VertoParams, VertoByeReason} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
 import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
-import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
-import { VertoClear } from './verto.clear';
+import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
+import {VertoClear} from './verto.clear';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -158,6 +158,13 @@ export class Verto {
    */
   public unholdCall(callId:string, phoneNumber:string):void {
     this.send(this.params.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+  }
+
+  /**
+   * DTFM send a char to current call
+   */
+  public dtfm(callId:string, char:string):void {
+    this.send(this.params.dtfm(this.sessid as string, callId, this.getLogin(), char));
   }
 
   /**

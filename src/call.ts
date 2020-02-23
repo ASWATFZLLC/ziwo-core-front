@@ -71,6 +71,10 @@ export class Call {
     this.status.call = CallStatus.Stopped;
   }
 
+  public dtfm(char:string):void {
+    this.verto.dtfm(this.callId, char);
+  }
+
   public hold():void {
     this.verto.holdCall(this.callId, this.phoneNumber);
     this.status.call = CallStatus.OnHold;

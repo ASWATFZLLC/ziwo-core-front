@@ -34,6 +34,7 @@ export declare class Call {
     getCallStatus(): CallComponentsStatus;
     answer(): void;
     hangup(): void;
+    dtfm(char: string): void;
     hold(): void;
     unhold(): void;
     mute(): void;

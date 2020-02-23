@@ -524,6 +524,7 @@
         VertoMethod["Media"] = "verto.media";
         VertoMethod["Invite"] = "verto.invite";
         VertoMethod["Answer"] = "verto.answer";
+        VertoMethod["Info"] = "verto.info";
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
@@ -598,6 +599,16 @@
                 sdp: sdp,
                 sessid: sessionId,
                 dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
+            });
+        }
+        dtfm(sessionId, callId, login, char) {
+            return this.wrap(VertoMethod.Info, {
+                sessid: sessionId,
+                dialogParams: {
+                    callID: callId,
+                    login: login,
+                    dtfm: char,
+                }
             });
         }
         getUuid() {
@@ -678,6 +689,9 @@
             this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
                 : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
             this.status.call = CallStatus.Stopped;
+        }
+        dtfm(char) {
+            this.verto.dtfm(this.callId, char);
         }
         hold() {
             this.verto.holdCall(this.callId, this.phoneNumber);
@@ -946,6 +960,28 @@
         }
     }
 
+    class VertoClear {
+        constructor(verto, debug) {
+            this.verto = verto;
+            this.debug = debug;
+        }
+        /**
+         * When user closes the tab, we need to purge the call:
+         *  - for on going call(s): purge
+         *  - for ended call(s): purge + destroy
+         */
+        prepareUnloadEvent() {
+            window.addEventListener('unload', (e) => {
+                this.purge(this.verto.calls);
+                this.destroy(this.verto.calls.filter(c => c.states.findIndex(x => x.state === ZiwoEventType.Hangup) >= 0));
+            }, false);
+        }
+        purge(calls) {
+        }
+        destroy(call) {
+        }
+    }
+
     /**
      * JsonRpcClient implements Verto protocol using JSON RPC
      *
@@ -964,10 +1000,11 @@
              * Callback functions - register using `addListener`
              */
             this.listeners = [];
-            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
+            this.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
             this.debug = debug;
             this.tags = tags;
             this.orchestrator = new VertoOrchestrator(this, this.debug);
+            this.cleaner = new VertoClear(this, this.debug);
             this.params = new VertoParams();
             this.calls = calls;
         }
@@ -1047,6 +1084,12 @@
             this.send(this.params.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
         }
         /**
+         * DTFM send a char to current call
+         */
+        dtfm(callId, char) {
+            this.send(this.params.dtfm(this.sessid, callId, this.getLogin(), char));
+        }
+        /**
          * Send data to socket and log in case of debug
          */
         send(data) {
@@ -1087,6 +1130,8 @@
                     if (this.debug) {
                         console.log('Socket opened');
                     }
+                    // clear.prepareUnloadEvent makes sure we clear the calls properly when user closes the tab
+                    this.cleaner.prepareUnloadEvent();
                     onRes();
                 };
                 this.socket.onmessage = (msg) => {
@@ -1112,7 +1157,7 @@
         }
         getNewRTCPeerConnection() {
             const rtcPeerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: this.ICE_SERVER }],
+                iceServers: [{ urls: this.STUN_ICE_SERVER }],
             });
             return rtcPeerConnection;
         }

@@ -1,6 +1,6 @@
 import {Verto} from './verto';
-import { Call } from '../call';
-import { ZiwoEventType } from '../events';
+import {Call} from '../call';
+import {ZiwoEventType} from '../events';
 
 export class VertoClear {
 

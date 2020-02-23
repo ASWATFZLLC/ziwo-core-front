@@ -4,6 +4,7 @@ export enum VertoMethod {
   Media = 'verto.media',
   Invite = 'verto.invite',
   Answer = 'verto.answer',
+  Info = 'verto.info',
   Modify = 'verto.modify',
   Display = 'verto.display',
   Bye = 'verto.bye',
@@ -103,6 +104,17 @@ export class VertoParams {
         sessid: sessionId,
         dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
     });
+  }
+
+  public dtfm(sessionId:string, callId:string, login:string, char:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Info, {
+      sessid: sessionId,
+      dialogParams: {
+        callID: callId,
+        login: login,
+        dtfm: char,
+      }
+    })
   }
 
   public getUuid():string {

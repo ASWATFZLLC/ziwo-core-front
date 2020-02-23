@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("./events");
+const verto_params_1 = require("./verto/verto.params");
 var CallStatus;
 (function (CallStatus) {
     CallStatus["Stopped"] = "stopped";
@@ -38,8 +39,12 @@ class Call {
         return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
     }
     hangup() {
-        this.verto.hangupCall(this.callId, this.phoneNumber);
+        this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === events_1.ZiwoEventType.Answering) >= 0 ? verto_params_1.VertoByeReason.NORMAL_CLEARING
+            : (this.direction === 'inbound' ? verto_params_1.VertoByeReason.CALL_REJECTED : verto_params_1.VertoByeReason.ORIGINATOR_CANCEL));
         this.status.call = CallStatus.Stopped;
+    }
+    dtfm(char) {
+        this.verto.dtfm(this.callId, char);
     }
     hold() {
         this.verto.holdCall(this.callId, this.phoneNumber);

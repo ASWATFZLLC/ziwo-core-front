@@ -4,6 +4,7 @@ export declare enum VertoMethod {
     Media = "verto.media",
     Invite = "verto.invite",
     Answer = "verto.answer",
+    Info = "verto.info",
     Modify = "verto.modify",
     Display = "verto.display",
     Bye = "verto.bye"
@@ -44,6 +45,7 @@ export declare class VertoParams {
     holdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     unholdCall(sessionId: string, callId: string, login: string, phoneNumber: string): VertoMessage<any>;
     answerCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoMessage<any>;
+    dtfm(sessionId: string, callId: string, login: string, char: string): VertoMessage<any>;
     getUuid(): string;
     private dialogParams;
 }
