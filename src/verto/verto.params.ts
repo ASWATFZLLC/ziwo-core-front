@@ -1,9 +1,11 @@
 export enum VertoMethod {
   Login = 'login',
   ClientReady = 'verto.clientReady',
+  Attach = 'verto.attach',
   Media = 'verto.media',
   Invite = 'verto.invite',
   Answer = 'verto.answer',
+  Info = 'verto.info',
   Modify = 'verto.modify',
   Display = 'verto.display',
   Bye = 'verto.bye',
@@ -15,9 +17,10 @@ export enum VertoByeReason {
   ORIGINATOR_CANCEL = 487,
 }
 
-export enum VertoAction {
+export enum VertoState {
   Hold = 'hold',
   Unhold = 'unhold',
+  Purge = 'purge',
 }
 
 export enum VertoNotificationMessage {
@@ -81,22 +84,6 @@ export class VertoParams {
     });
   }
 
-  public holdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.Modify, {
-      action: 'hold',
-      dialogParams: this.dialogParams(callId, login, phoneNumber),
-      sessid: sessionId,
-    });
-  }
-
-  public unholdCall(sessionId:string, callId:string, login:string, phoneNumber:string):VertoMessage<any> {
-    return this.wrap(VertoMethod.Modify, {
-      action: 'unhold',
-      dialogParams: this.dialogParams(callId, login, phoneNumber),
-      sessid: sessionId,
-    });
-  }
-
   public answerCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Answer, {
         sdp: sdp,
@@ -105,7 +92,30 @@ export class VertoParams {
     });
   }
 
+  public setState(sessionId:string, callId:string, login:string, phoneNumber:string, state:VertoState):VertoMessage<any> {
+    return this.wrap(VertoMethod.Modify, {
+      action: state,
+      dialogParams: this.dialogParams(callId, login, phoneNumber),
+      sessid: sessionId,
+    });
+  }
+
+  public dtfm(sessionId:string, callId:string, login:string, char:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Info, {
+      sessid: sessionId,
+      dialogParams: {
+        callID: callId,
+        login: login,
+        dtfm: char,
+      }
+    });
+  }
+
   public getUuid():string {
+    return VertoParams.getUuid();
+  }
+
+  public static getUuid():string {
     /* tslint:disable */
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0,

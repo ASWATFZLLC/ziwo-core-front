@@ -7,6 +7,7 @@ const verto_orchestrator_1 = require("./verto.orchestrator");
 const events_1 = require("../events");
 const messages_1 = require("../messages");
 const RTCPeerConnection_factory_1 = require("./RTCPeerConnection.factory");
+const verto_clear_1 = require("./verto.clear");
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
  *
@@ -25,10 +26,11 @@ class Verto {
          * Callback functions - register using `addListener`
          */
         this.listeners = [];
-        this.ICE_SERVER = 'stun:stun.l.google.com:19302';
+        this.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
         this.debug = debug;
         this.tags = tags;
         this.orchestrator = new verto_orchestrator_1.VertoOrchestrator(this, this.debug);
+        this.cleaner = new verto_clear_1.VertoClear(this, this.debug);
         this.params = new verto_params_1.VertoParams();
         this.calls = calls;
     }
@@ -92,20 +94,38 @@ class Verto {
     /**
      * Hang up a specific call
      */
-    hangupCall(callId, phoneNumber) {
-        this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber));
+    hangupCall(callId, phoneNumber, reason = verto_params_1.VertoByeReason.NORMAL_CLEARING) {
+        this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber, reason));
     }
     /**
      * Hold a specific call
      */
     holdCall(callId, phoneNumber) {
-        this.send(this.params.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Hold));
     }
     /**
      * Hang up a specific call
      */
     unholdCall(callId, phoneNumber) {
-        this.send(this.params.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Unhold));
+    }
+    /**
+     * Purge a specific call
+     */
+    purgeCall(callId, phoneNumber) {
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Purge));
+    }
+    /**
+     * Destroy a specific call
+     */
+    destroyCall(callId, phoneNumber) {
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Destroy));
+    }
+    /**
+     * DTFM send a char to current call
+     */
+    dtfm(callId, char) {
+        this.send(this.params.dtfm(this.sessid, callId, this.getLogin(), char));
     }
     /**
      * Send data to socket and log in case of debug
@@ -148,6 +168,8 @@ class Verto {
                 if (this.debug) {
                     console.log('Socket opened');
                 }
+                // clear.prepareUnloadEvent makes sure we clear the calls properly when user closes the tab
+                this.cleaner.prepareUnloadEvent();
                 onRes();
             };
             this.socket.onmessage = (msg) => {
@@ -173,7 +195,7 @@ class Verto {
     }
     getNewRTCPeerConnection() {
         const rtcPeerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: this.ICE_SERVER }],
+            iceServers: [{ urls: this.STUN_ICE_SERVER }],
         });
         return rtcPeerConnection;
     }

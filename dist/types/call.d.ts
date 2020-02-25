@@ -29,11 +29,12 @@ export declare class Call {
     readonly direction: 'outbound' | 'inbound' | 'internal' | 'service';
     readonly states: CallState[];
     private status;
-    private readonly outboundDetails?;
-    constructor(callId: string, verto: Verto, phoneNumber: string, login: string, rtcPeerConnection: RTCPeerConnection, direction: 'outbound' | 'inbound', outboundDetails?: any);
+    private readonly initialPayload?;
+    constructor(callId: string, verto: Verto, phoneNumber: string, login: string, rtcPeerConnection: RTCPeerConnection, direction: 'outbound' | 'inbound', initialPayload?: any);
     getCallStatus(): CallComponentsStatus;
     answer(): void;
     hangup(): void;
+    dtfm(char: string): void;
     hold(): void;
     unhold(): void;
     mute(): void;

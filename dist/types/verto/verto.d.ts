@@ -43,12 +43,10 @@ export declare class Verto {
      * Callback functions - register using `addListener`
      */
     private listeners;
-    /**
-     *
-     */
     private orchestrator;
+    private cleaner;
     private readonly debug;
-    private readonly ICE_SERVER;
+    private readonly STUN_ICE_SERVER;
     /**
      * Reference to list of running calls
      */
@@ -79,6 +77,22 @@ export declare class Verto {
      * Hang up a specific call
      */
     unholdCall(callId: string, phoneNumber: string): void;
+    /**
+     * Purge a specific call
+     */
+    purgeCall(callId: string, phoneNumber: string): void;
+    /**
+     * Destroy a specific call.
+     */
+    destroyCall(callId: string): void;
+    /**
+     * Purge & Destroy a specific call.
+     */
+    purgeAndDestroyCall(callId: string, phoneNumber: string, removeFromList?: boolean): void;
+    /**
+     * DTFM send a char to current call
+     */
+    dtfm(callId: string, char: string): void;
     /**
      * Send data to socket and log in case of debug
      */

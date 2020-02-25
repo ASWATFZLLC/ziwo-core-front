@@ -71,10 +71,10 @@ class VertoOrchestrator {
         }
         if (message.result && message.result.action) {
             switch (message.result.action) {
-                case verto_params_1.VertoAction.Hold:
+                case verto_params_1.VertoState.Hold:
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onHold(call);
-                case verto_params_1.VertoAction.Unhold:
+                case verto_params_1.VertoState.Unhold:
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onUnhold(call);
             }
