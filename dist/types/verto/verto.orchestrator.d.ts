@@ -28,6 +28,8 @@ export declare class VertoOrchestrator {
      */
     private onMedia;
     private onInvite;
+    /** Recovering call */
+    private onAttach;
     /**
      * Call has been answered by remote. Broadcast the event
      */

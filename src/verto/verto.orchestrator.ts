@@ -1,8 +1,8 @@
-import {VertoMessage, VertoMethod, VertoLogin, VertoNotification, VertoAction, VertoNotificationMessage} from './verto.params';
+import {VertoMessage, VertoMethod, VertoNotification, VertoState, VertoNotificationMessage} from './verto.params';
 import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../events';
 import {Call} from '../call';
 import {Verto} from './verto';
-import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
+import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -36,6 +36,8 @@ export class VertoOrchestrator {
     switch (message.method) {
       case VertoMethod.ClientReady:
         return this.onClientReady(message);
+      case VertoMethod.Attach:
+        return this.onAttach(message);
       case VertoMethod.Media:
         return !this.ensureCallIsExisting(call) ? undefined
           : this.onMedia(message, call as Call);
@@ -78,10 +80,10 @@ export class VertoOrchestrator {
     }
     if (message.result && message.result.action) {
       switch (message.result.action) {
-        case VertoAction.Hold:
+        case VertoState.Hold:
           return !this.ensureCallIsExisting(call) ? undefined
             : this.onHold(call as Call);
-        case VertoAction.Unhold:
+        case VertoState.Unhold:
           return !this.ensureCallIsExisting(call) ? undefined
             : this.onUnhold(call as Call);
       }
@@ -117,7 +119,7 @@ export class VertoOrchestrator {
 
   private onInvite(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory
-      .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
+      .inbound(this.verto, message.params)
       .then(pc => {
         const call = new Call(
           message.params.callID,
@@ -130,6 +132,25 @@ export class VertoOrchestrator {
         );
         this.verto.calls.push(call);
         call.pushState(ZiwoEventType.Ringing);
+      });
+  }
+
+  /** Recovering call */
+  private onAttach(message:VertoMessage<any>):void {
+    RTCPeerConnectionFactory.recovering(this.verto, message.params)
+      .then(pc => {
+        const call = new Call(
+          message.params.callID,
+          this.verto,
+          message.params.verto_h_originalCallerIdNumber,
+          this.verto.getLogin(),
+          pc,
+          message.params.display_direction,
+          message.params
+        );
+        this.verto.calls.push(call);
+        call.pushState(ZiwoEventType.Recovering);
+        call.pushState(ZiwoEventType.Active);
       });
   }
 

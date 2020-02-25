@@ -101,13 +101,25 @@ class Verto {
      * Hold a specific call
      */
     holdCall(callId, phoneNumber) {
-        this.send(this.params.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Hold));
     }
     /**
      * Hang up a specific call
      */
     unholdCall(callId, phoneNumber) {
-        this.send(this.params.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Unhold));
+    }
+    /**
+     * Purge a specific call
+     */
+    purgeCall(callId, phoneNumber) {
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Purge));
+    }
+    /**
+     * Destroy a specific call
+     */
+    destroyCall(callId, phoneNumber) {
+        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Destroy));
     }
     /**
      * DTFM send a char to current call

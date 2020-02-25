@@ -6,30 +6,60 @@ export class VertoClear {
 
   private verto:Verto;
   private debug:boolean;
+  private readonly eventType:'unload'|'beforeunload';
 
   constructor(verto:Verto, debug:boolean) {
     this.verto = verto;
     this.debug = debug;
+    this.eventType = this.debug ? 'beforeunload' : 'unload';
   }
 
   /**
-   * When user closes the tab, we need to purge the call:
+   * When user closes the tab, we need to purge the call
    *  - for on going call(s): purge
    *  - for ended call(s): purge + destroy
    */
   public prepareUnloadEvent():void {
-    window.addEventListener('unload', (e) => {
+    window.addEventListener(this.eventType, (e) => {
       this.purge(this.verto.calls);
-      this.destroy(this.verto.calls.filter(c => c.states.findIndex(x => x.state === ZiwoEventType.Hangup) >= 0));
     }, false);
+    if (this.debug) {
+      /**
+       * this display a validation popup before closing the tab.
+       * Gives us time to check the console ;) || uncomment for testing
+       */
+      // window.onbeforeunload = () => {
+      // return 'Purging calls';
+      // };
+    }
+  }
+
+  public destroyCall(call:Call):void {
+    if (call.states.findIndex(x => x.state === ZiwoEventType.Hangup) === -1) {
+      call.hangup();
+    }
+    if (call.channel.stream) {
+      // tslint:disable-next-line: triple-equals
+      if (typeof call.channel.stream.stop == 'function') {
+        call.channel.stream.stop();
+      } else {
+        if (call.channel.stream.active) {
+          const tracks = call.channel.stream.getTracks();
+          tracks.forEach((tr:any) => tr.stop());
+        }
+      }
+    }
+    // tslint:disable-next-line: triple-equals
+    if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
+      call.channel.remoteStream.stop();
+    }
   }
 
   private purge(calls:Call[]):void {
-
-  }
-
-  private destroy(call:Call[]):void {
-
+    if (this.debug) {
+      console.log('PURGE > ', calls);
+    }
+    calls.forEach(c => this.verto.purgeCall(c.callId, c.phoneNumber));
   }
 
 }

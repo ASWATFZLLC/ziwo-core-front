@@ -18,11 +18,13 @@ var VertoByeReason;
     VertoByeReason[VertoByeReason["CALL_REJECTED"] = 21] = "CALL_REJECTED";
     VertoByeReason[VertoByeReason["ORIGINATOR_CANCEL"] = 487] = "ORIGINATOR_CANCEL";
 })(VertoByeReason = exports.VertoByeReason || (exports.VertoByeReason = {}));
-var VertoAction;
-(function (VertoAction) {
-    VertoAction["Hold"] = "hold";
-    VertoAction["Unhold"] = "unhold";
-})(VertoAction = exports.VertoAction || (exports.VertoAction = {}));
+var VertoState;
+(function (VertoState) {
+    VertoState["Hold"] = "hold";
+    VertoState["Unhold"] = "unhold";
+    VertoState["Destroy"] = "destroy";
+    VertoState["Purge"] = "purge";
+})(VertoState = exports.VertoState || (exports.VertoState = {}));
 var VertoNotificationMessage;
 (function (VertoNotificationMessage) {
     VertoNotificationMessage["CallCreated"] = "CALL CREATED";
@@ -63,25 +65,18 @@ class VertoParams {
             sessid: sessionId,
         });
     }
-    holdCall(sessionId, callId, login, phoneNumber) {
-        return this.wrap(VertoMethod.Modify, {
-            action: 'hold',
-            dialogParams: this.dialogParams(callId, login, phoneNumber),
-            sessid: sessionId,
-        });
-    }
-    unholdCall(sessionId, callId, login, phoneNumber) {
-        return this.wrap(VertoMethod.Modify, {
-            action: 'unhold',
-            dialogParams: this.dialogParams(callId, login, phoneNumber),
-            sessid: sessionId,
-        });
-    }
     answerCall(sessionId, callId, login, phoneNumber, sdp) {
         return this.wrap(VertoMethod.Answer, {
             sdp: sdp,
             sessid: sessionId,
             dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
+        });
+    }
+    setState(sessionId, callId, login, phoneNumber, state) {
+        return this.wrap(VertoMethod.Modify, {
+            action: state,
+            dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
         });
     }
     dtfm(sessionId, callId, login, char) {

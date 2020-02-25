@@ -40,9 +40,9 @@ export class Call {
     microphone: CallStatus.Running,
     camera: CallStatus.Stopped,
   };
-  private readonly outboundDetails?:any;
+  private readonly initialPayload?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', outboundDetails?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', initialPayload?:any) {
     this.verto = verto;
     this.callId = callId;
     this.verto = verto;
@@ -50,9 +50,9 @@ export class Call {
     this.channel = verto.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
-    this.outboundDetails = outboundDetails;
-    if (this.direction === 'inbound') {
-      this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+    this.initialPayload = initialPayload;
+    if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
+      this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
     }
   }
 

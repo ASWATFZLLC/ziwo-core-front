@@ -43,6 +43,7 @@ export declare enum ZiwoEventType {
     Hangup = "hangup",
     Mute = "mute",
     Unmute = "unmute",
+    Purge = "purge",
     Destroy = "destroy",
     Recovering = "recovering"
 }

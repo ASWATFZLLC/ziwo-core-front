@@ -1,12 +1,13 @@
 import {AgentPosition, AgentInfo} from '../authentication.service';
 import {MediaChannel, MediaInfo} from '../media-channel';
 import {Call} from '../call';
-import {VertoParams, VertoByeReason} from './verto.params';
+import {VertoParams, VertoByeReason, VertoState} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
 import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
 import {MESSAGES} from '../messages';
 import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
 import {VertoClear} from './verto.clear';
+import { VertoSession } from './verto.session';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -143,21 +144,54 @@ export class Verto {
    * Hang up a specific call
    */
   public hangupCall(callId:string, phoneNumber:string, reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):void {
-    this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
+    // this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
+    this.destroyCall(callId);
   }
 
   /**
    * Hold a specific call
    */
   public holdCall(callId:string, phoneNumber:string):void {
-    this.send(this.params.holdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(this.params.setState(this.sessid as string, callId, this.getLogin(), phoneNumber, VertoState.Hold));
   }
 
   /**
    * Hang up a specific call
    */
   public unholdCall(callId:string, phoneNumber:string):void {
-    this.send(this.params.unholdCall(this.sessid as string, callId, this.getLogin(), phoneNumber));
+    this.send(this.params.setState(this.sessid as string, callId, this.getLogin(), phoneNumber, VertoState.Unhold));
+  }
+
+  /**
+   * Purge a specific call
+   */
+  public purgeCall(callId:string, phoneNumber:string):void {
+    const call = this.calls.find(x => x.callId === callId);
+    if (call) {
+      call.pushState(ZiwoEventType.Purge);
+    }
+    this.send(this.params.setState(this.sessid as string, callId, this.getLogin(), phoneNumber, VertoState.Purge));
+  }
+
+  /**
+   * Destroy a specific call.
+   */
+  public destroyCall(callId:string):void {
+    const callIndex = this.calls.findIndex(x => x.callId === callId);
+    if (callIndex === -1) {
+      return;
+    }
+    this.calls[callIndex].pushState(ZiwoEventType.Destroy);
+    this.cleaner.destroyCall(this.calls[callIndex]);
+    this.calls.splice(callIndex, 1);
+  }
+
+  /**
+   * Purge & Destroy a specific call.
+   */
+  public purgeAndDestroyCall(callId:string, phoneNumber:string, removeFromList = true):void {
+    this.purgeCall(callId, phoneNumber);
+    this.destroyCall(callId);
   }
 
   /**
@@ -189,7 +223,7 @@ export class Verto {
       if (!this.socket) {
         return onErr();
       }
-      this.sessid = this.params.getUuid();
+      this.sessid = VertoSession.get();
       this.send(this.params.login(this.sessid, agentPosition.name, agentPosition.password));
     });
   }
