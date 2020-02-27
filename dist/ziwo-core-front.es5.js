@@ -194,6 +194,7 @@ var Md5 = /** @class */ (function () {
     Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
     return Md5;
 }());
+//# sourceMappingURL=index.js.map
 
 const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
 const MESSAGES = {
@@ -202,6 +203,7 @@ const MESSAGES = {
     AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
     MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
 };
+//# sourceMappingURL=messages.js.map
 
 var UserStatus;
 (function (UserStatus) {
@@ -398,6 +400,7 @@ class ApiService {
         });
     }
 }
+//# sourceMappingURL=api.service.js.map
 
 /**
  * TODO : documentation
@@ -462,6 +465,7 @@ class ZiwoEvent {
 }
 ZiwoEvent.listeners = [];
 ZiwoEvent.prefixes = ['_jorel-dialog-state-', 'ziwo-'];
+//# sourceMappingURL=events.js.map
 
 class MediaChannel {
     constructor(stream) {
@@ -511,6 +515,7 @@ class MediaChannel {
         return audioContext;
     }
 }
+//# sourceMappingURL=media-channel.js.map
 
 var VertoMethod;
 (function (VertoMethod) {
@@ -641,6 +646,7 @@ class VertoParams {
         };
     }
 }
+//# sourceMappingURL=verto.params.js.map
 
 var CallStatus;
 (function (CallStatus) {
@@ -731,6 +737,7 @@ class Call {
         });
     }
 }
+//# sourceMappingURL=call.js.map
 
 class RTCPeerConnectionFactory {
     /**
@@ -810,6 +817,7 @@ class RTCPeerConnectionFactory {
         return this.inbound(verto, params);
     }
 }
+//# sourceMappingURL=RTCPeerConnection.factory.js.map
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -967,6 +975,7 @@ class VertoOrchestrator {
         }
     }
 }
+//# sourceMappingURL=verto.orchestrator.js.map
 
 class VertoClear {
     constructor(verto, debug) {
@@ -1013,6 +1022,7 @@ class VertoClear {
         calls.forEach(c => this.verto.purgeCall(c.callId, c.phoneNumber));
     }
 }
+//# sourceMappingURL=verto.clear.js.map
 
 class VertoSession {
     /**
@@ -1030,6 +1040,7 @@ class VertoSession {
     }
 }
 VertoSession.storageKey = 'ziwo_socket_session_id';
+//# sourceMappingURL=verto.session.js.map
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC

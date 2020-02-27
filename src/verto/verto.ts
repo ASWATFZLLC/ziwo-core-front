@@ -144,8 +144,8 @@ export class Verto {
    * Hang up a specific call
    */
   public hangupCall(callId:string, phoneNumber:string, reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING):void {
-    // this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
-    this.destroyCall(callId);
+    this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
+    this.purgeAndDestroyCall(callId);
   }
 
   /**
@@ -165,12 +165,11 @@ export class Verto {
   /**
    * Purge a specific call
    */
-  public purgeCall(callId:string, phoneNumber:string):void {
+  public purgeCall(callId:string):void {
     const call = this.calls.find(x => x.callId === callId);
     if (call) {
       call.pushState(ZiwoEventType.Purge);
     }
-    this.send(this.params.setState(this.sessid as string, callId, this.getLogin(), phoneNumber, VertoState.Purge));
   }
 
   /**
@@ -189,8 +188,8 @@ export class Verto {
   /**
    * Purge & Destroy a specific call.
    */
-  public purgeAndDestroyCall(callId:string, phoneNumber:string, removeFromList = true):void {
-    this.purgeCall(callId, phoneNumber);
+  public purgeAndDestroyCall(callId:string):void {
+    this.purgeCall(callId);
     this.destroyCall(callId);
   }
 

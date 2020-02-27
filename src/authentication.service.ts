@@ -2,6 +2,10 @@ import {Md5} from 'md5-typescript';
 import {ApiService, ApiResult} from './api.service';
 import {MESSAGES} from './messages';
 
+export interface ManualPosition {
+
+}
+
 /**
  * Credential provided by Ziwo
  * @email is the agent's email
