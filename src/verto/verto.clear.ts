@@ -59,7 +59,7 @@ export class VertoClear {
     if (this.debug) {
       console.log('PURGE > ', calls);
     }
-    calls.forEach(c => this.verto.purgeCall(c.callId, c.phoneNumber));
+    calls.forEach(c => this.verto.purgeCall(c.callId));
   }
 
 }

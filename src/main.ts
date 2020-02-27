@@ -1,4 +1,4 @@
-import {Credentials, AuthenticationService, AgentInfo} from './authentication.service';
+import {Credentials, AuthenticationService, AgentInfo, AgentPosition, ManualPosition} from './authentication.service';
 import {ApiService} from './api.service';
 import {ZiwoEvent, ZiwoEventType} from './events';
 import {MediaInfo} from './media-channel';

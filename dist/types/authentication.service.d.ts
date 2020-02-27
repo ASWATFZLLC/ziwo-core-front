@@ -1,4 +1,6 @@
 import { ApiService } from './api.service';
+export interface ManualPosition {
+}
 /**
  * Credential provided by Ziwo
  * @email is the agent's email

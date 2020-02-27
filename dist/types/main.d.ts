@@ -1,4 +1,4 @@
-import { Credentials } from './authentication.service';
+import { Credentials, ManualPosition } from './authentication.service';
 import { MediaInfo } from './media-channel';
 import { Call } from './call';
 /**
@@ -13,6 +13,10 @@ export interface ZiwoClientOptions {
      * see `authentication.ts#Credentials` for complete definition
      */
     credentials: Credentials;
+    /**
+     * Allow to connect agent to a specific position
+     */
+    position?: ManualPosition;
     /**
      * @autoConnect let you choose to connect the agent automatically or not.
      * Default = true
