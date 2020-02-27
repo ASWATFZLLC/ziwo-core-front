@@ -35,9 +35,6 @@ export class VertoClear {
   }
 
   public destroyCall(call:Call):void {
-    if (call.states.findIndex(x => x.state === ZiwoEventType.Hangup) === -1) {
-      call.hangup();
-    }
     if (call.channel.stream) {
       // tslint:disable-next-line: triple-equals
       if (typeof call.channel.stream.stop == 'function') {
