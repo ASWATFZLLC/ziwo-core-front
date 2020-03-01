@@ -79,6 +79,10 @@ export class Call {
     // Because unmute is not sent/received over the socket, we throw the event manually
   }
 
+  public blindTransfer(destination:string):void {
+    this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
+  }
+
   public pushState(type:ZiwoEventType, broadcast = true):void {
     const d = new Date();
     this.states.push({

@@ -162,6 +162,10 @@ export class Verto {
     this.send(this.params.setState(this.sessid as string, callId, this.getLogin(), phoneNumber, VertoState.Unhold));
   }
 
+  public blindTransfer(transferTo:string, callId:string, phoneNumber:string):void {
+    this.send(this.params.transfer(this.sessid as string, callId, this.getLogin(), phoneNumber, transferTo));
+  }
+
   /**
    * Purge a specific call
    */

@@ -46,6 +46,7 @@ export declare class VertoParams {
     hangupCall(sessionId: string, callId: string, login: string, phoneNumber: string, reason?: VertoByeReason): VertoMessage<any>;
     answerCall(sessionId: string | undefined, callId: string, login: string, phoneNumber: string, sdp: string): VertoMessage<any>;
     setState(sessionId: string, callId: string, login: string, phoneNumber: string, state: VertoState): VertoMessage<any>;
+    transfer(sessionId: string, callId: string, login: string, phoneNumber: string, transferTo: string): VertoMessage<any>;
     dtfm(sessionId: string, callId: string, login: string, char: string): VertoMessage<any>;
     getUuid(): string;
     static getUuid(): string;

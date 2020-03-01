@@ -77,6 +77,12 @@ function unhold() {
     }
 }
 
+function transfer() {
+    if (call) {
+        call.blindTransfer("6969");
+    }
+}
+
 /**
  * TOOLS
  */

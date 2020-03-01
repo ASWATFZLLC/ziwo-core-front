@@ -77,10 +77,11 @@ export declare class Verto {
      * Hang up a specific call
      */
     unholdCall(callId: string, phoneNumber: string): void;
+    blindTransfer(transferTo: string, callId: string, phoneNumber: string): void;
     /**
      * Purge a specific call
      */
-    purgeCall(callId: string, phoneNumber: string): void;
+    purgeCall(callId: string): void;
     /**
      * Destroy a specific call.
      */
@@ -88,7 +89,7 @@ export declare class Verto {
     /**
      * Purge & Destroy a specific call.
      */
-    purgeAndDestroyCall(callId: string, phoneNumber: string, removeFromList?: boolean): void;
+    purgeAndDestroyCall(callId: string): void;
     /**
      * DTFM send a char to current call
      */
