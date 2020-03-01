@@ -4,6 +4,7 @@ var VertoMethod;
 (function (VertoMethod) {
     VertoMethod["Login"] = "login";
     VertoMethod["ClientReady"] = "verto.clientReady";
+    VertoMethod["Attach"] = "verto.attach";
     VertoMethod["Media"] = "verto.media";
     VertoMethod["Invite"] = "verto.invite";
     VertoMethod["Answer"] = "verto.answer";
@@ -22,7 +23,6 @@ var VertoState;
 (function (VertoState) {
     VertoState["Hold"] = "hold";
     VertoState["Unhold"] = "unhold";
-    VertoState["Destroy"] = "destroy";
     VertoState["Purge"] = "purge";
 })(VertoState = exports.VertoState || (exports.VertoState = {}));
 var VertoNotificationMessage;
@@ -79,6 +79,14 @@ class VertoParams {
             sessid: sessionId,
         });
     }
+    transfer(sessionId, callId, login, phoneNumber, transferTo) {
+        return this.wrap(VertoMethod.Modify, {
+            action: 'transfer',
+            destination: transferTo,
+            dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
+        });
+    }
     dtfm(sessionId, callId, login, char) {
         return this.wrap(VertoMethod.Info, {
             sessid: sessionId,
@@ -90,6 +98,9 @@ class VertoParams {
         });
     }
     getUuid() {
+        return VertoParams.getUuid();
+    }
+    static getUuid() {
         /* tslint:disable */
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
             const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);

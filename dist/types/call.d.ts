@@ -32,6 +32,8 @@ export declare class Call {
     unhold(): void;
     mute(): void;
     unmute(): void;
+    attendedTransfer(destination: string): Call | undefined;
+    proceedAttendedTransfer(transferCall: Call): void;
     blindTransfer(destination: string): void;
     pushState(type: ZiwoEventType, broadcast?: boolean): void;
     private toggleSelfStream;

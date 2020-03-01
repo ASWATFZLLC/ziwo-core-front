@@ -8,6 +8,7 @@ const events_1 = require("../events");
 const messages_1 = require("../messages");
 const RTCPeerConnection_factory_1 = require("./RTCPeerConnection.factory");
 const verto_clear_1 = require("./verto.clear");
+const verto_session_1 = require("./verto.session");
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
  *
@@ -96,6 +97,7 @@ class Verto {
      */
     hangupCall(callId, phoneNumber, reason = verto_params_1.VertoByeReason.NORMAL_CLEARING) {
         this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber, reason));
+        this.purgeAndDestroyCall(callId);
     }
     /**
      * Hold a specific call
@@ -109,17 +111,36 @@ class Verto {
     unholdCall(callId, phoneNumber) {
         this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Unhold));
     }
+    blindTransfer(transferTo, callId, phoneNumber) {
+        this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
+    }
     /**
      * Purge a specific call
      */
-    purgeCall(callId, phoneNumber) {
-        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Purge));
+    purgeCall(callId) {
+        const call = this.calls.find(x => x.callId === callId);
+        if (call) {
+            call.pushState(events_1.ZiwoEventType.Purge);
+        }
     }
     /**
-     * Destroy a specific call
+     * Destroy a specific call.
      */
-    destroyCall(callId, phoneNumber) {
-        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, verto_params_1.VertoState.Destroy));
+    destroyCall(callId) {
+        const callIndex = this.calls.findIndex(x => x.callId === callId);
+        if (callIndex === -1) {
+            return;
+        }
+        this.calls[callIndex].pushState(events_1.ZiwoEventType.Destroy);
+        this.cleaner.destroyCall(this.calls[callIndex]);
+        this.calls.splice(callIndex, 1);
+    }
+    /**
+     * Purge & Destroy a specific call.
+     */
+    purgeAndDestroyCall(callId) {
+        this.purgeCall(callId);
+        this.destroyCall(callId);
     }
     /**
      * DTFM send a char to current call
@@ -148,7 +169,7 @@ class Verto {
             if (!this.socket) {
                 return onErr();
             }
-            this.sessid = this.params.getUuid();
+            this.sessid = verto_session_1.VertoSession.get();
             this.send(this.params.login(this.sessid, agentPosition.name, agentPosition.password));
         });
     }

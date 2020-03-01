@@ -702,6 +702,23 @@ class Call {
         this.pushState(ZiwoEventType.Unmute);
         // Because unmute is not sent/received over the socket, we throw the event manually
     }
+    attendedTransfer(destination) {
+        this.hold();
+        const call = this.verto.startCall(destination);
+        if (!call) {
+            return undefined;
+        }
+        this.verto.calls.push(call);
+        return call;
+    }
+    proceedAttendedTransfer(transferCall) {
+        if (!transferCall) {
+            return;
+        }
+        const destination = transferCall.phoneNumber;
+        transferCall.hangup();
+        this.blindTransfer(destination);
+    }
     blindTransfer(destination) {
         this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
     }

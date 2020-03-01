@@ -83,6 +83,18 @@ function transfer() {
     }
 }
 
+function attendedTransfer() {
+    if (!call) {
+        return;
+    }
+    var res = call.attendedTransfer('6969');
+    console.log(res);
+    window.setTimeout(() => {
+        console.log('CONFIRM ATTENDED TRANSFER');
+        call.proceedAttendedTransfer(res);
+    }, 3000);
+}
+
 /**
  * TOOLS
  */
