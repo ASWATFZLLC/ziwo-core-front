@@ -6,11 +6,6 @@ export declare enum CallStatus {
     Running = "running",
     OnHold = "onHold"
 }
-export interface CallComponentsStatus {
-    call: CallStatus;
-    microphone: CallStatus;
-    camera: CallStatus;
-}
 export interface CallState {
     state: ZiwoEventType;
     date: Date;
@@ -28,10 +23,8 @@ export declare class Call {
     readonly phoneNumber: string;
     readonly direction: 'outbound' | 'inbound' | 'internal' | 'service';
     readonly states: CallState[];
-    private status;
     private readonly initialPayload?;
     constructor(callId: string, verto: Verto, phoneNumber: string, login: string, rtcPeerConnection: RTCPeerConnection, direction: 'outbound' | 'inbound', initialPayload?: any);
-    getCallStatus(): CallComponentsStatus;
     answer(): void;
     hangup(): void;
     dtfm(char: string): void;
@@ -39,6 +32,9 @@ export declare class Call {
     unhold(): void;
     mute(): void;
     unmute(): void;
+    attendedTransfer(destination: string): Call | undefined;
+    proceedAttendedTransfer(transferCall: Call): void;
+    blindTransfer(destination: string): void;
     pushState(type: ZiwoEventType, broadcast?: boolean): void;
     private toggleSelfStream;
 }

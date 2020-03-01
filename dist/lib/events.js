@@ -32,6 +32,7 @@ var ZiwoEventType;
     ZiwoEventType["Hangup"] = "hangup";
     ZiwoEventType["Mute"] = "mute";
     ZiwoEventType["Unmute"] = "unmute";
+    ZiwoEventType["Purge"] = "purge";
     ZiwoEventType["Destroy"] = "destroy";
     ZiwoEventType["Recovering"] = "recovering";
 })(ZiwoEventType = exports.ZiwoEventType || (exports.ZiwoEventType = {}));

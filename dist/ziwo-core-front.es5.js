@@ -194,7 +194,6 @@ var Md5 = /** @class */ (function () {
     Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
     return Md5;
 }());
-//# sourceMappingURL=index.js.map
 
 const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
 const MESSAGES = {
@@ -203,7 +202,6 @@ const MESSAGES = {
     AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
     MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
 };
-//# sourceMappingURL=messages.js.map
 
 var UserStatus;
 (function (UserStatus) {
@@ -400,7 +398,6 @@ class ApiService {
         });
     }
 }
-//# sourceMappingURL=api.service.js.map
 
 /**
  * TODO : documentation
@@ -465,7 +462,6 @@ class ZiwoEvent {
 }
 ZiwoEvent.listeners = [];
 ZiwoEvent.prefixes = ['_jorel-dialog-state-', 'ziwo-'];
-//# sourceMappingURL=events.js.map
 
 class MediaChannel {
     constructor(stream) {
@@ -515,7 +511,6 @@ class MediaChannel {
         return audioContext;
     }
 }
-//# sourceMappingURL=media-channel.js.map
 
 var VertoMethod;
 (function (VertoMethod) {
@@ -596,6 +591,14 @@ class VertoParams {
             sessid: sessionId,
         });
     }
+    transfer(sessionId, callId, login, phoneNumber, transferTo) {
+        return this.wrap(VertoMethod.Modify, {
+            action: 'transfer',
+            destination: transferTo,
+            dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
+        });
+    }
     dtfm(sessionId, callId, login, char) {
         return this.wrap(VertoMethod.Info, {
             sessid: sessionId,
@@ -646,7 +649,6 @@ class VertoParams {
         };
     }
 }
-//# sourceMappingURL=verto.params.js.map
 
 var CallStatus;
 (function (CallStatus) {
@@ -660,11 +662,6 @@ var CallStatus;
 class Call {
     constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
         this.states = [];
-        this.status = {
-            call: CallStatus.Running,
-            microphone: CallStatus.Running,
-            camera: CallStatus.Stopped,
-        };
         this.verto = verto;
         this.callId = callId;
         this.verto = verto;
@@ -677,40 +674,53 @@ class Call {
             this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
         }
     }
-    getCallStatus() {
-        return this.status;
-    }
     answer() {
         var _a;
         return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
     }
     hangup() {
+        this.pushState(ZiwoEventType.Hangup);
         this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
             : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
-        this.status.call = CallStatus.Stopped;
     }
     dtfm(char) {
         this.verto.dtfm(this.callId, char);
     }
     hold() {
         this.verto.holdCall(this.callId, this.phoneNumber);
-        this.status.call = CallStatus.OnHold;
     }
     unhold() {
         this.verto.unholdCall(this.callId, this.phoneNumber);
-        this.status.call = CallStatus.Running;
     }
     mute() {
         this.toggleSelfStream(true);
-        this.status.microphone = CallStatus.OnHold;
         // Because mute is not sent/received over the socket, we throw the event manually
         this.pushState(ZiwoEventType.Mute);
     }
     unmute() {
         this.toggleSelfStream(false);
-        this.status.microphone = CallStatus.Running;
         this.pushState(ZiwoEventType.Unmute);
         // Because unmute is not sent/received over the socket, we throw the event manually
+    }
+    attendedTransfer(destination) {
+        this.hold();
+        const call = this.verto.startCall(destination);
+        if (!call) {
+            return undefined;
+        }
+        this.verto.calls.push(call);
+        return call;
+    }
+    proceedAttendedTransfer(transferCall) {
+        if (!transferCall) {
+            return;
+        }
+        const destination = transferCall.phoneNumber;
+        transferCall.hangup();
+        this.blindTransfer(destination);
+    }
+    blindTransfer(destination) {
+        this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
     }
     pushState(type, broadcast = true) {
         const d = new Date();
@@ -737,7 +747,6 @@ class Call {
         });
     }
 }
-//# sourceMappingURL=call.js.map
 
 class RTCPeerConnectionFactory {
     /**
@@ -817,7 +826,6 @@ class RTCPeerConnectionFactory {
         return this.inbound(verto, params);
     }
 }
-//# sourceMappingURL=RTCPeerConnection.factory.js.map
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -975,7 +983,6 @@ class VertoOrchestrator {
         }
     }
 }
-//# sourceMappingURL=verto.orchestrator.js.map
 
 class VertoClear {
     constructor(verto, debug) {
@@ -995,9 +1002,6 @@ class VertoClear {
         if (this.debug) ;
     }
     destroyCall(call) {
-        if (call.states.findIndex(x => x.state === ZiwoEventType.Hangup) === -1) {
-            call.hangup();
-        }
         if (call.channel.stream) {
             // tslint:disable-next-line: triple-equals
             if (typeof call.channel.stream.stop == 'function') {
@@ -1019,10 +1023,9 @@ class VertoClear {
         if (this.debug) {
             console.log('PURGE > ', calls);
         }
-        calls.forEach(c => this.verto.purgeCall(c.callId, c.phoneNumber));
+        calls.forEach(c => this.verto.purgeCall(c.callId));
     }
 }
-//# sourceMappingURL=verto.clear.js.map
 
 class VertoSession {
     /**
@@ -1040,7 +1043,6 @@ class VertoSession {
     }
 }
 VertoSession.storageKey = 'ziwo_socket_session_id';
-//# sourceMappingURL=verto.session.js.map
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -1129,8 +1131,8 @@ class Verto {
      * Hang up a specific call
      */
     hangupCall(callId, phoneNumber, reason = VertoByeReason.NORMAL_CLEARING) {
-        // this.send(this.params.hangupCall(this.sessid as string, callId, this.getLogin(), phoneNumber, reason));
-        this.destroyCall(callId);
+        this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber, reason));
+        this.purgeAndDestroyCall(callId);
     }
     /**
      * Hold a specific call
@@ -1144,15 +1146,17 @@ class Verto {
     unholdCall(callId, phoneNumber) {
         this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, VertoState.Unhold));
     }
+    blindTransfer(transferTo, callId, phoneNumber) {
+        this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
+    }
     /**
      * Purge a specific call
      */
-    purgeCall(callId, phoneNumber) {
+    purgeCall(callId) {
         const call = this.calls.find(x => x.callId === callId);
         if (call) {
             call.pushState(ZiwoEventType.Purge);
         }
-        this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, VertoState.Purge));
     }
     /**
      * Destroy a specific call.
@@ -1169,8 +1173,8 @@ class Verto {
     /**
      * Purge & Destroy a specific call.
      */
-    purgeAndDestroyCall(callId, phoneNumber, removeFromList = true) {
-        this.purgeCall(callId, phoneNumber);
+    purgeAndDestroyCall(callId) {
+        this.purgeCall(callId);
         this.destroyCall(callId);
     }
     /**

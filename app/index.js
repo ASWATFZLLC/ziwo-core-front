@@ -77,6 +77,24 @@ function unhold() {
     }
 }
 
+function transfer() {
+    if (call) {
+        call.blindTransfer("6969");
+    }
+}
+
+function attendedTransfer() {
+    if (!call) {
+        return;
+    }
+    var res = call.attendedTransfer('6969');
+    console.log(res);
+    window.setTimeout(() => {
+        console.log('CONFIRM ATTENDED TRANSFER');
+        call.proceedAttendedTransfer(res);
+    }, 3000);
+}
+
 /**
  * TOOLS
  */

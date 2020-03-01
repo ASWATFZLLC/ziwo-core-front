@@ -100,6 +100,15 @@ export class VertoParams {
     });
   }
 
+  public transfer(sessionId:string, callId:string, login:string, phoneNumber:string, transferTo:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Modify, {
+        action: 'transfer',
+        destination: transferTo,
+        dialogParams: this.dialogParams(callId, login, phoneNumber),
+        sessid: sessionId,
+    });
+  }
+
   public dtfm(sessionId:string, callId:string, login:string, char:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Info, {
       sessid: sessionId,
