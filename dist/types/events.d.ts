@@ -54,7 +54,7 @@ export declare class ZiwoEvent {
     private data;
     constructor(type: ZiwoEventType, data: ZiwoEventDetails);
     static subscribe(func: Function): void;
-    static emit(type: ZiwoEventType, data: ZiwoEventDetails): void;
+    static emit(type: ZiwoEventType, data: ZiwoEventDetails | any): void;
     static error(code: ZiwoErrorCode, data: any): void;
     private static dispatchEvents;
     emit(): void;

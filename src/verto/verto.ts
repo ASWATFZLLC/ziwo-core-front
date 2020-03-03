@@ -3,7 +3,7 @@ import {MediaChannel, MediaInfo} from '../media-channel';
 import {Call} from '../call';
 import {VertoParams, VertoByeReason, VertoState} from './verto.params';
 import {VertoOrchestrator} from './verto.orchestrator';
-import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType} from '../events';
+import {ZiwoEvent, ZiwoErrorCode, ZiwoEventType, ZiwoEventDetails} from '../events';
 import {MESSAGES} from '../messages';
 import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
 import {VertoClear} from './verto.clear';
@@ -243,6 +243,11 @@ export class Verto {
           console.log('Socket closed');
         }
       };
+      this.socket.onerror = (e) => {
+        if (this.debug) {
+          console.warn('Socket error', e);
+        }
+      };
       this.socket.onopen = () => {
         if (this.debug) {
           console.log('Socket opened');
@@ -257,6 +262,13 @@ export class Verto {
           if (!this.isJsonRpcValid) {
             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
             throw new Error('Message is not a valid format');
+          }
+          if (data.error && data.error.code === -32000) {
+            this.socket?.close();
+            return ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Duplicate connection'});
+          }
+          if (data.error && data.error.code === -32003) {
+            return;
           }
           const callId = data.params && data.params.callID ? data.params.callID :
             (data.result && data.result.callID ? data.result.callID : undefined);
