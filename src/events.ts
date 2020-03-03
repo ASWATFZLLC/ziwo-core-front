@@ -72,7 +72,7 @@ export class ZiwoEvent {
     this.listeners.push(func);
   }
 
-  public static emit(type:ZiwoEventType, data:ZiwoEventDetails):void {
+  public static emit(type:ZiwoEventType, data:ZiwoEventDetails|any):void {
     this.listeners.forEach(x => x(type, data));
     this.dispatchEvents(type, data);
   }

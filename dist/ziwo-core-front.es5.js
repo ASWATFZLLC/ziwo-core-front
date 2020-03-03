@@ -1220,6 +1220,11 @@ class Verto {
                     console.log('Socket closed');
                 }
             };
+            this.socket.onerror = (e) => {
+                if (this.debug) {
+                    console.warn('Socket error', e);
+                }
+            };
             this.socket.onopen = () => {
                 if (this.debug) {
                     console.log('Socket opened');
@@ -1229,11 +1234,19 @@ class Verto {
                 onRes();
             };
             this.socket.onmessage = (msg) => {
+                var _a;
                 try {
                     const data = JSON.parse(msg.data);
                     if (!this.isJsonRpcValid) {
                         ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
                         throw new Error('Message is not a valid format');
+                    }
+                    if (data.error && data.error.code === -32000) {
+                        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+                        return ZiwoEvent.emit(ZiwoEventType.Disconnected, { message: 'Duplicate connection' });
+                    }
+                    if (data.error && data.error.code === -32003) {
+                        return;
                     }
                     const callId = data.params && data.params.callID ? data.params.callID :
                         (data.result && data.result.callID ? data.result.callID : undefined);
