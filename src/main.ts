@@ -38,9 +38,9 @@ export interface ZiwoClientOptions {
 export class ZiwoClient {
 
   public readonly options:ZiwoClientOptions;
+  public connectedAgent?:AgentInfo;
 
   private readonly calls:Call[] = [];
-  private connectedAgent?:AgentInfo;
   private apiService:ApiService;
   private verto:Verto;
   private readonly debug:boolean;
