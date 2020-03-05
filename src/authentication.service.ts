@@ -162,6 +162,10 @@ export class AuthenticationService {
     });
   }
 
+  public static logout(api:ApiService):Promise<any> {
+    return api.put<any>('/agents/logout', {});
+  }
+
   private static loginZiwo(api:ApiService, email:string, password:string):Promise<User> {
     return new Promise<User>((onRes, onErr) => {
       api.post<User>(api.endpoints.authenticate, {

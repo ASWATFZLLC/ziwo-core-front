@@ -72,6 +72,15 @@ export class ZiwoClient {
     });
   }
 
+  public disconnect():Promise<void> {
+    return new Promise<void>((onRes, onErr) => {
+      AuthenticationService.logout(this.apiService).then(((r:any) => {
+        this.verto.disconnect();
+        ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
+      }));
+    });
+  }
+
   public addListener(func:Function):void {
     return ZiwoEvent.subscribe(func);
   }

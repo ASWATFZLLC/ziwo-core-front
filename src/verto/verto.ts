@@ -166,6 +166,10 @@ export class Verto {
     this.send(this.params.transfer(this.sessid as string, callId, this.getLogin(), phoneNumber, transferTo));
   }
 
+  public disconnect():void {
+    this.socket?.close();
+  }
+
   /**
    * Purge a specific call
    */
