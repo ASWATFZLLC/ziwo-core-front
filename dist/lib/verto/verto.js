@@ -114,6 +114,10 @@ class Verto {
     blindTransfer(transferTo, callId, phoneNumber) {
         this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
     }
+    disconnect() {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+    }
     /**
      * Purge a specific call
      */

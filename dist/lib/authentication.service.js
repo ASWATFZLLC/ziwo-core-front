@@ -40,6 +40,9 @@ class AuthenticationService {
             }).catch(err => onErr(err));
         });
     }
+    static logout(api) {
+        return api.put('/agents/logout', {});
+    }
     static loginZiwo(api, email, password) {
         return new Promise((onRes, onErr) => {
             api.post(api.endpoints.authenticate, {

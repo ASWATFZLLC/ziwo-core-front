@@ -241,6 +241,9 @@ class AuthenticationService {
             }).catch(err => onErr(err));
         });
     }
+    static logout(api) {
+        return api.put('/agents/logout', {});
+    }
     static loginZiwo(api, email, password) {
         return new Promise((onRes, onErr) => {
             api.post(api.endpoints.authenticate, {
@@ -1149,6 +1152,10 @@ class Verto {
     blindTransfer(transferTo, callId, phoneNumber) {
         this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
     }
+    disconnect() {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+    }
     /**
      * Purge a specific call
      */
@@ -1316,6 +1323,14 @@ class ZiwoClient {
                 this.verto.connectAgent(this.connectedAgent);
                 onRes();
             }).catch(err => onErr(err));
+        });
+    }
+    disconnect() {
+        return new Promise((onRes, onErr) => {
+            AuthenticationService.logout(this.apiService).then(((r) => {
+                this.verto.disconnect();
+                ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
+            }));
         });
     }
     addListener(func) {

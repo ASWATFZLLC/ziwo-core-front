@@ -30,6 +30,14 @@ class ZiwoClient {
             }).catch(err => onErr(err));
         });
     }
+    disconnect() {
+        return new Promise((onRes, onErr) => {
+            authentication_service_1.AuthenticationService.logout(this.apiService).then(((r) => {
+                this.verto.disconnect();
+                events_1.ZiwoEvent.emit(events_1.ZiwoEventType.Disconnected, {});
+            }));
+        });
+    }
     addListener(func) {
         return events_1.ZiwoEvent.subscribe(func);
     }

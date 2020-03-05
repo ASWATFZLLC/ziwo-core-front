@@ -117,6 +117,7 @@ export interface AgentInfo {
 export declare class AuthenticationService {
     constructor();
     static authenticate(api: ApiService, credentials: Credentials): Promise<AgentInfo>;
+    static logout(api: ApiService): Promise<any>;
     private static loginZiwo;
     private static autoLogin;
     private static initAgent;

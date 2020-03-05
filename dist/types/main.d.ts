@@ -38,6 +38,7 @@ export declare class ZiwoClient {
      * This function is required before proceeding with calls
      */
     connect(): Promise<void>;
+    disconnect(): Promise<void>;
     addListener(func: Function): void;
     startCall(phoneNumber: string): Call | undefined;
 }

@@ -78,6 +78,7 @@ export declare class Verto {
      */
     unholdCall(callId: string, phoneNumber: string): void;
     blindTransfer(transferTo: string, callId: string, phoneNumber: string): void;
+    disconnect(): void;
     /**
      * Purge a specific call
      */
