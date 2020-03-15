@@ -17,7 +17,6 @@ export interface CallState {
 
 /**
  * Call hold a physical instance of a call.
- *
  * They provide useful information but also methods to change the state of the call.
  *
  * @callId : unique identifier used for Jorel protocol

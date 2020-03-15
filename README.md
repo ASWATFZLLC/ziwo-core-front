@@ -6,7 +6,7 @@ Online documentation: http://core-front.ziwo.io/
 
 ## Get started
 
-Take time to read the following link:
+Take time to read the following links:
   1. `Usage` section of this file
   2. `Events` section of this file
   3. Ziwo Client class http://core-front.ziwo.io/classes/ziwoclient.html
@@ -31,7 +31,7 @@ ziwoClient = new ziwoCoreFront.ZiwoClient({
         selfTag: document.getElementById('self-video'), // `selfTag` is not required if you don't use video
         peerTag: document.getElementById('peer-video'), // `peerTag` is mandatory. It is used to bind the incoming stream (audio or video)
     },
-    debug: true, // Will provide additional logs as well as display incoming/outgoing Verto messages
+    debug: true, // Will provide additional logs as well as displaying incoming/outgoing Verto messages
 });
 
 ```
@@ -46,7 +46,7 @@ Everything else is managed through the events.
 
 ### Events
 
-The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use to changes the status of the current call.
+The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use to change the status of the call.
 
 See below the list of events:
 
@@ -72,7 +72,7 @@ For retro-compability reason, events are emitted with 2 formats:
  - `jorel-dialog-state-{EVENT_NAME}` (ex: jorel-dialog-state-held)
  - `ziwo-{EVENT_NAME}` (ex: ziwo-held)
 
-You can use `addEventListener` to listen for ziwo event. Here is how you could simply answering an incoming call.
+You can use `addEventListener` to listen for ziwo event. Here is how you could simply answer an incoming call.
 
 ```ts
 // Automatically answer incoming call
