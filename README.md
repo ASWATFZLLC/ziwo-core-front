@@ -2,32 +2,40 @@
 
 Provides a Ziwo Client to perform call
 
-## Usage
+Online documentation: http://core-front.ziwo.io/
 
-You can see a live demo using `npm run start:app`. Demo app is available in `app/`
+## Get started
 
-This library provide you a `ziwo-client` class as well as custom events.
+Take time to read the following link:
+  1. `Usage` section of this file
+  2. `Events` section of this file
+  3. Ziwo Client class http://core-front.ziwo.io/classes/ziwoclient.html
+  4. Call class http://core-front.ziwo.io/classes/call.html
+  5. Event's details: http://core-front.ziwo.io/classes/ziwoevent.html)
 
-### Ziwo Client
+### Usage
 
-You can easily instanciate a Ziwo Client by providing some basic information as follow:
+You can easily instanciate a Ziwo Client:
 
 ```ts
 ziwoClient = new ziwoCoreFront.ZiwoClient({
     autoConnect: true, // Automatically connect agent to contact center. Default is true
-    contactCenterName: document.getElementById('center').value, // Contact center you are trying to connect to
-    credentials: { // User's credentials
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
+    contactCenterName: 'your-contact-center-name', // Contact center you are trying to connect to
+    credentials: { // User's credentials. You can either send an authentication token or directly the user's credentials
+        authenticationToken: 'token_returned_on_login_action',
+        //// If you don't have an authentication token, simply provide user's credentials
+        // email: 'toto@hello.org',
+        // password: 'verysecretpassword',
     },
     tags: { // HTML tags of <video> elements available in your DOM
         selfTag: document.getElementById('self-video'), // `selfTag` is not required if you don't use video
         peerTag: document.getElementById('peer-video'), // `peerTag` is mandatory. It is used to bind the incoming stream (audio or video)
     },
     debug: true, // Will provide additional logs as well as display incoming/outgoing Verto messages
-}
-);
+});
+
 ```
+*If you disabled the auto connect in the option, make sure to call `connect()` before anything else.*
 
 Now, you can use the only function available in the Ziwo Client : startCall
 ```ts
@@ -38,27 +46,27 @@ Everything else is managed through the events.
 
 ### Events
 
-The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use. (todo: link to Docs/Call)
+The events emitted by Ziwo will allow you to perform many actions. Each event holds a Call instance that you can use to changes the status of the current call.
 
 See below the list of events:
 
-| Events       | Description                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| error        | Something wrong happened. See details for further details                                  |
-| connected    | User has been successfully authenticated                                                   |
-| disconnected | User has been disconnected                                                                 |
-| requesting   | Requesting operator to make the call                                                       |
-| trying       | Operator trying to make the call                                                           |
-| early        | Call is waiting for customer to pick up                                                    |
-| ringing      | Call is ringing agent phone                                                                |
-| answering    | Agent is answering call                                                                    |
-| active       | Agent and customer can talk to each other                                                  |
-| held         | Customer has been put on hold by the Agent                                                 |
-| hangup       | Call is being hanged up                                                                    |
-| mute         | Call has been muted by the agent                                                           |
-| unmute       | Call has been unmuted by the agent                                                         |
-| destroy      | Call is destroying                                                                         |
-| recovering   | When reconnecting to virtual phone and a call wasn't over, Jorel automatically recovers it |
+| Events       | Description                                                                             |
+| ------------ | --------------------------------------------------------------------------------------- |
+| error        | Something wrong happened. See details for further information                           |
+| connected    | User has been successfully authenticated                                                |
+| disconnected | User has been disconnected                                                              |
+| requesting   | Requesting operator to make the call                                                    |
+| trying       | Operator trying to make the call                                                        |
+| early        | Call is waiting for customer to pick up                                                 |
+| ringing      | Call is ringing agent phone                                                             |
+| answering    | Agent is answering call                                                                 |
+| active       | Agent and customer can talk to each other                                               |
+| held         | Customer has been put on hold by the Agent                                              |
+| hangup       | Call is being hanged up                                                                 |
+| mute         | Call has been muted by the agent                                                        |
+| unmute       | Call has been unmuted by the agent                                                      |
+| destroy      | Call is destroying                                                                      |
+| recovering   | When reconnecting to virtual phone and a call wasn't over, it automatically recovers it |
 
 For retro-compability reason, events are emitted with 2 formats:
  - `jorel-dialog-state-{EVENT_NAME}` (ex: jorel-dialog-state-held)
@@ -67,11 +75,14 @@ For retro-compability reason, events are emitted with 2 formats:
 You can use `addEventListener` to listen for ziwo event. Here is how you could simply answering an incoming call.
 
 ```ts
+// Automatically answer incoming call
 window.addEventListener('ziwo-ringing', (ev) => {
     // ev holds an instance of the Call in its details
     ev.details.call.answer();
 });
 ```
+
+Read http://core-front.ziwo.io/classes/ziwoevent.html) for more details
 
 ## Commands
 
