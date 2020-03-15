@@ -30,6 +30,8 @@ class VertoOrchestrator {
         switch (message.method) {
             case verto_params_1.VertoMethod.ClientReady:
                 return this.onClientReady(message);
+            case verto_params_1.VertoMethod.Attach:
+                return this.onAttach(message);
             case verto_params_1.VertoMethod.Media:
                 return !this.ensureCallIsExisting(call) ? undefined
                     : this.onMedia(message, call);
@@ -71,10 +73,10 @@ class VertoOrchestrator {
         }
         if (message.result && message.result.action) {
             switch (message.result.action) {
-                case verto_params_1.VertoAction.Hold:
+                case verto_params_1.VertoState.Hold:
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onHold(call);
-                case verto_params_1.VertoAction.Unhold:
+                case verto_params_1.VertoState.Unhold:
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onUnhold(call);
             }
@@ -106,11 +108,21 @@ class VertoOrchestrator {
     }
     onInvite(message) {
         RTCPeerConnection_factory_1.RTCPeerConnectionFactory
-            .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
+            .inbound(this.verto, message.params)
             .then(pc => {
             const call = new call_1.Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
             this.verto.calls.push(call);
             call.pushState(events_1.ZiwoEventType.Ringing);
+        });
+    }
+    /** Recovering call */
+    onAttach(message) {
+        RTCPeerConnection_factory_1.RTCPeerConnectionFactory.recovering(this.verto, message.params)
+            .then(pc => {
+            const call = new call_1.Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+            this.verto.calls.push(call);
+            call.pushState(events_1.ZiwoEventType.Recovering);
+            call.pushState(events_1.ZiwoEventType.Active);
         });
     }
     /**

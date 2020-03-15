@@ -4,18 +4,27 @@ var VertoMethod;
 (function (VertoMethod) {
     VertoMethod["Login"] = "login";
     VertoMethod["ClientReady"] = "verto.clientReady";
+    VertoMethod["Attach"] = "verto.attach";
     VertoMethod["Media"] = "verto.media";
     VertoMethod["Invite"] = "verto.invite";
     VertoMethod["Answer"] = "verto.answer";
+    VertoMethod["Info"] = "verto.info";
     VertoMethod["Modify"] = "verto.modify";
     VertoMethod["Display"] = "verto.display";
     VertoMethod["Bye"] = "verto.bye";
 })(VertoMethod = exports.VertoMethod || (exports.VertoMethod = {}));
-var VertoAction;
-(function (VertoAction) {
-    VertoAction["Hold"] = "hold";
-    VertoAction["Unhold"] = "unhold";
-})(VertoAction = exports.VertoAction || (exports.VertoAction = {}));
+var VertoByeReason;
+(function (VertoByeReason) {
+    VertoByeReason[VertoByeReason["NORMAL_CLEARING"] = 16] = "NORMAL_CLEARING";
+    VertoByeReason[VertoByeReason["CALL_REJECTED"] = 21] = "CALL_REJECTED";
+    VertoByeReason[VertoByeReason["ORIGINATOR_CANCEL"] = 487] = "ORIGINATOR_CANCEL";
+})(VertoByeReason = exports.VertoByeReason || (exports.VertoByeReason = {}));
+var VertoState;
+(function (VertoState) {
+    VertoState["Hold"] = "hold";
+    VertoState["Unhold"] = "unhold";
+    VertoState["Purge"] = "purge";
+})(VertoState = exports.VertoState || (exports.VertoState = {}));
 var VertoNotificationMessage;
 (function (VertoNotificationMessage) {
     VertoNotificationMessage["CallCreated"] = "CALL CREATED";
@@ -48,24 +57,10 @@ class VertoParams {
             dialogParams: this.dialogParams(callId, login, phoneNumber),
         });
     }
-    hangupCall(sessionId, callId, login, phoneNumber) {
+    hangupCall(sessionId, callId, login, phoneNumber, reason = VertoByeReason.NORMAL_CLEARING) {
         return this.wrap(VertoMethod.Bye, {
-            cause: 'NORMAL_CLEARING',
-            causeCode: 16,
-            dialogParams: this.dialogParams(callId, login, phoneNumber),
-            sessid: sessionId,
-        });
-    }
-    holdCall(sessionId, callId, login, phoneNumber) {
-        return this.wrap(VertoMethod.Modify, {
-            action: 'hold',
-            dialogParams: this.dialogParams(callId, login, phoneNumber),
-            sessid: sessionId,
-        });
-    }
-    unholdCall(sessionId, callId, login, phoneNumber) {
-        return this.wrap(VertoMethod.Modify, {
-            action: 'unhold',
+            cause: VertoByeReason[reason],
+            causeCode: reason,
             dialogParams: this.dialogParams(callId, login, phoneNumber),
             sessid: sessionId,
         });
@@ -77,7 +72,35 @@ class VertoParams {
             dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
         });
     }
+    setState(sessionId, callId, login, phoneNumber, state) {
+        return this.wrap(VertoMethod.Modify, {
+            action: state,
+            dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
+        });
+    }
+    transfer(sessionId, callId, login, phoneNumber, transferTo) {
+        return this.wrap(VertoMethod.Modify, {
+            action: 'transfer',
+            destination: transferTo,
+            dialogParams: this.dialogParams(callId, login, phoneNumber),
+            sessid: sessionId,
+        });
+    }
+    dtfm(sessionId, callId, login, char) {
+        return this.wrap(VertoMethod.Info, {
+            sessid: sessionId,
+            dialogParams: {
+                callID: callId,
+                login: login,
+                dtfm: char,
+            }
+        });
+    }
     getUuid() {
+        return VertoParams.getUuid();
+    }
+    static getUuid() {
         /* tslint:disable */
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
             const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);

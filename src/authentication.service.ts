@@ -2,6 +2,10 @@ import {Md5} from 'md5-typescript';
 import {ApiService, ApiResult} from './api.service';
 import {MESSAGES} from './messages';
 
+export interface ManualPosition {
+
+}
+
 /**
  * Credential provided by Ziwo
  * @email is the agent's email
@@ -156,6 +160,10 @@ export class AuthenticationService {
         }).catch(err => onErr(err));
       }).catch(err => onErr(err));
     });
+  }
+
+  public static logout(api:ApiService):Promise<any> {
+    return api.put<any>('/agents/logout', {});
   }
 
   private static loginZiwo(api:ApiService, email:string, password:string):Promise<User> {

@@ -247,6 +247,9 @@
                 }).catch(err => onErr(err));
             });
         }
+        static logout(api) {
+            return api.put('/agents/logout', {});
+        }
         static loginZiwo(api, email, password) {
             return new Promise((onRes, onErr) => {
                 api.post(api.endpoints.authenticate, {
@@ -437,6 +440,7 @@
         ZiwoEventType["Hangup"] = "hangup";
         ZiwoEventType["Mute"] = "mute";
         ZiwoEventType["Unmute"] = "unmute";
+        ZiwoEventType["Purge"] = "purge";
         ZiwoEventType["Destroy"] = "destroy";
         ZiwoEventType["Recovering"] = "recovering";
     })(ZiwoEventType || (ZiwoEventType = {}));
@@ -521,9 +525,11 @@
     (function (VertoMethod) {
         VertoMethod["Login"] = "login";
         VertoMethod["ClientReady"] = "verto.clientReady";
+        VertoMethod["Attach"] = "verto.attach";
         VertoMethod["Media"] = "verto.media";
         VertoMethod["Invite"] = "verto.invite";
         VertoMethod["Answer"] = "verto.answer";
+        VertoMethod["Info"] = "verto.info";
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
@@ -534,11 +540,12 @@
         VertoByeReason[VertoByeReason["CALL_REJECTED"] = 21] = "CALL_REJECTED";
         VertoByeReason[VertoByeReason["ORIGINATOR_CANCEL"] = 487] = "ORIGINATOR_CANCEL";
     })(VertoByeReason || (VertoByeReason = {}));
-    var VertoAction;
-    (function (VertoAction) {
-        VertoAction["Hold"] = "hold";
-        VertoAction["Unhold"] = "unhold";
-    })(VertoAction || (VertoAction = {}));
+    var VertoState;
+    (function (VertoState) {
+        VertoState["Hold"] = "hold";
+        VertoState["Unhold"] = "unhold";
+        VertoState["Purge"] = "purge";
+    })(VertoState || (VertoState = {}));
     var VertoNotificationMessage;
     (function (VertoNotificationMessage) {
         VertoNotificationMessage["CallCreated"] = "CALL CREATED";
@@ -579,20 +586,6 @@
                 sessid: sessionId,
             });
         }
-        holdCall(sessionId, callId, login, phoneNumber) {
-            return this.wrap(VertoMethod.Modify, {
-                action: 'hold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-                sessid: sessionId,
-            });
-        }
-        unholdCall(sessionId, callId, login, phoneNumber) {
-            return this.wrap(VertoMethod.Modify, {
-                action: 'unhold',
-                dialogParams: this.dialogParams(callId, login, phoneNumber),
-                sessid: sessionId,
-            });
-        }
         answerCall(sessionId, callId, login, phoneNumber, sdp) {
             return this.wrap(VertoMethod.Answer, {
                 sdp: sdp,
@@ -600,7 +593,35 @@
                 dialogParams: this.dialogParams(callId, login, phoneNumber, 'Inbound Call')
             });
         }
+        setState(sessionId, callId, login, phoneNumber, state) {
+            return this.wrap(VertoMethod.Modify, {
+                action: state,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        transfer(sessionId, callId, login, phoneNumber, transferTo) {
+            return this.wrap(VertoMethod.Modify, {
+                action: 'transfer',
+                destination: transferTo,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+                sessid: sessionId,
+            });
+        }
+        dtfm(sessionId, callId, login, char) {
+            return this.wrap(VertoMethod.Info, {
+                sessid: sessionId,
+                dialogParams: {
+                    callID: callId,
+                    login: login,
+                    dtfm: char,
+                }
+            });
+        }
         getUuid() {
+            return VertoParams.getUuid();
+        }
+        static getUuid() {
             /* tslint:disable */
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -648,13 +669,8 @@
      * Call holds a call information and provide helpers
      */
     class Call {
-        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, outboundDetails) {
+        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
             this.states = [];
-            this.status = {
-                call: CallStatus.Running,
-                microphone: CallStatus.Running,
-                camera: CallStatus.Stopped,
-            };
             this.verto = verto;
             this.callId = callId;
             this.verto = verto;
@@ -662,42 +678,58 @@
             this.channel = verto.channel;
             this.phoneNumber = phoneNumber;
             this.direction = direction;
-            this.outboundDetails = outboundDetails;
-            if (this.direction === 'inbound') {
-                this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+            this.initialPayload = initialPayload;
+            if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
+                this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
             }
-        }
-        getCallStatus() {
-            return this.status;
         }
         answer() {
             var _a;
             return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
         }
         hangup() {
+            this.pushState(ZiwoEventType.Hangup);
             this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
                 : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
-            this.status.call = CallStatus.Stopped;
+        }
+        dtfm(char) {
+            this.verto.dtfm(this.callId, char);
         }
         hold() {
             this.verto.holdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.OnHold;
         }
         unhold() {
             this.verto.unholdCall(this.callId, this.phoneNumber);
-            this.status.call = CallStatus.Running;
         }
         mute() {
             this.toggleSelfStream(true);
-            this.status.microphone = CallStatus.OnHold;
             // Because mute is not sent/received over the socket, we throw the event manually
             this.pushState(ZiwoEventType.Mute);
         }
         unmute() {
             this.toggleSelfStream(false);
-            this.status.microphone = CallStatus.Running;
             this.pushState(ZiwoEventType.Unmute);
             // Because unmute is not sent/received over the socket, we throw the event manually
+        }
+        attendedTransfer(destination) {
+            this.hold();
+            const call = this.verto.startCall(destination);
+            if (!call) {
+                return undefined;
+            }
+            this.verto.calls.push(call);
+            return call;
+        }
+        proceedAttendedTransfer(transferCall) {
+            if (!transferCall) {
+                return;
+            }
+            const destination = transferCall.phoneNumber;
+            transferCall.hangup();
+            this.blindTransfer(destination);
+        }
+        blindTransfer(destination) {
+            this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
         }
         pushState(type, broadcast = true) {
             const d = new Date();
@@ -766,7 +798,7 @@
         /**
          * We receive the call
          */
-        static inbound(verto, callId, login, inboudParams) {
+        static inbound(verto, inboudParams) {
             return new Promise((onRes, onErr) => {
                 const rtcPeerConnection = new RTCPeerConnection();
                 rtcPeerConnection.ontrack = (tr) => {
@@ -799,6 +831,9 @@
                 onRes(rtcPeerConnection);
             });
         }
+        static recovering(verto, params) {
+            return this.inbound(verto, params);
+        }
     }
 
     /**
@@ -827,6 +862,8 @@
             switch (message.method) {
                 case VertoMethod.ClientReady:
                     return this.onClientReady(message);
+                case VertoMethod.Attach:
+                    return this.onAttach(message);
                 case VertoMethod.Media:
                     return !this.ensureCallIsExisting(call) ? undefined
                         : this.onMedia(message, call);
@@ -868,10 +905,10 @@
             }
             if (message.result && message.result.action) {
                 switch (message.result.action) {
-                    case VertoAction.Hold:
+                    case VertoState.Hold:
                         return !this.ensureCallIsExisting(call) ? undefined
                             : this.onHold(call);
-                    case VertoAction.Unhold:
+                    case VertoState.Unhold:
                         return !this.ensureCallIsExisting(call) ? undefined
                             : this.onUnhold(call);
                 }
@@ -903,11 +940,21 @@
         }
         onInvite(message) {
             RTCPeerConnectionFactory
-                .inbound(this.verto, message.params.callID, this.verto.getLogin(), message.params)
+                .inbound(this.verto, message.params)
                 .then(pc => {
                 const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
+            });
+        }
+        /** Recovering call */
+        onAttach(message) {
+            RTCPeerConnectionFactory.recovering(this.verto, message.params)
+                .then(pc => {
+                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+                this.verto.calls.push(call);
+                call.pushState(ZiwoEventType.Recovering);
+                call.pushState(ZiwoEventType.Active);
             });
         }
         /**
@@ -946,6 +993,66 @@
         }
     }
 
+    class VertoClear {
+        constructor(verto, debug) {
+            this.verto = verto;
+            this.debug = debug;
+            this.eventType = this.debug ? 'beforeunload' : 'unload';
+        }
+        /**
+         * When user closes the tab, we need to purge the call
+         *  - for on going call(s): purge
+         *  - for ended call(s): purge + destroy
+         */
+        prepareUnloadEvent() {
+            window.addEventListener(this.eventType, (e) => {
+                this.purge(this.verto.calls);
+            }, false);
+            if (this.debug) ;
+        }
+        destroyCall(call) {
+            if (call.channel.stream) {
+                // tslint:disable-next-line: triple-equals
+                if (typeof call.channel.stream.stop == 'function') {
+                    call.channel.stream.stop();
+                }
+                else {
+                    if (call.channel.stream.active) {
+                        const tracks = call.channel.stream.getTracks();
+                        tracks.forEach((tr) => tr.stop());
+                    }
+                }
+            }
+            // tslint:disable-next-line: triple-equals
+            if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
+                call.channel.remoteStream.stop();
+            }
+        }
+        purge(calls) {
+            if (this.debug) {
+                console.log('PURGE > ', calls);
+            }
+            calls.forEach(c => this.verto.purgeCall(c.callId));
+        }
+    }
+
+    class VertoSession {
+        /**
+         * get will fetch local storage to retrieve existing SessionId
+         * If no SessionId are found in storage, we generate a new one
+         */
+        static get() {
+            const v = window.sessionStorage.getItem(this.storageKey);
+            if (v) {
+                return v;
+            }
+            const newId = VertoParams.getUuid();
+            window.sessionStorage.setItem(this.storageKey, newId);
+            return newId;
+        }
+    }
+    VertoSession.storageKey = 'ziwo_socket_session_id';
+
     /**
      * JsonRpcClient implements Verto protocol using JSON RPC
      *
@@ -964,10 +1071,11 @@
              * Callback functions - register using `addListener`
              */
             this.listeners = [];
-            this.ICE_SERVER = 'stun:stun.l.google.com:19302';
+            this.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
             this.debug = debug;
             this.tags = tags;
             this.orchestrator = new VertoOrchestrator(this, this.debug);
+            this.cleaner = new VertoClear(this, this.debug);
             this.params = new VertoParams();
             this.calls = calls;
         }
@@ -1033,18 +1141,60 @@
          */
         hangupCall(callId, phoneNumber, reason = VertoByeReason.NORMAL_CLEARING) {
             this.send(this.params.hangupCall(this.sessid, callId, this.getLogin(), phoneNumber, reason));
+            this.purgeAndDestroyCall(callId);
         }
         /**
          * Hold a specific call
          */
         holdCall(callId, phoneNumber) {
-            this.send(this.params.holdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+            this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, VertoState.Hold));
         }
         /**
          * Hang up a specific call
          */
         unholdCall(callId, phoneNumber) {
-            this.send(this.params.unholdCall(this.sessid, callId, this.getLogin(), phoneNumber));
+            this.send(this.params.setState(this.sessid, callId, this.getLogin(), phoneNumber, VertoState.Unhold));
+        }
+        blindTransfer(transferTo, callId, phoneNumber) {
+            this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
+        }
+        disconnect() {
+            var _a;
+            (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+        }
+        /**
+         * Purge a specific call
+         */
+        purgeCall(callId) {
+            const call = this.calls.find(x => x.callId === callId);
+            if (call) {
+                call.pushState(ZiwoEventType.Purge);
+            }
+        }
+        /**
+         * Destroy a specific call.
+         */
+        destroyCall(callId) {
+            const callIndex = this.calls.findIndex(x => x.callId === callId);
+            if (callIndex === -1) {
+                return;
+            }
+            this.calls[callIndex].pushState(ZiwoEventType.Destroy);
+            this.cleaner.destroyCall(this.calls[callIndex]);
+            this.calls.splice(callIndex, 1);
+        }
+        /**
+         * Purge & Destroy a specific call.
+         */
+        purgeAndDestroyCall(callId) {
+            this.purgeCall(callId);
+            this.destroyCall(callId);
+        }
+        /**
+         * DTFM send a char to current call
+         */
+        dtfm(callId, char) {
+            this.send(this.params.dtfm(this.sessid, callId, this.getLogin(), char));
         }
         /**
          * Send data to socket and log in case of debug
@@ -1067,7 +1217,7 @@
                 if (!this.socket) {
                     return onErr();
                 }
-                this.sessid = this.params.getUuid();
+                this.sessid = VertoSession.get();
                 this.send(this.params.login(this.sessid, agentPosition.name, agentPosition.password));
             });
         }
@@ -1083,18 +1233,33 @@
                         console.log('Socket closed');
                     }
                 };
+                this.socket.onerror = (e) => {
+                    if (this.debug) {
+                        console.warn('Socket error', e);
+                    }
+                };
                 this.socket.onopen = () => {
                     if (this.debug) {
                         console.log('Socket opened');
                     }
+                    // clear.prepareUnloadEvent makes sure we clear the calls properly when user closes the tab
+                    this.cleaner.prepareUnloadEvent();
                     onRes();
                 };
                 this.socket.onmessage = (msg) => {
+                    var _a;
                     try {
                         const data = JSON.parse(msg.data);
                         if (!this.isJsonRpcValid) {
                             ZiwoEvent.error(ZiwoErrorCode.ProtocolError, data);
                             throw new Error('Message is not a valid format');
+                        }
+                        if (data.error && data.error.code === -32000) {
+                            (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+                            return ZiwoEvent.emit(ZiwoEventType.Disconnected, { message: 'Duplicate connection' });
+                        }
+                        if (data.error && data.error.code === -32003) {
+                            return;
                         }
                         const callId = data.params && data.params.callID ? data.params.callID :
                             (data.result && data.result.callID ? data.result.callID : undefined);
@@ -1112,7 +1277,7 @@
         }
         getNewRTCPeerConnection() {
             const rtcPeerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: this.ICE_SERVER }],
+                iceServers: [{ urls: this.STUN_ICE_SERVER }],
             });
             return rtcPeerConnection;
         }
@@ -1164,6 +1329,14 @@
                     this.verto.connectAgent(this.connectedAgent);
                     onRes();
                 }).catch(err => onErr(err));
+            });
+        }
+        disconnect() {
+            return new Promise((onRes, onErr) => {
+                AuthenticationService.logout(this.apiService).then(((r) => {
+                    this.verto.disconnect();
+                    ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
+                }));
             });
         }
         addListener(func) {

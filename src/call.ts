@@ -1,19 +1,12 @@
 import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
 import {ZiwoEventType, ZiwoEvent} from './events';
-import {RTCPeerConnectionFactory} from './verto/RTCPeerConnection.factory';
-import { VertoByeReason } from './verto/verto.params';
+import {VertoByeReason} from './verto/verto.params';
 
 export enum CallStatus {
   Stopped = 'stopped',
   Running = 'running',
   OnHold = 'onHold',
-}
-
-export interface CallComponentsStatus {
-  call:CallStatus;
-  microphone:CallStatus;
-  camera:CallStatus;
 }
 
 export interface CallState {
@@ -23,7 +16,19 @@ export interface CallState {
 }
 
 /**
- * Call holds a call information and provide helpers
+ * Call hold a physical instance of a call.
+ *
+ * They provide useful information but also methods to change the state of the call.
+ *
+ * @callId : unique identifier used for Jorel protocol
+ * @primaryCallId : link to first call of the chain if existing
+ * @rtcPeerConnection : the WebRTC interface
+ * @channel : holds the media stream (input/output)
+ * @verto : holds a reference to Verto singleton
+ * @phoneNumber : peer phone number
+ * @direction : call's direction
+ * @states : array containing all the call's status update with a Datetime.
+ * @initialPayload : complete payload received/sent to start the call
  */
 export class Call {
 
@@ -35,14 +40,9 @@ export class Call {
   public readonly phoneNumber:string;
   public readonly direction:'outbound'|'inbound'|'internal'|'service';
   public readonly states:CallState[] = [];
-  private status:CallComponentsStatus = {
-    call: CallStatus.Running,
-    microphone: CallStatus.Running,
-    camera: CallStatus.Stopped,
-  };
-  private readonly outboundDetails?:any;
+  private readonly initialPayload?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', outboundDetails?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', initialPayload?:any) {
     this.verto = verto;
     this.callId = callId;
     this.verto = verto;
@@ -50,51 +50,106 @@ export class Call {
     this.channel = verto.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
-    this.outboundDetails = outboundDetails;
-    if (this.direction === 'inbound') {
-      this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+    this.initialPayload = initialPayload;
+    if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
+      this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
     }
   }
 
-  public getCallStatus():CallComponentsStatus {
-    return this.status;
-  }
-
+  /**
+   * Use when current state is `ringing` to switch the call to `active`
+   */
   public answer():void {
     return this.verto.answerCall(this.callId, this.phoneNumber, this.rtcPeerConnection.localDescription?.sdp as string);
   }
 
+  /**
+   * Use when current state is 'ringing' or 'active' to stop the call
+   */
   public hangup():void {
+    this.pushState(ZiwoEventType.Hangup);
     this.verto.hangupCall(this.callId, this.phoneNumber,
       this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
         : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
-    this.status.call = CallStatus.Stopped;
   }
 
+  /**
+   * Use to send a digit
+   */
+  public dtfm(char:string):void {
+    this.verto.dtfm(this.callId, char);
+  }
+
+  /**
+   * Set the call on hold
+   */
   public hold():void {
     this.verto.holdCall(this.callId, this.phoneNumber);
-    this.status.call = CallStatus.OnHold;
   }
 
+  /**
+   * Unhold the call
+   */
   public unhold():void {
     this.verto.unholdCall(this.callId, this.phoneNumber);
-    this.status.call = CallStatus.Running;
   }
 
+  /**
+   * Mute user's microphone
+   */
   public mute():void {
     this.toggleSelfStream(true);
-    this.status.microphone = CallStatus.OnHold;
     // Because mute is not sent/received over the socket, we throw the event manually
     this.pushState(ZiwoEventType.Mute);
   }
 
+  /**
+   * Unmute user's microphone
+   */
   public unmute():void {
     this.toggleSelfStream(false);
-    this.status.microphone = CallStatus.Running;
     this.pushState(ZiwoEventType.Unmute);
     // Because unmute is not sent/received over the socket, we throw the event manually
   }
 
+  /**
+   * Start an attended transfer.
+   * Attended transfer set the current call on hold and call @destination
+   * Use `proceedAttendedTransfer` to confirm the transfer
+   */
+  public attendedTransfer(destination:string):Call|undefined {
+    this.hold();
+    const call = this.verto.startCall(destination);
+    if (!call) {
+      return undefined;
+    }
+    this.verto.calls.push(call);
+    return call;
+  }
+
+  /**
+   * Confirm an attended transfer.
+   * Stop the current call and create a new call between the initial correspondant and the @destination
+   */
+  public proceedAttendedTransfer(transferCall:Call):void {
+    if (!transferCall) {
+      return;
+    }
+    const destination = transferCall.phoneNumber;
+    transferCall.hangup();
+    this.blindTransfer(destination);
+  }
+
+  /**
+   * Stop the current call and directly forward the correspondant to @destination
+   */
+  public blindTransfer(destination:string):void {
+    this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
+  }
+
+  /**
+   * Push state add a new state in the stack and throw an event
+   */
   public pushState(type:ZiwoEventType, broadcast = true):void {
     const d = new Date();
     this.states.push({

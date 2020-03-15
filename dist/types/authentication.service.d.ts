@@ -1,4 +1,6 @@
 import { ApiService } from './api.service';
+export interface ManualPosition {
+}
 /**
  * Credential provided by Ziwo
  * @email is the agent's email
@@ -115,6 +117,7 @@ export interface AgentInfo {
 export declare class AuthenticationService {
     constructor();
     static authenticate(api: ApiService, credentials: Credentials): Promise<AgentInfo>;
+    static logout(api: ApiService): Promise<any>;
     private static loginZiwo;
     private static autoLogin;
     private static initAgent;

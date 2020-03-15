@@ -41,7 +41,7 @@ class RTCPeerConnectionFactory {
     /**
      * We receive the call
      */
-    static inbound(verto, callId, login, inboudParams) {
+    static inbound(verto, inboudParams) {
         return new Promise((onRes, onErr) => {
             const rtcPeerConnection = new RTCPeerConnection();
             rtcPeerConnection.ontrack = (tr) => {
@@ -73,6 +73,9 @@ class RTCPeerConnectionFactory {
             });
             onRes(rtcPeerConnection);
         });
+    }
+    static recovering(verto, params) {
+        return this.inbound(verto, params);
     }
 }
 exports.RTCPeerConnectionFactory = RTCPeerConnectionFactory;

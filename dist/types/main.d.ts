@@ -1,4 +1,4 @@
-import { Credentials } from './authentication.service';
+import { Credentials, AgentInfo } from './authentication.service';
 import { MediaInfo } from './media-channel';
 import { Call } from './call';
 /**
@@ -27,8 +27,8 @@ export interface ZiwoClientOptions {
 }
 export declare class ZiwoClient {
     readonly options: ZiwoClientOptions;
+    connectedAgent?: AgentInfo;
     private readonly calls;
-    private connectedAgent?;
     private apiService;
     private verto;
     private readonly debug;
@@ -38,6 +38,7 @@ export declare class ZiwoClient {
      * This function is required before proceeding with calls
      */
     connect(): Promise<void>;
+    disconnect(): Promise<void>;
     addListener(func: Function): void;
     startCall(phoneNumber: string): Call | undefined;
 }

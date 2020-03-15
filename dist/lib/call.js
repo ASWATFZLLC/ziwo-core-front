@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("./events");
+const verto_params_1 = require("./verto/verto.params");
 var CallStatus;
 (function (CallStatus) {
     CallStatus["Stopped"] = "stopped";
@@ -11,13 +12,8 @@ var CallStatus;
  * Call holds a call information and provide helpers
  */
 class Call {
-    constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, outboundDetails) {
+    constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
         this.states = [];
-        this.status = {
-            call: CallStatus.Running,
-            microphone: CallStatus.Running,
-            camera: CallStatus.Stopped,
-        };
         this.verto = verto;
         this.callId = callId;
         this.verto = verto;
@@ -25,41 +21,58 @@ class Call {
         this.channel = verto.channel;
         this.phoneNumber = phoneNumber;
         this.direction = direction;
-        this.outboundDetails = outboundDetails;
-        if (this.direction === 'inbound') {
-            this.primaryCallId = outboundDetails.verto_h_primaryCallID;
+        this.initialPayload = initialPayload;
+        if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
+            this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
         }
-    }
-    getCallStatus() {
-        return this.status;
     }
     answer() {
         var _a;
         return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
     }
     hangup() {
-        this.verto.hangupCall(this.callId, this.phoneNumber);
-        this.status.call = CallStatus.Stopped;
+        this.pushState(events_1.ZiwoEventType.Hangup);
+        this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === events_1.ZiwoEventType.Answering) >= 0 ? verto_params_1.VertoByeReason.NORMAL_CLEARING
+            : (this.direction === 'inbound' ? verto_params_1.VertoByeReason.CALL_REJECTED : verto_params_1.VertoByeReason.ORIGINATOR_CANCEL));
+    }
+    dtfm(char) {
+        this.verto.dtfm(this.callId, char);
     }
     hold() {
         this.verto.holdCall(this.callId, this.phoneNumber);
-        this.status.call = CallStatus.OnHold;
     }
     unhold() {
         this.verto.unholdCall(this.callId, this.phoneNumber);
-        this.status.call = CallStatus.Running;
     }
     mute() {
         this.toggleSelfStream(true);
-        this.status.microphone = CallStatus.OnHold;
         // Because mute is not sent/received over the socket, we throw the event manually
         this.pushState(events_1.ZiwoEventType.Mute);
     }
     unmute() {
         this.toggleSelfStream(false);
-        this.status.microphone = CallStatus.Running;
         this.pushState(events_1.ZiwoEventType.Unmute);
         // Because unmute is not sent/received over the socket, we throw the event manually
+    }
+    attendedTransfer(destination) {
+        this.hold();
+        const call = this.verto.startCall(destination);
+        if (!call) {
+            return undefined;
+        }
+        this.verto.calls.push(call);
+        return call;
+    }
+    proceedAttendedTransfer(transferCall) {
+        if (!transferCall) {
+            return;
+        }
+        const destination = transferCall.phoneNumber;
+        transferCall.hangup();
+        this.blindTransfer(destination);
+    }
+    blindTransfer(destination) {
+        this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
     }
     pushState(type, broadcast = true) {
         const d = new Date();
