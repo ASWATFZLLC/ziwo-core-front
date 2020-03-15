@@ -73,10 +73,6 @@ window.addEventListener('ziwo-ringing', (ev) => {
 });
 ```
 
-## Docs
-
-Docs is available in `docs`. Open using `npm run open:doc`
-
 ## Commands
 
 | Command        | Description                                                                                |
@@ -91,9 +87,15 @@ Docs is available in `docs`. Open using `npm run open:doc`
 | doc            | Build the documentation                                                                    |
 | open:doc       | Open the documentation                                                                     |
 
-## Coding standards
+## Contributing
 
-### Typescript
+1. Fork it (<https://github.com/ASWATFZLLC/ziwo-core-front/fork>)
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create a new Pull Request
+
+### Coding standards
 
 #### Styles
 
