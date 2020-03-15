@@ -16,7 +16,19 @@ export interface CallState {
 }
 
 /**
- * Call holds a call information and provide helpers
+ * Call hold a physical instance of a call.
+ *
+ * They provide useful information but also methods to change the state of the call.
+ *
+ * @callId : unique identifier used for Jorel protocol
+ * @primaryCallId : link to first call of the chain if existing
+ * @rtcPeerConnection : the WebRTC interface
+ * @channel : holds the media stream (input/output)
+ * @verto : holds a reference to Verto singleton
+ * @phoneNumber : peer phone number
+ * @direction : call's direction
+ * @states : array containing all the call's status update with a Datetime.
+ * @initialPayload : complete payload received/sent to start the call
  */
 export class Call {
 
@@ -44,10 +56,16 @@ export class Call {
     }
   }
 
+  /**
+   * Use when current state is `ringing` to switch the call to `active`
+   */
   public answer():void {
     return this.verto.answerCall(this.callId, this.phoneNumber, this.rtcPeerConnection.localDescription?.sdp as string);
   }
 
+  /**
+   * Use when current state is 'ringing' or 'active' to stop the call
+   */
   public hangup():void {
     this.pushState(ZiwoEventType.Hangup);
     this.verto.hangupCall(this.callId, this.phoneNumber,
@@ -55,30 +73,50 @@ export class Call {
         : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
   }
 
+  /**
+   * Use to send a digit
+   */
   public dtfm(char:string):void {
     this.verto.dtfm(this.callId, char);
   }
 
+  /**
+   * Set the call on hold
+   */
   public hold():void {
     this.verto.holdCall(this.callId, this.phoneNumber);
   }
 
+  /**
+   * Unhold the call
+   */
   public unhold():void {
     this.verto.unholdCall(this.callId, this.phoneNumber);
   }
 
+  /**
+   * Mute user's microphone
+   */
   public mute():void {
     this.toggleSelfStream(true);
     // Because mute is not sent/received over the socket, we throw the event manually
     this.pushState(ZiwoEventType.Mute);
   }
 
+  /**
+   * Unmute user's microphone
+   */
   public unmute():void {
     this.toggleSelfStream(false);
     this.pushState(ZiwoEventType.Unmute);
     // Because unmute is not sent/received over the socket, we throw the event manually
   }
 
+  /**
+   * Start an attended transfer.
+   * Attended transfer set the current call on hold and call @destination
+   * Use `proceedAttendedTransfer` to confirm the transfer
+   */
   public attendedTransfer(destination:string):Call|undefined {
     this.hold();
     const call = this.verto.startCall(destination);
@@ -89,6 +127,10 @@ export class Call {
     return call;
   }
 
+  /**
+   * Confirm an attended transfer.
+   * Stop the current call and create a new call between the initial correspondant and the @destination
+   */
   public proceedAttendedTransfer(transferCall:Call):void {
     if (!transferCall) {
       return;
@@ -98,10 +140,16 @@ export class Call {
     this.blindTransfer(destination);
   }
 
+  /**
+   * Stop the current call and directly forward the correspondant to @destination
+   */
   public blindTransfer(destination:string):void {
     this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
   }
 
+  /**
+   * Push state add a new state in the stack and throw an event
+   */
   public pushState(type:ZiwoEventType, broadcast = true):void {
     const d = new Date();
     this.states.push({

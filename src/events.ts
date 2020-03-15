@@ -1,7 +1,20 @@
 import {Call, CallState} from './call';
 
 /**
- * TODO : documentation
+ * All phone call (outbound & inbound) will throw events during their lifetime.
+ * Here is the expected cycle of a phone call:
+ *  1. requesting (event thrown only for outbound call)
+ *  2. trying (event thrown only for outbound call)
+ *  3. early (event thrown only for outbound call)
+ *  4. ringing
+ *  5. answering
+ *  6. active (peers are able to talk)
+ *  6.x call can changes states multiple time (hold, unhold, ...)
+ *  7. hangup (call stops and peers are not able to talk anymore)
+ *  8. purge (event is going to be destroy)
+ *  9. event is destroyed
+ *
+ * All call not going through step 7, 8 and 9 will be automatically recovered in case user refresh the page
  */
 
 export enum ErrorCode {
