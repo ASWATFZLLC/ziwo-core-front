@@ -6,9 +6,15 @@ import {Call} from './call';
 import {Verto} from './verto/verto';
 
 /**
- * ziwo-core-front provides a client for real time communication using WebRTC integrated with Ziwo
+ * Ziwo Client allow your to initiate the environment.
+ * It will setup the WebRTC, open the WebSocket and do the required authentication
+ *
+ * See README#Ziwo Client to see how to instanciate a new client.
+ * Make sure to wait for `connected` event before doing further action.
+ *
+ * Once the client is instancied and you received the `connected` event, Ziwo is ready to be used
+ * and you can start a call using `startCall(phoneNumber:string)` or simply wait for events to proc.
  */
-
 export interface ZiwoClientOptions {
   /**
    * @contactCenterName is the contact center the agent is working for
@@ -37,8 +43,13 @@ export interface ZiwoClientOptions {
 
 export class ZiwoClient {
 
-  public readonly options:ZiwoClientOptions;
+  /**
+   * @connectedAgent provide useful information about the connected user
+   * See src/authentication.service.ts#AgentInfo for more details
+   */
   public connectedAgent?:AgentInfo;
+
+  public readonly options:ZiwoClientOptions;
 
   private readonly calls:Call[] = [];
   private apiService:ApiService;
@@ -72,6 +83,9 @@ export class ZiwoClient {
     });
   }
 
+  /**
+   * Disconnect user from our socket and stop the protocol
+   */
   public disconnect():Promise<void> {
     return new Promise<void>((onRes, onErr) => {
       AuthenticationService.logout(this.apiService).then(((r:any) => {
@@ -81,10 +95,20 @@ export class ZiwoClient {
     });
   }
 
+  /**
+   * Add a callback function for all events
+   * Can be used instead of `addEventListener`
+   * NoteL Event thrown through this support
+   * does not include the `ziwo` suffix nor the `_jorel-dialog-state` prefix
+   */
   public addListener(func:Function):void {
     return ZiwoEvent.subscribe(func);
   }
 
+  /**
+   * Start a phone call with the external phone number provided and return an instance of the Call
+   * Note: the call's instance will also be provided in all the events
+   */
   public startCall(phoneNumber:string):Call|undefined {
     const call = this.verto.startCall(phoneNumber);
     if (!call) {
