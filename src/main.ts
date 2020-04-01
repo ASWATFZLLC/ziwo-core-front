@@ -5,16 +5,6 @@ import {MediaInfo} from './media-channel';
 import {Call} from './call';
 import {Verto} from './verto/verto';
 
-/**
- * Ziwo Client allow your to initiate the environment.
- * It will setup the WebRTC, open the WebSocket and do the required authentication
- *
- * See README#Ziwo Client to see how to instanciate a new client.
- * Make sure to wait for `connected` event before doing further action.
- *
- * Once the client is instancied and you received the `connected` event, Ziwo is ready to be used
- * and you can start a call using `startCall(phoneNumber:string)` or simply wait for events to proc.
- */
 export interface ZiwoClientOptions {
   /**
    * @contactCenterName is the contact center the agent is working for
@@ -41,6 +31,16 @@ export interface ZiwoClientOptions {
   debug?:boolean;
 }
 
+/**
+ * Ziwo Client allow your to setup the environment.
+ * It will setup the WebRTC, open the WebSocket and do the required authentications
+ *
+ * See README#Ziwo Client to see how to instanciate a new client.
+ * Make sure to wait for `connected` event before doing further action.
+ *
+ * Once the client is instancied and you received the `connected` event, Ziwo is ready to be used
+ * and you can start a call by using `startCall(phoneNumber:string)` or simply wait for events to proc.
+ */
 export class ZiwoClient {
 
   /**

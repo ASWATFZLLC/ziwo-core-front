@@ -1,13 +1,17 @@
 {
-  "name": "ziwo-core-front",
-  "version": "0.0.0",
+  "name": "@ASWATFZLLC/ziwo-core-front",
+  "version": "0.0.1",
   "description": "",
   "keywords": [],
   "author": "Mathieu Delacroix <mathieu@kalvad.com>",
-  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
+  "publishConfig": { "registry": "https://npm.pkg.github.com" },
   "main": "dist/ziwo-core-front.umd.js",
   "module": "dist/ziwo-core-front.es5.js",
   "typings": "dist/types/ziwo-core-front.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ASWATFZLLC/ziwo-core-front"
+  },
   "files": [
     "dist"
   ],
