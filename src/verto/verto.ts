@@ -44,6 +44,16 @@ export class Verto {
   public channel?:MediaChannel;
 
   /**
+   * Store contact center
+   */
+  public contactCenterName?:string;
+
+  /**
+   * Store Agent Information
+   */
+  public connectedAgent?:AgentInfo;
+
+  /**
    * Our communication channel
    */
   private socket?:WebSocket;
@@ -80,7 +90,6 @@ export class Verto {
     this.calls = calls;
   }
 
-
   /**
    * addListener allows to listen for incoming Socket Event
    */
@@ -88,10 +97,12 @@ export class Verto {
     this.listeners.push(call);
   }
 
-  public connectAgent(agent:AgentInfo):Promise<AgentInfo> {
+  public connectAgent(agent:AgentInfo, contactCenterName:string):Promise<AgentInfo> {
     return new Promise<AgentInfo>((onRes, onErr) => {
       // First we make ensure access to microphone &| camera
       // And wait for the socket to open
+      this.connectedAgent = agent;
+      this.contactCenterName = contactCenterName;
       Promise.all([
         MediaChannel.getUserMediaAsChannel({audio: true, video: false}),
         this.openSocket(agent.webRtc.socket),

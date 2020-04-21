@@ -77,7 +77,7 @@ export class ZiwoClient {
       AuthenticationService.authenticate(this.apiService, this.options.credentials)
         .then(res => {
           this.connectedAgent = res;
-          this.verto.connectAgent(this.connectedAgent);
+          this.verto.connectAgent(this.connectedAgent, this.options.contactCenterName);
           onRes();
         }).catch(err => onErr(err));
     });

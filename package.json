@@ -4,7 +4,9 @@
   "description": "",
   "keywords": [],
   "author": "Mathieu Delacroix <mathieu@kalvad.com>",
-  "publishConfig": { "registry": "https://npm.pkg.github.com" },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "dist/ziwo-core-front.umd.js",
   "module": "dist/ziwo-core-front.es5.js",
   "typings": "dist/types/ziwo-core-front.d.ts",
