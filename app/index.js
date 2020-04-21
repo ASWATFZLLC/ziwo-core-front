@@ -21,7 +21,7 @@ function start() {
   );
 
   ziwoClient.addListener((type, data) => {
-    console.log(`[Ziwo Event] ${type}`);
+    console.log(`[Ziwo Event] ${type}`, data);
     this.pushMessage( `[${type}]`);
     switch (type) {
       case 'connected':

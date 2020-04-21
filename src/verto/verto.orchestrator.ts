@@ -92,7 +92,10 @@ export class VertoOrchestrator {
   }
 
   private onClientReady(message:VertoMessage<any>):void {
-    ZiwoEvent.emit(ZiwoEventType.Connected, {} as ZiwoEventDetails);
+    ZiwoEvent.emit(ZiwoEventType.Connected, {
+      agent: this.verto.connectedAgent,
+      contactCenterName: this.verto.contactCenterName,
+    } as any);
   }
 
   /***

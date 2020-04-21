@@ -408,9 +408,6 @@
         }
     }
 
-    /**
-     * TODO : documentation
-     */
     var ErrorCode;
     (function (ErrorCode) {
         ErrorCode[ErrorCode["InvalidPhoneNumber"] = 2] = "InvalidPhoneNumber";
@@ -444,6 +441,22 @@
         ZiwoEventType["Destroy"] = "destroy";
         ZiwoEventType["Recovering"] = "recovering";
     })(ZiwoEventType || (ZiwoEventType = {}));
+    /**
+     * All phone call (outbound & inbound) will throw events during their lifetime.
+     * Here is the expected cycle of a phone call:
+     *  1. requesting (event thrown only for outbound call)
+     *  2. trying (event thrown only for outbound call)
+     *  3. early (event thrown only for outbound call)
+     *  4. ringing
+     *  5. answering
+     *  6. active (peers are able to talk)
+     *  6.x call can changes states multiple time (hold, unhold, ...)
+     *  7. hangup (call stops and peers are not able to talk anymore)
+     *  8. purge (event is going to be destroy)
+     *  9. event is destroyed
+     *
+     * All call not going through step 7, 8 and 9 will be automatically recovered in case user refresh the page
+     */
     class ZiwoEvent {
         constructor(type, data) {
             this.type = type;
@@ -666,7 +679,18 @@
         CallStatus["OnHold"] = "onHold";
     })(CallStatus || (CallStatus = {}));
     /**
-     * Call holds a call information and provide helpers
+     * Call hold a physical instance of a call.
+     * They provide useful information but also methods to change the state of the call.
+     *
+     * @callId : unique identifier used for Jorel protocol
+     * @primaryCallId : link to first call of the chain if existing
+     * @rtcPeerConnection : the WebRTC interface
+     * @channel : holds the media stream (input/output)
+     * @verto : holds a reference to Verto singleton
+     * @phoneNumber : peer phone number
+     * @direction : call's direction
+     * @states : array containing all the call's status update with a Datetime.
+     * @initialPayload : complete payload received/sent to start the call
      */
     class Call {
         constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
@@ -683,34 +707,60 @@
                 this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
             }
         }
+        /**
+         * Use when current state is `ringing` to switch the call to `active`
+         */
         answer() {
             var _a;
             return this.verto.answerCall(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
         }
+        /**
+         * Use when current state is 'ringing' or 'active' to stop the call
+         */
         hangup() {
             this.pushState(ZiwoEventType.Hangup);
             this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
                 : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
         }
+        /**
+         * Use to send a digit
+         */
         dtfm(char) {
             this.verto.dtfm(this.callId, char);
         }
+        /**
+         * Set the call on hold
+         */
         hold() {
             this.verto.holdCall(this.callId, this.phoneNumber);
         }
+        /**
+         * Unhold the call
+         */
         unhold() {
             this.verto.unholdCall(this.callId, this.phoneNumber);
         }
+        /**
+         * Mute user's microphone
+         */
         mute() {
             this.toggleSelfStream(true);
             // Because mute is not sent/received over the socket, we throw the event manually
             this.pushState(ZiwoEventType.Mute);
         }
+        /**
+         * Unmute user's microphone
+         */
         unmute() {
             this.toggleSelfStream(false);
             this.pushState(ZiwoEventType.Unmute);
             // Because unmute is not sent/received over the socket, we throw the event manually
         }
+        /**
+         * Start an attended transfer.
+         * Attended transfer set the current call on hold and call @destination
+         * Use `proceedAttendedTransfer` to confirm the transfer
+         */
         attendedTransfer(destination) {
             this.hold();
             const call = this.verto.startCall(destination);
@@ -720,6 +770,10 @@
             this.verto.calls.push(call);
             return call;
         }
+        /**
+         * Confirm an attended transfer.
+         * Stop the current call and create a new call between the initial correspondant and the @destination
+         */
         proceedAttendedTransfer(transferCall) {
             if (!transferCall) {
                 return;
@@ -728,9 +782,15 @@
             transferCall.hangup();
             this.blindTransfer(destination);
         }
+        /**
+         * Stop the current call and directly forward the correspondant to @destination
+         */
         blindTransfer(destination) {
             this.verto.blindTransfer(destination, this.callId, this.phoneNumber);
         }
+        /**
+         * Push state add a new state in the stack and throw an event
+         */
         pushState(type, broadcast = true) {
             const d = new Date();
             this.states.push({
@@ -916,7 +976,10 @@
             return undefined;
         }
         onClientReady(message) {
-            ZiwoEvent.emit(ZiwoEventType.Connected, {});
+            ZiwoEvent.emit(ZiwoEventType.Connected, {
+                agent: this.verto.connectedAgent,
+                contactCenterName: this.verto.contactCenterName,
+            });
         }
         /***
          *** MESSAGE SECTION
@@ -1085,10 +1148,12 @@
         addListener(call) {
             this.listeners.push(call);
         }
-        connectAgent(agent) {
+        connectAgent(agent, contactCenterName) {
             return new Promise((onRes, onErr) => {
                 // First we make ensure access to microphone &| camera
                 // And wait for the socket to open
+                this.connectedAgent = agent;
+                this.contactCenterName = contactCenterName;
                 Promise.all([
                     MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
                     this.openSocket(agent.webRtc.socket),
@@ -1305,6 +1370,16 @@
         }
     }
 
+    /**
+     * Ziwo Client allow your to setup the environment.
+     * It will setup the WebRTC, open the WebSocket and do the required authentications
+     *
+     * See README#Ziwo Client to see how to instanciate a new client.
+     * Make sure to wait for `connected` event before doing further action.
+     *
+     * Once the client is instancied and you received the `connected` event, Ziwo is ready to be used
+     * and you can start a call by using `startCall(phoneNumber:string)` or simply wait for events to proc.
+     */
     class ZiwoClient {
         constructor(options) {
             this.calls = [];
@@ -1326,11 +1401,14 @@
                 AuthenticationService.authenticate(this.apiService, this.options.credentials)
                     .then(res => {
                     this.connectedAgent = res;
-                    this.verto.connectAgent(this.connectedAgent);
+                    this.verto.connectAgent(this.connectedAgent, this.options.contactCenterName);
                     onRes();
                 }).catch(err => onErr(err));
             });
         }
+        /**
+         * Disconnect user from our socket and stop the protocol
+         */
         disconnect() {
             return new Promise((onRes, onErr) => {
                 AuthenticationService.logout(this.apiService).then(((r) => {
@@ -1339,9 +1417,19 @@
                 }));
             });
         }
+        /**
+         * Add a callback function for all events
+         * Can be used instead of `addEventListener`
+         * NoteL Event thrown through this support
+         * does not include the `ziwo` suffix nor the `_jorel-dialog-state` prefix
+         */
         addListener(func) {
             return ZiwoEvent.subscribe(func);
         }
+        /**
+         * Start a phone call with the external phone number provided and return an instance of the Call
+         * Note: the call's instance will also be provided in all the events
+         */
         startCall(phoneNumber) {
             const call = this.verto.startCall(phoneNumber);
             if (!call) {
