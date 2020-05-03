@@ -54,7 +54,9 @@ export class VertoOrchestrator {
         }
         break;
       case VertoMethod.Pickup:
-        this.transparentPickup(message);
+        if (this.ensureCallIsExisting(call)) {
+          this.pickup(message, call as Call);
+        }
         break;
       case VertoMethod.Bye:
         if (this.ensureCallIsExisting(call)) {
@@ -145,22 +147,8 @@ export class VertoOrchestrator {
    * Automatically create a phone call instance and reply to it in the background
    * used for Zoho CTI
    */
-  private transparentPickup(message:VertoMessage<any>):void {
-    RTCPeerConnectionFactory
-    .inbound(this.verto, message.params)
-    .then(pc => {
-      const call = new Call(
-        message.params.callID,
-        this.verto,
-        message.params.verto_h_originalCallerIdNumber,
-        this.verto.getLogin(),
-        pc,
-        'inbound',
-        message.params,
-      );
-      // we do not push the call instance in our call stack
-      call.answer();
-    });
+  private pickup(message:VertoMessage<any>, call:Call):void {
+    call.answer();
   }
 
   /** Recovering call */
