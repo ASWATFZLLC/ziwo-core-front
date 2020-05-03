@@ -54,7 +54,8 @@ export class VertoOrchestrator {
         }
         break;
       case VertoMethod.Pickup:
-        this.transparentPickup();
+        this.transparentPickup(message);
+        break;
       case VertoMethod.Bye:
         if (this.ensureCallIsExisting(call)) {
           (call as Call).pushState(ZiwoEventType.Hangup);
