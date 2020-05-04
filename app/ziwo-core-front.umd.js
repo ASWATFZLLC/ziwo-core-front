@@ -200,6 +200,7 @@
         Md5.I = function (x, y, z) { return (y ^ (x | (~z))); };
         return Md5;
     }());
+    //# sourceMappingURL=index.js.map
 
     const MESSAGE_PREFIX = '[LIB Ziwo-core-front] ';
     const MESSAGES = {
@@ -208,6 +209,7 @@
         AGENT_NOT_CONNECTED: (action) => `Agent is not connected. Cannot proceed '${action}'`,
         MEDIA_ERROR: `${MESSAGE_PREFIX}User media are not available`,
     };
+    //# sourceMappingURL=messages.js.map
 
     var UserStatus;
     (function (UserStatus) {
@@ -320,6 +322,7 @@
             });
         }
     }
+    //# sourceMappingURL=authentication.service.js.map
 
     /**
      * ApiService provide functions for GET, POST, PUT and DELETE query
@@ -407,6 +410,7 @@
             });
         }
     }
+    //# sourceMappingURL=api.service.js.map
 
     var ErrorCode;
     (function (ErrorCode) {
@@ -484,6 +488,7 @@
     }
     ZiwoEvent.listeners = [];
     ZiwoEvent.prefixes = ['_jorel-dialog-state-', 'ziwo-'];
+    //# sourceMappingURL=events.js.map
 
     class MediaChannel {
         constructor(stream) {
@@ -533,6 +538,7 @@
             return audioContext;
         }
     }
+    //# sourceMappingURL=media-channel.js.map
 
     var VertoMethod;
     (function (VertoMethod) {
@@ -546,6 +552,7 @@
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
+        VertoMethod["Pickup"] = "verto.pickup";
     })(VertoMethod || (VertoMethod = {}));
     var VertoByeReason;
     (function (VertoByeReason) {
@@ -671,6 +678,7 @@
             };
         }
     }
+    //# sourceMappingURL=verto.params.js.map
 
     var CallStatus;
     (function (CallStatus) {
@@ -816,6 +824,7 @@
             });
         }
     }
+    //# sourceMappingURL=call.js.map
 
     class RTCPeerConnectionFactory {
         /**
@@ -895,6 +904,7 @@
             return this.inbound(verto, params);
         }
     }
+    //# sourceMappingURL=RTCPeerConnection.factory.js.map
 
     /**
      * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -937,6 +947,11 @@
                 case VertoMethod.Display:
                     if (this.ensureCallIsExisting(call)) {
                         call.pushState(ZiwoEventType.Active);
+                    }
+                    break;
+                case VertoMethod.Pickup:
+                    if (this.ensureCallIsExisting(call)) {
+                        this.pickup(message, call);
                     }
                     break;
                 case VertoMethod.Bye:
@@ -1010,6 +1025,13 @@
                 call.pushState(ZiwoEventType.Ringing);
             });
         }
+        /**
+         * Automatically create a phone call instance and reply to it in the background
+         * used for Zoho CTI
+         */
+        pickup(message, call) {
+            call.answer();
+        }
         /** Recovering call */
         onAttach(message) {
             RTCPeerConnectionFactory.recovering(this.verto, message.params)
@@ -1055,6 +1077,7 @@
             }
         }
     }
+    //# sourceMappingURL=verto.orchestrator.js.map
 
     class VertoClear {
         constructor(verto, debug) {
@@ -1098,6 +1121,7 @@
             calls.forEach(c => this.verto.purgeCall(c.callId));
         }
     }
+    //# sourceMappingURL=verto.clear.js.map
 
     class VertoSession {
         /**
@@ -1115,6 +1139,7 @@
         }
     }
     VertoSession.storageKey = 'ziwo_socket_session_id';
+    //# sourceMappingURL=verto.session.js.map
 
     /**
      * JsonRpcClient implements Verto protocol using JSON RPC
@@ -1369,6 +1394,89 @@
                 && data.jsonrpc === '2.0';
         }
     }
+    //# sourceMappingURL=verto.js.map
+
+    var DeviceKind;
+    (function (DeviceKind) {
+        DeviceKind["VideoInput"] = "videoinput";
+        DeviceKind["AudioInput"] = "audioinput";
+        DeviceKind["AudioOutput"] = "audiooutput";
+    })(DeviceKind || (DeviceKind = {}));
+    /**
+     * IO Service allow your to quickly manager your inputs and outputs
+     */
+    class IOService {
+        constructor(tags) {
+            this.inputs = [];
+            this.outputs = [];
+            this.tags = tags;
+            this.load();
+        }
+        /**
+         * set @input as default input for calls
+         */
+        useInput(input) {
+        }
+        /**
+         * set @output as default output for calls
+         */
+        useOutput(outputId) {
+            this.tags.peerTag.setSinkId(outputId).
+                then(() => {
+                console.log('Audio successfuly changed to ', outputId);
+            }).catch();
+        }
+        /**
+         * return all the available input medias
+         */
+        getInputs() {
+        }
+        /**
+         * return all the available output medias
+         */
+        getOutput() {
+            return this.outputs;
+        }
+        load() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => this.getStream(stream)).then((devices) => this.getDevices(devices)).catch();
+            navigator.mediaDevices.enumerateDevices().then((devices) => this.getDevices(devices)).catch();
+        }
+        getStream(stream) {
+            this.stream = stream;
+        }
+        getDevices(devices) {
+            console.log(devices);
+            if (!devices) {
+                return;
+            }
+            console.log('peer output', this.tags.peerTag.sinkId);
+            console.log('peer output', this.tags.selfTag.sinkId);
+            devices.forEach((device) => {
+                switch (device.kind) {
+                    case DeviceKind.VideoInput:
+                        // We do not do support video
+                        break;
+                    case DeviceKind.AudioInput:
+                        this.inputs.push({
+                            currentlyInUse: false,
+                            label: device.label,
+                            deviceId: device.deviceId,
+                            groupId: device.groupId,
+                        });
+                        break;
+                    case DeviceKind.AudioOutput:
+                        this.outputs.push({
+                            currentlyInUse: false,
+                            label: device.label,
+                            deviceId: device.deviceId,
+                            groupId: device.groupId,
+                        });
+                        break;
+                }
+            });
+        }
+    }
+    //# sourceMappingURL=io.js.map
 
     /**
      * Ziwo Client allow your to setup the environment.
@@ -1387,6 +1495,7 @@
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
             this.verto = new Verto(this.calls, this.debug, options.tags);
+            this.io = new IOService(options.tags);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });
