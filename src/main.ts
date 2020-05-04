@@ -63,7 +63,7 @@ export class ZiwoClient {
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
     this.verto = new Verto(this.calls, this.debug, options.tags);
-    this.io = new IOService(options.tags);
+    this.io = new IOService(options.tags, this.verto);
 
     if (options.autoConnect) {
       this.connect().then(r => {

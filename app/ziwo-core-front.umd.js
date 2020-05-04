@@ -1190,6 +1190,9 @@
                 });
             });
         }
+        updateStream(stream) {
+            this.channel = new MediaChannel(stream);
+        }
         /**
          * send a start call request
          */
@@ -1394,7 +1397,6 @@
                 && data.jsonrpc === '2.0';
         }
     }
-    //# sourceMappingURL=verto.js.map
 
     var DeviceKind;
     (function (DeviceKind) {
@@ -1406,30 +1408,40 @@
      * IO Service allow your to quickly manager your inputs and outputs
      */
     class IOService {
-        constructor(tags) {
+        constructor(tags, verto) {
             this.inputs = [];
             this.outputs = [];
+            this.verto = verto;
             this.tags = tags;
             this.load();
         }
         /**
          * set @input as default input for calls
          */
-        useInput(input) {
+        useInput(inputId) {
+            return new Promise((ok, err) => {
+                navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: inputId } } }).then((stream) => {
+                    this.verto.updateStream(stream);
+                    ok();
+                }).catch(e => err(e));
+            });
         }
         /**
          * set @output as default output for calls
          */
         useOutput(outputId) {
-            this.tags.peerTag.setSinkId(outputId).
-                then(() => {
-                console.log('Audio successfuly changed to ', outputId);
-            }).catch();
+            return new Promise((ok, err) => {
+                this.tags.peerTag.setSinkId(outputId).
+                    then(() => {
+                    ok();
+                }).catch((e) => err(e));
+            });
         }
         /**
          * return all the available input medias
          */
         getInputs() {
+            return this.inputs;
         }
         /**
          * return all the available output medias
@@ -1438,19 +1450,19 @@
             return this.outputs;
         }
         load() {
-            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => this.getStream(stream)).then((devices) => this.getDevices(devices)).catch();
+            navigator.mediaDevices.getUserMedia().then((stream) => this.getStream(stream)).then((devices) => this.getDevices(devices)).catch();
             navigator.mediaDevices.enumerateDevices().then((devices) => this.getDevices(devices)).catch();
         }
         getStream(stream) {
             this.stream = stream;
         }
         getDevices(devices) {
-            console.log(devices);
             if (!devices) {
                 return;
             }
-            console.log('peer output', this.tags.peerTag.sinkId);
-            console.log('peer output', this.tags.selfTag.sinkId);
+            // console.log(devices);
+            // console.log('peer output', (this.tags.peerTag as any).sinkId);
+            // console.log('peer output', (this.tags.selfTag as any).sinkId);
             devices.forEach((device) => {
                 switch (device.kind) {
                     case DeviceKind.VideoInput:
@@ -1476,7 +1488,6 @@
             });
         }
     }
-    //# sourceMappingURL=io.js.map
 
     /**
      * Ziwo Client allow your to setup the environment.
@@ -1495,7 +1506,7 @@
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
             this.verto = new Verto(this.calls, this.debug, options.tags);
-            this.io = new IOService(options.tags);
+            this.io = new IOService(options.tags, this.verto);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });

@@ -1,4 +1,5 @@
 import { MediaInfo } from './media-channel';
+import { Verto } from './verto/verto';
 
 interface Device {
   currentlyInUse:boolean;
@@ -22,8 +23,10 @@ export class IOService {
   private inputs:Device[] = [];
   private outputs:Device[] = [];
   private readonly tags:MediaInfo;
+  private readonly verto:Verto;
 
-  constructor(tags:MediaInfo) {
+  constructor(tags:MediaInfo, verto:Verto) {
+    this.verto = verto;
     this.tags = tags;
     this.load();
   }
@@ -31,36 +34,45 @@ export class IOService {
   /**
    * set @input as default input for calls
    */
-  public useInput(input:any): void {
-
+  public useInput(inputId:any): Promise<void> {
+    return new Promise<void>((ok, err) => {
+      navigator.mediaDevices.getUserMedia({audio: {deviceId: {exact: inputId}}}).then(
+        (stream) => {
+          this.verto.updateStream(stream);
+          ok();
+        }
+      ).catch(e => err(e));
+    });
   }
 
   /**
    * set @output as default output for calls
    */
-  public useOutput(outputId:string): void {
-    (this.tags.peerTag as any).setSinkId(outputId).
+  public useOutput(outputId:string): Promise<void> {
+    return new Promise<void>((ok, err) => {
+      (this.tags.peerTag as any).setSinkId(outputId).
       then(() => {
-        console.log('Audio successfuly changed to ', outputId);
-      }).catch();
+        ok();
+      }).catch((e:any) => err(e));
+    });
   }
 
   /**
    * return all the available input medias
    */
-  public getInputs(): void {
-
+  public getInputs(): Device[] {
+    return this.inputs;
   }
 
   /**
    * return all the available output medias
    */
-  public getOutput(): any[] {
+  public getOutput(): Device[] {
     return this.outputs;
   }
 
   public load(): void {
-    navigator.mediaDevices.getUserMedia({audio: true}).then(
+    navigator.mediaDevices.getUserMedia().then(
       (stream) => this.getStream(stream),
     ).then(
       (devices) => this.getDevices(devices),
@@ -75,12 +87,12 @@ export class IOService {
   }
 
   private getDevices(devices:any): void {
-    console.log(devices);
     if (!devices) {
       return;
     }
-    console.log('peer output', (this.tags.peerTag as any).sinkId);
-    console.log('peer output', (this.tags.selfTag as any).sinkId);
+    // console.log(devices);
+    // console.log('peer output', (this.tags.peerTag as any).sinkId);
+    // console.log('peer output', (this.tags.selfTag as any).sinkId);
     devices.forEach((device:any) => {
       switch (device.kind) {
         case DeviceKind.VideoInput:
