@@ -28,7 +28,7 @@ export class IOService {
   constructor(tags:MediaInfo, verto:Verto) {
     this.verto = verto;
     this.tags = tags;
-    this.load();
+    this.load().then();
   }
 
   /**
@@ -71,15 +71,31 @@ export class IOService {
     return this.outputs;
   }
 
-  public load(): void {
-    navigator.mediaDevices.getUserMedia().then(
-      (stream) => this.getStream(stream),
-    ).then(
-      (devices) => this.getDevices(devices),
-    ).catch();
-    navigator.mediaDevices.enumerateDevices().then(
-      (devices) => this.getDevices(devices),
-    ).catch();
+  public load(): Promise<void> {
+    return new Promise<void>((ok, err) => {
+      let streamDone = false;
+      let deviceDone = false;
+      navigator.mediaDevices.getUserMedia().then(
+        (stream) => {
+          this.getStream(stream);
+          streamDone = true;
+          if (deviceDone) {
+            ok();
+          }
+        },
+      ).then(
+        (devices) => {
+          this.getDevices(devices);
+          deviceDone = true;
+          if (streamDone) {
+            ok();
+          }
+        },
+      ).catch();
+      navigator.mediaDevices.enumerateDevices().then(
+        (devices) => this.getDevices(devices),
+      ).catch(e => err(e));
+    });
   }
 
   private getStream(stream:any): void {
@@ -90,9 +106,6 @@ export class IOService {
     if (!devices) {
       return;
     }
-    // console.log(devices);
-    // console.log('peer output', (this.tags.peerTag as any).sinkId);
-    // console.log('peer output', (this.tags.selfTag as any).sinkId);
     devices.forEach((device:any) => {
       switch (device.kind) {
         case DeviceKind.VideoInput:
