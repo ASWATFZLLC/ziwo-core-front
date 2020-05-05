@@ -67,7 +67,7 @@ export class IOService {
   /**
    * return all the available output medias
    */
-  public getOutput(): Device[] {
+  public getOutputs(): Device[] {
     return this.outputs;
   }
 
@@ -106,6 +106,8 @@ export class IOService {
     if (!devices) {
       return;
     }
+    this.inputs.splice(0, this.inputs.length);
+    this.outputs.splice(0, this.outputs.length);
     devices.forEach((device:any) => {
       switch (device.kind) {
         case DeviceKind.VideoInput:
