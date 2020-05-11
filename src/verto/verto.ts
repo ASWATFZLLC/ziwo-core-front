@@ -8,6 +8,7 @@ import {MESSAGES} from '../messages';
 import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
 import {VertoClear} from './verto.clear';
 import { VertoSession } from './verto.session';
+import { IOService } from '../io';
 
 /**
  * JsonRpcClient implements Verto protocol using JSON RPC
@@ -113,6 +114,10 @@ export class Verto {
         onErr(err);
       });
     });
+  }
+
+  public updateStream(stream:any): void {
+    this.channel = new MediaChannel(stream);
   }
 
   /**

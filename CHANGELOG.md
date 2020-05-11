@@ -21,3 +21,10 @@
  * [MILESTONE] Complete flow for outbound call
  * [MILESTONE] Complete flow for inbound call
  * First tests implemented
+
+## V0.3
+
+ * Add new `io` service to manage input and output devices
+ * Update all dependencies to latest version
+ * More logs and stability
+ * Include agent details in the connected event

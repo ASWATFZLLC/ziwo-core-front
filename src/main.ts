@@ -4,6 +4,7 @@ import {ZiwoEvent, ZiwoEventType} from './events';
 import {MediaInfo} from './media-channel';
 import {Call} from './call';
 import {Verto} from './verto/verto';
+import { IOService } from './io';
 
 export interface ZiwoClientOptions {
   /**
@@ -51,6 +52,7 @@ export class ZiwoClient {
 
   public readonly options:ZiwoClientOptions;
 
+  public readonly io:IOService;
   private readonly calls:Call[] = [];
   private apiService:ApiService;
   private verto:Verto;
@@ -61,6 +63,7 @@ export class ZiwoClient {
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
     this.verto = new Verto(this.calls, this.debug, options.tags);
+    this.io = new IOService(options.tags, this.verto);
 
     if (options.autoConnect) {
       this.connect().then(r => {

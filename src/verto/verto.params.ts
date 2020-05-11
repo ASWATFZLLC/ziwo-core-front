@@ -9,6 +9,7 @@ export enum VertoMethod {
   Modify = 'verto.modify',
   Display = 'verto.display',
   Bye = 'verto.bye',
+  Pickup = 'verto.pickup',
 }
 
 export enum VertoByeReason {

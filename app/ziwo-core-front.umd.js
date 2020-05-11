@@ -546,6 +546,7 @@
         VertoMethod["Modify"] = "verto.modify";
         VertoMethod["Display"] = "verto.display";
         VertoMethod["Bye"] = "verto.bye";
+        VertoMethod["Pickup"] = "verto.pickup";
     })(VertoMethod || (VertoMethod = {}));
     var VertoByeReason;
     (function (VertoByeReason) {
@@ -939,6 +940,11 @@
                         call.pushState(ZiwoEventType.Active);
                     }
                     break;
+                case VertoMethod.Pickup:
+                    if (this.ensureCallIsExisting(call)) {
+                        this.pickup(message, call);
+                    }
+                    break;
                 case VertoMethod.Bye:
                     if (this.ensureCallIsExisting(call)) {
                         call.pushState(ZiwoEventType.Hangup);
@@ -1009,6 +1015,13 @@
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
             });
+        }
+        /**
+         * Automatically create a phone call instance and reply to it in the background
+         * used for Zoho CTI
+         */
+        pickup(message, call) {
+            call.answer();
         }
         /** Recovering call */
         onAttach(message) {
@@ -1164,6 +1177,9 @@
                     onErr(err);
                 });
             });
+        }
+        updateStream(stream) {
+            this.channel = new MediaChannel(stream);
         }
         /**
          * send a start call request
@@ -1370,6 +1386,112 @@
         }
     }
 
+    var DeviceKind;
+    (function (DeviceKind) {
+        DeviceKind["VideoInput"] = "videoinput";
+        DeviceKind["AudioInput"] = "audioinput";
+        DeviceKind["AudioOutput"] = "audiooutput";
+    })(DeviceKind || (DeviceKind = {}));
+    /**
+     * IO Service allow your to quickly manager your inputs and outputs
+     */
+    class IOService {
+        constructor(tags, verto) {
+            this.inputs = [];
+            this.outputs = [];
+            this.verto = verto;
+            this.tags = tags;
+            this.load().then();
+        }
+        /**
+         * set @input as default input for calls
+         */
+        useInput(inputId) {
+            return new Promise((ok, err) => {
+                navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: inputId } } }).then((stream) => {
+                    this.verto.updateStream(stream);
+                    ok();
+                }).catch(e => err(e));
+            });
+        }
+        /**
+         * set @output as default output for calls
+         */
+        useOutput(outputId) {
+            return new Promise((ok, err) => {
+                this.tags.peerTag.setSinkId(outputId).
+                    then(() => {
+                    ok();
+                }).catch((e) => err(e));
+            });
+        }
+        /**
+         * return all the available input medias
+         */
+        getInputs() {
+            return this.inputs;
+        }
+        /**
+         * return all the available output medias
+         */
+        getOutputs() {
+            return this.outputs;
+        }
+        load() {
+            return new Promise((ok, err) => {
+                let streamDone = false;
+                let deviceDone = false;
+                navigator.mediaDevices.getUserMedia().then((stream) => {
+                    this.getStream(stream);
+                    streamDone = true;
+                    if (deviceDone) {
+                        ok();
+                    }
+                }).then((devices) => {
+                    this.getDevices(devices);
+                    deviceDone = true;
+                    if (streamDone) {
+                        ok();
+                    }
+                }).catch();
+                navigator.mediaDevices.enumerateDevices().then((devices) => this.getDevices(devices)).catch(e => err(e));
+            });
+        }
+        getStream(stream) {
+            this.stream = stream;
+        }
+        getDevices(devices) {
+            if (!devices) {
+                return;
+            }
+            this.inputs.splice(0, this.inputs.length);
+            this.outputs.splice(0, this.outputs.length);
+            devices.forEach((device) => {
+                switch (device.kind) {
+                    case DeviceKind.VideoInput:
+                        // We do not do support video
+                        break;
+                    case DeviceKind.AudioInput:
+                        this.inputs.push({
+                            currentlyInUse: false,
+                            label: device.label,
+                            deviceId: device.deviceId,
+                            groupId: device.groupId,
+                        });
+                        break;
+                    case DeviceKind.AudioOutput:
+                        this.outputs.push({
+                            currentlyInUse: false,
+                            label: device.label,
+                            deviceId: device.deviceId,
+                            groupId: device.groupId,
+                        });
+                        break;
+                }
+            });
+        }
+    }
+
     /**
      * Ziwo Client allow your to setup the environment.
      * It will setup the WebRTC, open the WebSocket and do the required authentications
@@ -1387,6 +1509,7 @@
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
             this.verto = new Verto(this.calls, this.debug, options.tags);
+            this.io = new IOService(options.tags, this.verto);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });

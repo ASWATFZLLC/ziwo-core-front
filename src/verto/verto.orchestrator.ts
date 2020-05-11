@@ -53,6 +53,11 @@ export class VertoOrchestrator {
           (call as Call).pushState(ZiwoEventType.Active);
         }
         break;
+      case VertoMethod.Pickup:
+        if (this.ensureCallIsExisting(call)) {
+          this.pickup(message, call as Call);
+        }
+        break;
       case VertoMethod.Bye:
         if (this.ensureCallIsExisting(call)) {
           (call as Call).pushState(ZiwoEventType.Hangup);
@@ -136,6 +141,14 @@ export class VertoOrchestrator {
         this.verto.calls.push(call);
         call.pushState(ZiwoEventType.Ringing);
       });
+  }
+
+  /**
+   * Automatically create a phone call instance and reply to it in the background
+   * used for Zoho CTI
+   */
+  private pickup(message:VertoMessage<any>, call:Call):void {
+    call.answer();
   }
 
   /** Recovering call */
