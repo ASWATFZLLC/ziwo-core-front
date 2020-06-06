@@ -75,7 +75,7 @@ export class IOService {
     return new Promise<void>((ok, err) => {
       let streamDone = false;
       let deviceDone = false;
-      navigator.mediaDevices.getUserMedia().then(
+      navigator.mediaDevices.getUserMedia({audio: true}).then(
         (stream) => {
           this.getStream(stream);
           streamDone = true;

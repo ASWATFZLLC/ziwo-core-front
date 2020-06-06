@@ -1441,7 +1441,7 @@
             return new Promise((ok, err) => {
                 let streamDone = false;
                 let deviceDone = false;
-                navigator.mediaDevices.getUserMedia().then((stream) => {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                     this.getStream(stream);
                     streamDone = true;
                     if (deviceDone) {
