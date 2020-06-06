@@ -132,7 +132,7 @@ export class VertoOrchestrator {
         const call = new Call(
           message.params.callID,
           this.verto,
-          message.params.verto_h_originalCallerIdNumber,
+          message.params.caller_id_number,
           this.verto.getLogin(),
           pc,
           'inbound',
