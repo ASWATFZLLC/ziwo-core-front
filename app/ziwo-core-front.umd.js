@@ -1027,7 +1027,7 @@
         onAttach(message) {
             RTCPeerConnectionFactory.recovering(this.verto, message.params)
                 .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Recovering);
                 call.pushState(ZiwoEventType.Active);
