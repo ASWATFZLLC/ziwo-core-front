@@ -16,6 +16,7 @@ function start() {
             selfTag: document.getElementById('self-video'),
             peerTag: document.getElementById('peer-video'),
         },
+        mediaTag: document.getElementById('mediatag'),
         debug: true,
     }
   );
