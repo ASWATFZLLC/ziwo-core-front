@@ -834,10 +834,10 @@
         }
         static delete(parent, callId) {
             const toRemove = [];
-            let elIt;
-            for (elIt in parent.children) {
-                if (elIt.dataset.callId === callId) {
-                    toRemove.push(elIt);
+            for (let i = 0; i < parent.children.length; i++) {
+                const item = parent.children[i];
+                if (item && item.dataset && item.dataset.callId === callId) {
+                    toRemove.push(item);
                 }
             }
             toRemove.forEach(e => e.remove());
@@ -1129,6 +1129,7 @@
             if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
                 call.channel.remoteStream.stop();
             }
+            HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
         }
         purge(calls) {
             if (this.debug) {

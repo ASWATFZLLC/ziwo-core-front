@@ -14,10 +14,10 @@ export class HTMLMediaElementFactory {
 
   public static delete(parent:HTMLDivElement, callId:string): void {
     const toRemove:HTMLElement[] = [];
-    let elIt:any;
-    for (elIt in parent.children) {
-      if ((elIt as HTMLElement).dataset.callId === callId) {
-        toRemove.push(elIt);
+    for (let i = 0 ; i < parent.children.length ; i++) {
+      const item = parent.children[i] as HTMLElement;
+      if (item && item.dataset && item.dataset.callId === callId) {
+        toRemove.push(item);
       }
     }
     toRemove.forEach(e => e.remove());

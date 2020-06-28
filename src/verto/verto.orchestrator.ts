@@ -3,6 +3,7 @@ import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../even
 import {Call} from '../call';
 import {Verto} from './verto';
 import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
+import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
