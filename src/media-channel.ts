@@ -1,4 +1,4 @@
-import { ZiwoEvent, ZiwoErrorCode } from "./events";
+import { ZiwoEvent, ZiwoErrorCode } from './events';
 
 interface MicrophoneData {
   filterNode:BiquadFilterNode;

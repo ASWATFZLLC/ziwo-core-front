@@ -27,7 +27,8 @@ export class Verto {
   /**
    * Media video tags
    */
-  public tags:MediaInfo;
+  // public tags:MediaInfo;
+  public tag:HTMLDivElement;
 
   /**
    *
@@ -82,9 +83,10 @@ export class Verto {
    */
   public readonly calls:Call[];
 
-  constructor(calls:Call[], debug:boolean, tags:MediaInfo) {
+  constructor(calls:Call[], debug:boolean, tag:HTMLDivElement) {
     this.debug = debug;
-    this.tags = tags;
+    // this.tags = tags;
+    this.tag = tag;
     this.orchestrator = new VertoOrchestrator(this, this.debug);
     this.cleaner = new VertoClear(this, this.debug);
     this.params = new VertoParams();

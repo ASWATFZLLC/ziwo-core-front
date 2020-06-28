@@ -25,10 +25,19 @@ export interface ZiwoClientOptions {
   autoConnect:boolean;
 
   /**
-   * @tags
+   * [DEPRECATED] - use @mediaTag instead
    */
   tags:MediaInfo;
 
+  /**
+   * @mediaTag is a DIV element that will contains the HTML media elements used for calls
+   * The div must always be available but doesn't have to be visible
+   */
+  mediaTag:HTMLDivElement;
+
+  /**
+   * @debug display log info if set to true
+   */
   debug?:boolean;
 }
 
@@ -62,7 +71,7 @@ export class ZiwoClient {
     this.options = options;
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
-    this.verto = new Verto(this.calls, this.debug, options.tags);
+    this.verto = new Verto(this.calls, this.debug, options.mediaTag);
     this.io = new IOService(options.tags, this.verto);
 
     if (options.autoConnect) {
