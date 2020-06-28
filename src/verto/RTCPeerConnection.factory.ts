@@ -1,5 +1,6 @@
 import {MediaChannel, MediaInfo} from '../media-channel';
 import {Verto} from './verto';
+import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 export class RTCPeerConnectionFactory {
 
@@ -20,7 +21,7 @@ export class RTCPeerConnectionFactory {
         return;
       }
       verto.channel.remoteStream = stream;
-      verto.tags.peerTag.srcObject = stream;
+      HTMLMediaElementFactory.push(verto.tag, callId, 'peer').srcObject = stream;
     };
 
     if (!verto.channel) {
@@ -70,7 +71,7 @@ export class RTCPeerConnectionFactory {
           return;
         }
         verto.channel.remoteStream = stream;
-        verto.tags.peerTag.srcObject = stream;
+        HTMLMediaElementFactory.push(verto.tag, inboudParams.callID, 'peer').srcObject = stream;
       };
 
 

@@ -421,6 +421,7 @@
         ZiwoErrorCode[ZiwoErrorCode["MediaError"] = 1002] = "MediaError";
         ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
         ZiwoErrorCode[ZiwoErrorCode["CannotCreateCall"] = 1004] = "CannotCreateCall";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesError"] = 1005] = "DevicesError";
     })(ZiwoErrorCode || (ZiwoErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -495,6 +496,8 @@
                 try {
                     navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
                         onRes(new MediaChannel(stream));
+                    }).catch(e => {
+                        ZiwoEvent.error(ZiwoErrorCode.DevicesError, 'No devices available');
                     });
                 }
                 catch (e) {
@@ -818,6 +821,29 @@
         }
     }
 
+    class HTMLMediaElementFactory {
+        static push(parent, callId, type) {
+            const t = document.createElement('video');
+            t.id = `media-${type}-${callId}`;
+            t.setAttribute('playsinline', '');
+            t.setAttribute('autoplay', '');
+            t.dataset.callId = callId;
+            t.dataset.type = type;
+            parent.appendChild(t);
+            return t;
+        }
+        static delete(parent, callId) {
+            const toRemove = [];
+            for (let i = 0; i < parent.children.length; i++) {
+                const item = parent.children[i];
+                if (item && item.dataset && item.dataset.callId === callId) {
+                    toRemove.push(item);
+                }
+            }
+            toRemove.forEach(e => e.remove());
+        }
+    }
+
     class RTCPeerConnectionFactory {
         /**
          * We initiate the call
@@ -835,7 +861,7 @@
                     return;
                 }
                 verto.channel.remoteStream = stream;
-                verto.tags.peerTag.srcObject = stream;
+                HTMLMediaElementFactory.push(verto.tag, callId, 'peer').srcObject = stream;
             };
             if (!verto.channel) {
                 return rtcPeerConnection;
@@ -873,7 +899,7 @@
                         return;
                     }
                     verto.channel.remoteStream = stream;
-                    verto.tags.peerTag.srcObject = stream;
+                    HTMLMediaElementFactory.push(verto.tag, inboudParams.callID, 'peer').srcObject = stream;
                 };
                 if (!verto.channel) {
                     onRes(rtcPeerConnection);
@@ -1103,6 +1129,7 @@
             if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
                 call.channel.remoteStream.stop();
             }
+            HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
         }
         purge(calls) {
             if (this.debug) {
@@ -1142,14 +1169,15 @@
      *
      */
     class Verto {
-        constructor(calls, debug, tags) {
+        constructor(calls, debug, tag) {
             /**
              * Callback functions - register using `addListener`
              */
             this.listeners = [];
             this.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
             this.debug = debug;
-            this.tags = tags;
+            // this.tags = tags;
+            this.tag = tag;
             this.orchestrator = new VertoOrchestrator(this, this.debug);
             this.cleaner = new VertoClear(this, this.debug);
             this.params = new VertoParams();
@@ -1508,7 +1536,7 @@
             this.options = options;
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
-            this.verto = new Verto(this.calls, this.debug, options.tags);
+            this.verto = new Verto(this.calls, this.debug, options.mediaTag);
             this.io = new IOService(options.tags, this.verto);
             if (options.autoConnect) {
                 this.connect().then(r => {

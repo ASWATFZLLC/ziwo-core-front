@@ -14,6 +14,7 @@ describe('Should successfully set up a ZiwoClient', () => {
       selfTag: {} as HTMLMediaElement,
       peerTag: {} as HTMLMediaElement,
     },
+    mediaTag: {} as HTMLDivElement,
   };
 
   const client = new ZiwoClient(validOptions);
