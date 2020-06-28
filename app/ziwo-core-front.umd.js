@@ -825,8 +825,8 @@
         static push(parent, callId, type) {
             const t = document.createElement('video');
             t.id = `media-${type}-${callId}`;
-            t.playsinline = '';
-            t.autoplay = '';
+            t.setAttribute('playsinline', '');
+            t.setAttribute('autoplay', '');
             t.dataset.callId = callId;
             t.dataset.type = type;
             parent.appendChild(t);

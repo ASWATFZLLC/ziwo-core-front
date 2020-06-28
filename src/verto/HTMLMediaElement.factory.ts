@@ -4,8 +4,8 @@ export class HTMLMediaElementFactory {
   public static push(parent:HTMLDivElement, callId:string, type:'peer'|'self'): HTMLMediaElement {
     const t = document.createElement('video') as HTMLMediaElement;
     t.id = `media-${type}-${callId}`;
-    (t as any).playsinline = '';
-    (t as any).autoplay = '';
+    t.setAttribute('playsinline', '');
+    t.setAttribute('autoplay', '');
     t.dataset.callId = callId;
     t.dataset.type = type;
     parent.appendChild(t);
