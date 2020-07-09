@@ -71,8 +71,8 @@ export class ZiwoClient {
     this.options = options;
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
-    this.verto = new Verto(this.calls, this.debug, options.mediaTag);
-    this.io = new IOService(options.tags, this.verto);
+    this.io = new IOService();
+    this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
 
     if (options.autoConnect) {
       this.connect().then(r => {

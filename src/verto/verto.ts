@@ -41,11 +41,6 @@ export class Verto {
   public sessid?:string;
 
   /**
-   * User Media Channel
-   */
-  public channel?:MediaChannel;
-
-  /**
    * Store contact center
    */
   public contactCenterName?:string;
@@ -73,17 +68,15 @@ export class Verto {
   // Components
   private orchestrator:VertoOrchestrator;
   private cleaner:VertoClear;
-
+  public io:IOService;
   private readonly debug:boolean;
-
-  private readonly STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
 
   /**
    * Reference to list of running calls
    */
   public readonly calls:Call[];
 
-  constructor(calls:Call[], debug:boolean, tag:HTMLDivElement) {
+  constructor(calls:Call[], debug:boolean, tag:HTMLDivElement, io:IOService) {
     this.debug = debug;
     // this.tags = tags;
     this.tag = tag;
@@ -91,6 +84,7 @@ export class Verto {
     this.cleaner = new VertoClear(this, this.debug);
     this.params = new VertoParams();
     this.calls = calls;
+    this.io = io;
   }
 
   /**
@@ -107,10 +101,8 @@ export class Verto {
       this.connectedAgent = agent;
       this.contactCenterName = contactCenterName;
       Promise.all([
-        MediaChannel.getUserMediaAsChannel({audio: true, video: false}),
         this.openSocket(agent.webRtc.socket),
       ]).then(res => {
-        this.channel = res[0];
         this.login(agent.position);
       }).catch(err => {
         onErr(err);
@@ -118,15 +110,11 @@ export class Verto {
     });
   }
 
-  public updateStream(stream:any): void {
-    this.channel = new MediaChannel(stream);
-  }
-
   /**
    * send a start call request
    */
   public startCall(phoneNumber:string):Call|undefined {
-    if (!this.channel || !this.channel.stream) {
+    if (!this.io.channel || !this.io.channel.stream) {
       // TODO : throw Ziwo Error Event
       throw new Error('Error in User Media');
     }
@@ -306,14 +294,6 @@ export class Verto {
     });
   }
 
-  public getNewRTCPeerConnection():RTCPeerConnection {
-    const rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{urls: this.STUN_ICE_SERVER}],
-    });
-
-    return rtcPeerConnection;
-  }
-
   /**
    * Concat position to return the login used in Json RTC request
    */
@@ -322,7 +302,7 @@ export class Verto {
   }
 
   protected ensureMediaChannelIsValid():boolean {
-    if (!this.channel || !this.channel.stream) {
+    if (!this.io.channel || !this.io.channel.stream) {
       ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
       return false;
     }

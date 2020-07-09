@@ -97,6 +97,44 @@ function attendedTransfer() {
 }
 
 /**
+ * DEVICES
+ */
+
+ function refreshDevices() {
+     ziwoClient.io.load();
+ }
+
+function listInput() {
+    var ips = ziwoClient.io.getInputs();
+    var input = document.getElementById('inputs');
+    input.innerHTML = '';
+    ips.forEach(d => {
+        let btn = document.createElement('button');
+        btn.onclick = () => {
+            console.log('USE INPUT > ', d);
+            ziwoClient.io.useInput(d);
+        }
+        btn.innerText = d.label;
+        input.appendChild(btn);
+    });
+}
+
+function listOutput() {
+    var ops = ziwoClient.io.getOutputs();
+    var output = document.getElementById('outputs');
+    output.innerHTML = '';
+    ops.forEach(d => {
+        let btn = document.createElement('button');
+        btn.onclick = () => {
+            console.log('USE INPUT > ', d);
+            ziwoClient.io.useOutput(d);
+        }
+        btn.innerText = d.label;
+        output.appendChild(btn);
+    });
+}
+
+/**
  * TOOLS
  */
 

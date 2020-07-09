@@ -46,7 +46,7 @@ export class Call {
     this.callId = callId;
     this.verto = verto;
     this.rtcPeerConnection = rtcPeerConnection;
-    this.channel = verto.channel as MediaChannel;
+    this.channel = verto.io.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
     this.initialPayload = initialPayload;

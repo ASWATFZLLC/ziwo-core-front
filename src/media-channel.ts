@@ -13,7 +13,7 @@ export interface MediaInfo {
 
 export class MediaChannel {
 
-  public readonly stream:any;
+  public stream:any;
   public remoteStream:any;
 
   private microphone?:MicrophoneData;

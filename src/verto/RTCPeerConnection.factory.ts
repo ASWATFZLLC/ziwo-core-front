@@ -4,11 +4,16 @@ import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 export class RTCPeerConnectionFactory {
 
+
+  private static readonly STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
+
   /**
    * We initiate the call
    */
   public static outbound(verto:Verto, callId:string, login:string, phoneNumber:string):RTCPeerConnection {
-    const rtcPeerConnection = new RTCPeerConnection();
+    const rtcPeerConnection = new RTCPeerConnection({
+      iceServers: [{urls: this.STUN_ICE_SERVER}],
+    });
 
     rtcPeerConnection.ontrack = (tr:any) => {
       const track = tr.track;
@@ -17,19 +22,19 @@ export class RTCPeerConnectionFactory {
       }
       const stream = new MediaStream();
       stream.addTrack(track);
-      if (!verto.channel) {
+      if (!verto.io.channel) {
         return;
       }
-      verto.channel.remoteStream = stream;
-      HTMLMediaElementFactory.push(verto.tag, callId, 'peer').srcObject = stream;
+      verto.io.channel.remoteStream = stream;
+      HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
     };
 
-    if (!verto.channel) {
+    if (!verto.io.channel) {
       return rtcPeerConnection;
     }
 
     // Attach our media stream to the call's PeerConnection
-    verto.channel.stream.getTracks().forEach((track:any) => {
+    verto.io.channel.stream.getTracks().forEach((track:any) => {
       rtcPeerConnection.addTrack(track);
     });
 
@@ -67,21 +72,21 @@ export class RTCPeerConnectionFactory {
         const stream = new MediaStream();
 
         stream.addTrack(track);
-        if (!verto.channel) {
+        if (!verto.io.channel) {
           return;
         }
-        verto.channel.remoteStream = stream;
-        HTMLMediaElementFactory.push(verto.tag, inboudParams.callID, 'peer').srcObject = stream;
+        verto.io.channel.remoteStream = stream;
+        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
       };
 
 
-      if (!verto.channel) {
+      if (!verto.io.channel) {
         onRes(rtcPeerConnection);
         return;
       }
 
       // Attach our media stream to the call's PeerConnection
-      verto.channel.stream.getTracks().forEach((track:any) => {
+      verto.io.channel.stream.getTracks().forEach((track:any) => {
         rtcPeerConnection.addTrack(track);
       });
 
