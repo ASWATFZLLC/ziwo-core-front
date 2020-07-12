@@ -779,6 +779,7 @@
             t.setAttribute('autoplay', '');
             t.dataset.callId = callId;
             t.dataset.type = type;
+            t.volume = io.volume / 100;
             this.attachSinkId(t, (_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId);
             parent.appendChild(t);
             return t;
@@ -1437,6 +1438,7 @@
      */
     class IOService {
         constructor() {
+            this.volume = 100;
             this.inputs = [];
             this.outputs = [];
             this.load().then(e => {
@@ -1466,6 +1468,15 @@
          */
         getOutputs() {
             return this.outputs;
+        }
+        setVolume(vol) {
+            if (vol < 0) {
+                vol = 0;
+            }
+            if (vol > 100) {
+                vol = 100;
+            }
+            this.volume = vol;
         }
         load() {
             return new Promise((ok, err) => {
