@@ -21,6 +21,7 @@ export class IOService {
   public input?:Device;
   public output?:Device;
   public channel?:MediaChannel;
+  public volume = 100;
   private stream:any;
   private inputs:Device[] = [];
   private outputs:Device[] = [];
@@ -57,6 +58,16 @@ export class IOService {
    */
   public getOutputs(): Device[] {
     return this.outputs;
+  }
+
+  public setVolume(vol:number): void {
+    if (vol < 0) {
+      vol = 0;
+    }
+    if (vol > 100) {
+      vol = 100;
+    }
+    this.volume = vol;
   }
 
   public load(): Promise<void> {

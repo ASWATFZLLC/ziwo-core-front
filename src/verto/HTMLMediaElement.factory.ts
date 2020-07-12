@@ -9,6 +9,7 @@ export class HTMLMediaElementFactory {
     t.setAttribute('autoplay', '');
     t.dataset.callId = callId;
     t.dataset.type = type;
+    t.volume = io.volume / 100;
     this.attachSinkId(t, io.output?.deviceId as string);
 
     parent.appendChild(t);
