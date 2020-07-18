@@ -254,9 +254,9 @@ export class Verto {
     return new Promise<void>((onRes, onErr) => {
       this.socket = new WebSocket(socketUrl);
       this.socket.onclose = () => {
+        ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Socket closed'});
         if (this.debug) {
           console.log('Socket closed. now disconnected');
-          ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Socket closed'});
         }
       };
       this.socket.onerror = (e) => {
