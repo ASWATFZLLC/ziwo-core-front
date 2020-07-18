@@ -421,6 +421,7 @@
         ZiwoErrorCode[ZiwoErrorCode["MediaError"] = 1002] = "MediaError";
         ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
         ZiwoErrorCode[ZiwoErrorCode["CannotCreateCall"] = 1004] = "CannotCreateCall";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesError"] = 1005] = "DevicesError";
     })(ZiwoErrorCode || (ZiwoErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -484,55 +485,6 @@
     }
     ZiwoEvent.listeners = [];
     ZiwoEvent.prefixes = ['_jorel-dialog-state-', 'ziwo-'];
-
-    class MediaChannel {
-        constructor(stream) {
-            this.stream = stream;
-            this.audioContext = this.getAudioContext();
-        }
-        static getUserMediaAsChannel(mediaRequested) {
-            return new Promise((onRes, onErr) => {
-                try {
-                    navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
-                        onRes(new MediaChannel(stream));
-                    });
-                }
-                catch (e) {
-                    onErr(e);
-                }
-            });
-        }
-        startMicrophone() {
-            // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
-            const filterNode = this.audioContext.createBiquadFilter();
-            filterNode.type = 'highpass';
-            // cutoff frequency: for highpass, audio is attenuated below this frequency
-            filterNode.frequency.value = 10000;
-            // create a gain node (to change audio volume)
-            const gainNode = this.audioContext.createGain();
-            // default is 1 (no change); less than 1 means audio is attenuated and vice versa
-            gainNode.gain.value = 0.5;
-            const source = this.audioContext.createMediaStreamSource(this.stream);
-            this.microphone = {
-                filterNode,
-                gainNode,
-                source,
-            };
-        }
-        bindVideo(el) {
-            el.srcObject = this.stream;
-        }
-        getAudioContext() {
-            let audioContext;
-            if (typeof AudioContext === 'function') {
-                audioContext = new AudioContext();
-            }
-            else {
-                throw new Error('Web audio not supported');
-            }
-            return audioContext;
-        }
-    }
 
     var VertoMethod;
     (function (VertoMethod) {
@@ -700,7 +652,7 @@
             this.callId = callId;
             this.verto = verto;
             this.rtcPeerConnection = rtcPeerConnection;
-            this.channel = verto.channel;
+            this.channel = verto.io.channel;
             this.phoneNumber = phoneNumber;
             this.direction = direction;
             this.initialPayload = initialPayload;
@@ -818,12 +770,58 @@
         }
     }
 
+    class HTMLMediaElementFactory {
+        static push(io, parent, callId, type) {
+            var _a;
+            const t = document.createElement('video');
+            t.id = `media-${type}-${callId}`;
+            t.setAttribute('playsinline', '');
+            t.setAttribute('autoplay', '');
+            t.dataset.callId = callId;
+            t.dataset.type = type;
+            t.volume = io.volume / 100;
+            this.attachSinkId(t, (_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId);
+            parent.appendChild(t);
+            return t;
+        }
+        static delete(parent, callId) {
+            const toRemove = [];
+            for (let i = 0; i < parent.children.length; i++) {
+                const item = parent.children[i];
+                if (item && item.dataset && item.dataset.callId === callId) {
+                    toRemove.push(item);
+                }
+            }
+            toRemove.forEach(e => e.remove());
+        }
+        static attachSinkId(element, destinationId) {
+            if (typeof element.sinkId !== 'undefined') {
+                element.setSinkId(destinationId)
+                    .then(() => {
+                    console.log(`Success, audio output device attached: ${destinationId}`);
+                })
+                    .catch((error) => {
+                    let errorMessage = error;
+                    if (error.name === 'SecurityError') {
+                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+                    }
+                    console.error(errorMessage);
+                });
+            }
+            else {
+                console.warn('Browser does not support output device selection.');
+            }
+        }
+    }
+
     class RTCPeerConnectionFactory {
         /**
          * We initiate the call
          */
         static outbound(verto, callId, login, phoneNumber) {
-            const rtcPeerConnection = new RTCPeerConnection();
+            const rtcPeerConnection = new RTCPeerConnection({
+                iceServers: [{ urls: this.STUN_ICE_SERVER }],
+            });
             rtcPeerConnection.ontrack = (tr) => {
                 const track = tr.track;
                 if (track.kind !== 'audio') {
@@ -831,17 +829,17 @@
                 }
                 const stream = new MediaStream();
                 stream.addTrack(track);
-                if (!verto.channel) {
+                if (!verto.io.channel) {
                     return;
                 }
-                verto.channel.remoteStream = stream;
-                verto.tags.peerTag.srcObject = stream;
+                verto.io.channel.remoteStream = stream;
+                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
             };
-            if (!verto.channel) {
+            if (!verto.io.channel) {
                 return rtcPeerConnection;
             }
             // Attach our media stream to the call's PeerConnection
-            verto.channel.stream.getTracks().forEach((track) => {
+            verto.io.channel.stream.getTracks().forEach((track) => {
                 rtcPeerConnection.addTrack(track);
             });
             // We wait for candidate to be null to make sure all candidates have been processed
@@ -869,18 +867,18 @@
                     }
                     const stream = new MediaStream();
                     stream.addTrack(track);
-                    if (!verto.channel) {
+                    if (!verto.io.channel) {
                         return;
                     }
-                    verto.channel.remoteStream = stream;
-                    verto.tags.peerTag.srcObject = stream;
+                    verto.io.channel.remoteStream = stream;
+                    HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
                 };
-                if (!verto.channel) {
+                if (!verto.io.channel) {
                     onRes(rtcPeerConnection);
                     return;
                 }
                 // Attach our media stream to the call's PeerConnection
-                verto.channel.stream.getTracks().forEach((track) => {
+                verto.io.channel.stream.getTracks().forEach((track) => {
                     rtcPeerConnection.addTrack(track);
                 });
                 rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: inboudParams.sdp }))
@@ -896,6 +894,7 @@
             return this.inbound(verto, params);
         }
     }
+    RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
 
     /**
      * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -1011,7 +1010,7 @@
             RTCPeerConnectionFactory
                 .inbound(this.verto, message.params)
                 .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, 'inbound', message.params);
+                const call = new Call(message.params.callID, this.verto, message.params.caller_id_number, this.verto.getLogin(), pc, 'inbound', message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
             });
@@ -1027,7 +1026,7 @@
         onAttach(message) {
             RTCPeerConnectionFactory.recovering(this.verto, message.params)
                 .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Recovering);
                 call.pushState(ZiwoEventType.Active);
@@ -1103,6 +1102,7 @@
             if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
                 call.channel.remoteStream.stop();
             }
+            HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
         }
         purge(calls) {
             if (this.debug) {
@@ -1142,18 +1142,19 @@
      *
      */
     class Verto {
-        constructor(calls, debug, tags) {
+        constructor(calls, debug, tag, io) {
             /**
              * Callback functions - register using `addListener`
              */
             this.listeners = [];
-            this.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
             this.debug = debug;
-            this.tags = tags;
+            // this.tags = tags;
+            this.tag = tag;
             this.orchestrator = new VertoOrchestrator(this, this.debug);
             this.cleaner = new VertoClear(this, this.debug);
             this.params = new VertoParams();
             this.calls = calls;
+            this.io = io;
         }
         /**
          * addListener allows to listen for incoming Socket Event
@@ -1168,24 +1169,19 @@
                 this.connectedAgent = agent;
                 this.contactCenterName = contactCenterName;
                 Promise.all([
-                    MediaChannel.getUserMediaAsChannel({ audio: true, video: false }),
                     this.openSocket(agent.webRtc.socket),
                 ]).then(res => {
-                    this.channel = res[0];
                     this.login(agent.position);
                 }).catch(err => {
                     onErr(err);
                 });
             });
         }
-        updateStream(stream) {
-            this.channel = new MediaChannel(stream);
-        }
         /**
          * send a start call request
          */
         startCall(phoneNumber) {
-            if (!this.channel || !this.channel.stream) {
+            if (!this.io.channel || !this.io.channel.stream) {
                 // TODO : throw Ziwo Error Event
                 throw new Error('Error in User Media');
             }
@@ -1207,6 +1203,11 @@
          */
         answerCall(callId, phoneNumber, sdp) {
             try {
+                this.calls.forEach(x => {
+                    if (x.callId !== callId) {
+                        x.hold();
+                    }
+                });
                 this.send(this.params.answerCall(this.sessid, callId, this.getLogin(), phoneNumber, sdp));
                 const c = this.calls.find(x => x.callId === callId);
                 if (c) {
@@ -1356,12 +1357,6 @@
                 };
             });
         }
-        getNewRTCPeerConnection() {
-            const rtcPeerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: this.STUN_ICE_SERVER }],
-            });
-            return rtcPeerConnection;
-        }
         /**
          * Concat position to return the login used in Json RTC request
          */
@@ -1370,7 +1365,7 @@
             return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
         }
         ensureMediaChannelIsValid() {
-            if (!this.channel || !this.channel.stream) {
+            if (!this.io.channel || !this.io.channel.stream) {
                 ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
                 return false;
             }
@@ -1386,6 +1381,57 @@
         }
     }
 
+    class MediaChannel {
+        constructor(stream) {
+            this.stream = stream;
+            this.audioContext = this.getAudioContext();
+        }
+        static getUserMediaAsChannel(mediaRequested) {
+            return new Promise((onRes, onErr) => {
+                try {
+                    navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+                        onRes(new MediaChannel(stream));
+                    }).catch(e => {
+                        ZiwoEvent.error(ZiwoErrorCode.DevicesError, 'No devices available');
+                    });
+                }
+                catch (e) {
+                    onErr(e);
+                }
+            });
+        }
+        startMicrophone() {
+            // see https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html#BiquadFilterNode-section
+            const filterNode = this.audioContext.createBiquadFilter();
+            filterNode.type = 'highpass';
+            // cutoff frequency: for highpass, audio is attenuated below this frequency
+            filterNode.frequency.value = 10000;
+            // create a gain node (to change audio volume)
+            const gainNode = this.audioContext.createGain();
+            // default is 1 (no change); less than 1 means audio is attenuated and vice versa
+            gainNode.gain.value = 0.5;
+            const source = this.audioContext.createMediaStreamSource(this.stream);
+            this.microphone = {
+                filterNode,
+                gainNode,
+                source,
+            };
+        }
+        bindVideo(el) {
+            el.srcObject = this.stream;
+        }
+        getAudioContext() {
+            let audioContext;
+            if (typeof AudioContext === 'function') {
+                audioContext = new AudioContext();
+            }
+            else {
+                throw new Error('Web audio not supported');
+            }
+            return audioContext;
+        }
+    }
+
     var DeviceKind;
     (function (DeviceKind) {
         DeviceKind["VideoInput"] = "videoinput";
@@ -1396,34 +1442,25 @@
      * IO Service allow your to quickly manager your inputs and outputs
      */
     class IOService {
-        constructor(tags, verto) {
+        constructor() {
+            this.volume = 100;
             this.inputs = [];
             this.outputs = [];
-            this.verto = verto;
-            this.tags = tags;
-            this.load().then();
-        }
-        /**
-         * set @input as default input for calls
-         */
-        useInput(inputId) {
-            return new Promise((ok, err) => {
-                navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: inputId } } }).then((stream) => {
-                    this.verto.updateStream(stream);
-                    ok();
-                }).catch(e => err(e));
+            this.load().then(e => {
+                this.useInput(this.inputs[0]);
+                this.useOutput(this.outputs[0]);
             });
         }
-        /**
-         * set @output as default output for calls
-         */
-        useOutput(outputId) {
-            return new Promise((ok, err) => {
-                this.tags.peerTag.setSinkId(outputId).
-                    then(() => {
-                    ok();
-                }).catch((e) => err(e));
-            });
+        useInput(device) {
+            this.input = device;
+            navigator.mediaDevices.getUserMedia({
+                audio: { deviceId: device.deviceId }
+            }).then((stream) => {
+                this.channel = new MediaChannel(stream);
+            }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+        }
+        useOutput(device) {
+            this.output = device;
         }
         /**
          * return all the available input medias
@@ -1437,11 +1474,20 @@
         getOutputs() {
             return this.outputs;
         }
+        setVolume(vol) {
+            if (vol < 0) {
+                vol = 0;
+            }
+            if (vol > 100) {
+                vol = 100;
+            }
+            this.volume = vol;
+        }
         load() {
             return new Promise((ok, err) => {
                 let streamDone = false;
                 let deviceDone = false;
-                navigator.mediaDevices.getUserMedia().then((stream) => {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                     this.getStream(stream);
                     streamDone = true;
                     if (deviceDone) {
@@ -1473,7 +1519,6 @@
                         break;
                     case DeviceKind.AudioInput:
                         this.inputs.push({
-                            currentlyInUse: false,
                             label: device.label,
                             deviceId: device.deviceId,
                             groupId: device.groupId,
@@ -1481,7 +1526,6 @@
                         break;
                     case DeviceKind.AudioOutput:
                         this.outputs.push({
-                            currentlyInUse: false,
                             label: device.label,
                             deviceId: device.deviceId,
                             groupId: device.groupId,
@@ -1508,8 +1552,8 @@
             this.options = options;
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
-            this.verto = new Verto(this.calls, this.debug, options.tags);
-            this.io = new IOService(options.tags, this.verto);
+            this.io = new IOService();
+            this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
             if (options.autoConnect) {
                 this.connect().then(r => {
                 }).catch(err => { throw err; });

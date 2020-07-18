@@ -1,6 +1,7 @@
 import {Verto} from './verto';
 import {Call} from '../call';
 import {ZiwoEventType} from '../events';
+import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 export class VertoClear {
 
@@ -50,6 +51,7 @@ export class VertoClear {
     if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
       call.channel.remoteStream.stop();
     }
+    HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
   }
 
   private purge(calls:Call[]):void {

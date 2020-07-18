@@ -1,3 +1,4 @@
+import { ZiwoEvent, ZiwoErrorCode } from './events';
 
 interface MicrophoneData {
   filterNode:BiquadFilterNode;
@@ -12,7 +13,7 @@ export interface MediaInfo {
 
 export class MediaChannel {
 
-  public readonly stream:any;
+  public stream:any;
   public remoteStream:any;
 
   private microphone?:MicrophoneData;
@@ -29,6 +30,8 @@ export class MediaChannel {
       try {
         navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
           onRes(new MediaChannel(stream));
+        }).catch(e => {
+          ZiwoEvent.error(ZiwoErrorCode.DevicesError, 'No devices available');
         });
       } catch (e) {
         onErr(e);

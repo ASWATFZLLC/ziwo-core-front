@@ -1,8 +1,7 @@
-import { MediaInfo } from './media-channel';
+import { MediaInfo, MediaChannel } from './media-channel';
 import { Verto } from './verto/verto';
 
 interface Device {
-  currentlyInUse:boolean;
   deviceId:string;
   groupId:string;
   label:string;
@@ -19,42 +18,32 @@ enum DeviceKind {
  */
 export class IOService {
 
+  public input?:Device;
+  public output?:Device;
+  public channel?:MediaChannel;
+  public volume = 100;
   private stream:any;
   private inputs:Device[] = [];
   private outputs:Device[] = [];
-  private readonly tags:MediaInfo;
-  private readonly verto:Verto;
 
-  constructor(tags:MediaInfo, verto:Verto) {
-    this.verto = verto;
-    this.tags = tags;
-    this.load().then();
-  }
-
-  /**
-   * set @input as default input for calls
-   */
-  public useInput(inputId:any): Promise<void> {
-    return new Promise<void>((ok, err) => {
-      navigator.mediaDevices.getUserMedia({audio: {deviceId: {exact: inputId}}}).then(
-        (stream) => {
-          this.verto.updateStream(stream);
-          ok();
-        }
-      ).catch(e => err(e));
+  constructor() {
+    this.load().then(e => {
+      this.useInput(this.inputs[0]);
+      this.useOutput(this.outputs[0]);
     });
   }
 
-  /**
-   * set @output as default output for calls
-   */
-  public useOutput(outputId:string): Promise<void> {
-    return new Promise<void>((ok, err) => {
-      (this.tags.peerTag as any).setSinkId(outputId).
-      then(() => {
-        ok();
-      }).catch((e:any) => err(e));
-    });
+  public useInput(device:Device): void {
+    this.input = device;
+    navigator.mediaDevices.getUserMedia({
+      audio: {deviceId: device.deviceId}
+    }).then((stream) => {
+      this.channel = new MediaChannel(stream);
+    }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+  }
+
+  public useOutput(device:Device): void {
+    this.output = device;
   }
 
   /**
@@ -71,11 +60,21 @@ export class IOService {
     return this.outputs;
   }
 
+  public setVolume(vol:number): void {
+    if (vol < 0) {
+      vol = 0;
+    }
+    if (vol > 100) {
+      vol = 100;
+    }
+    this.volume = vol;
+  }
+
   public load(): Promise<void> {
     return new Promise<void>((ok, err) => {
       let streamDone = false;
       let deviceDone = false;
-      navigator.mediaDevices.getUserMedia().then(
+      navigator.mediaDevices.getUserMedia({audio: true}).then(
         (stream) => {
           this.getStream(stream);
           streamDone = true;
@@ -115,7 +114,6 @@ export class IOService {
           break;
         case DeviceKind.AudioInput:
           this.inputs.push({
-            currentlyInUse: false,
             label: device.label,
             deviceId: device.deviceId,
             groupId: device.groupId,
@@ -123,7 +121,6 @@ export class IOService {
           break;
         case DeviceKind.AudioOutput:
           this.outputs.push({
-            currentlyInUse: false,
             label: device.label,
             deviceId: device.deviceId,
             groupId: device.groupId,

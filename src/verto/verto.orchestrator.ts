@@ -3,6 +3,7 @@ import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../even
 import {Call} from '../call';
 import {Verto} from './verto';
 import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
+import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -132,7 +133,7 @@ export class VertoOrchestrator {
         const call = new Call(
           message.params.callID,
           this.verto,
-          message.params.verto_h_originalCallerIdNumber,
+          message.params.caller_id_number,
           this.verto.getLogin(),
           pc,
           'inbound',
@@ -158,7 +159,7 @@ export class VertoOrchestrator {
         const call = new Call(
           message.params.callID,
           this.verto,
-          message.params.verto_h_originalCallerIdNumber,
+          message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number,
           this.verto.getLogin(),
           pc,
           message.params.display_direction,
