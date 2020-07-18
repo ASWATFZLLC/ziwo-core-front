@@ -1337,8 +1337,9 @@
             return new Promise((onRes, onErr) => {
                 this.socket = new WebSocket(socketUrl);
                 this.socket.onclose = () => {
+                    ZiwoEvent.emit(ZiwoEventType.Disconnected, { message: 'Socket closed' });
                     if (this.debug) {
-                        console.log('Socket closed');
+                        console.log('Socket closed. now disconnected');
                     }
                 };
                 this.socket.onerror = (e) => {
