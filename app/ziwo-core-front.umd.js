@@ -770,19 +770,56 @@
         }
     }
 
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */
+
+    function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
     class HTMLMediaElementFactory {
         static push(io, parent, callId, type) {
-            var _a;
-            const t = document.createElement('video');
-            t.id = `media-${type}-${callId}`;
-            t.setAttribute('playsinline', '');
-            t.setAttribute('autoplay', '');
-            t.dataset.callId = callId;
-            t.dataset.type = type;
-            t.volume = io.volume / 100;
-            this.attachSinkId(t, (_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId);
-            parent.appendChild(t);
-            return t;
+            return __awaiter(this, void 0, void 0, function* () {
+                const t = document.createElement('video');
+                t.id = `media-${type}-${callId}`;
+                t.setAttribute('playsinline', '');
+                t.setAttribute('autoplay', '');
+                t.dataset.callId = callId;
+                t.dataset.type = type;
+                t.volume = io.volume / 100;
+                parent.appendChild(t);
+                t.setSinkId(io.output.deviceId)
+                    .then(() => {
+                    var _a;
+                    console.log(`Success, audio output device attached: ${(_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId}`);
+                })
+                    .catch((error) => {
+                    let errorMessage = error;
+                    if (error.name === 'SecurityError') {
+                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+                    }
+                    console.error(errorMessage);
+                });
+                return t;
+            });
         }
         static delete(parent, callId) {
             const toRemove = [];
@@ -793,24 +830,6 @@
                 }
             }
             toRemove.forEach(e => e.remove());
-        }
-        static attachSinkId(element, destinationId) {
-            if (typeof element.sinkId !== 'undefined') {
-                element.setSinkId(destinationId)
-                    .then(() => {
-                    console.log(`Success, audio output device attached: ${destinationId}`);
-                })
-                    .catch((error) => {
-                    let errorMessage = error;
-                    if (error.name === 'SecurityError') {
-                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
-                    }
-                    console.error(errorMessage);
-                });
-            }
-            else {
-                console.warn('Browser does not support output device selection.');
-            }
         }
     }
 
@@ -833,7 +852,10 @@
                     return;
                 }
                 verto.io.channel.remoteStream = stream;
-                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
+                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
+                    e.srcObject = stream;
+                    return rtcPeerConnection;
+                });
             };
             if (!verto.io.channel) {
                 return rtcPeerConnection;
@@ -871,7 +893,11 @@
                         return;
                     }
                     verto.io.channel.remoteStream = stream;
-                    HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
+                    HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
+                        r.srcObject = stream;
+                        onRes(rtcPeerConnection);
+                        return;
+                    });
                 };
                 if (!verto.io.channel) {
                     onRes(rtcPeerConnection);
@@ -1195,7 +1221,7 @@
             }
             catch (e) {
                 ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
-                return undefined;
+                console.warn('failed to created call', e);
             }
         }
         /**

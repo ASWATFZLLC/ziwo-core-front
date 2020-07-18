@@ -14,7 +14,6 @@ export class RTCPeerConnectionFactory {
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: [{urls: this.STUN_ICE_SERVER}],
     });
-
     rtcPeerConnection.ontrack = (tr:any) => {
       const track = tr.track;
       if (track.kind !== 'audio') {
@@ -26,18 +25,18 @@ export class RTCPeerConnectionFactory {
         return;
       }
       verto.io.channel.remoteStream = stream;
-      HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
+      HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
+        e.srcObject = stream;
+        return rtcPeerConnection;
+      });
     };
-
     if (!verto.io.channel) {
       return rtcPeerConnection;
     }
-
     // Attach our media stream to the call's PeerConnection
     verto.io.channel.stream.getTracks().forEach((track:any) => {
       rtcPeerConnection.addTrack(track);
     });
-
     // We wait for candidate to be null to make sure all candidates have been processed
     rtcPeerConnection.onicecandidate = (candidate:any) => {
       if (!candidate.candidate) {
@@ -50,7 +49,6 @@ export class RTCPeerConnectionFactory {
         );
       }
     };
-
     rtcPeerConnection.createOffer().then((offer:any) => {
       rtcPeerConnection.setLocalDescription(offer).then(() => {});
     });
@@ -76,7 +74,11 @@ export class RTCPeerConnectionFactory {
           return;
         }
         verto.io.channel.remoteStream = stream;
-        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
+        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
+          r.srcObject = stream;
+          onRes(rtcPeerConnection);
+          return;
+        });;
       };
 
 

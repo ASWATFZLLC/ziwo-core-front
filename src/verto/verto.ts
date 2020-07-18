@@ -127,7 +127,7 @@ export class Verto {
       return call;
     } catch (e) {
       ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
-      return undefined;
+      console.warn('failed to created call', e);
     }
   }
 

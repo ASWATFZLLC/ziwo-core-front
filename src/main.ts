@@ -122,12 +122,12 @@ export class ZiwoClient {
    * Note: the call's instance will also be provided in all the events
    */
   public startCall(phoneNumber:string):Call|undefined {
-    const call = this.verto.startCall(phoneNumber);
-    if (!call) {
-      return undefined;
-    }
-    this.calls.push(call);
-    return call;
+      const call = this.verto.startCall(phoneNumber);
+      if (!call) {
+        return undefined;
+      }
+      this.calls.push(call);
+      return call;
   }
 
 }
