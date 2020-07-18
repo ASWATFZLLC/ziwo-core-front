@@ -1203,6 +1203,11 @@
          */
         answerCall(callId, phoneNumber, sdp) {
             try {
+                this.calls.forEach(x => {
+                    if (x.callId !== callId) {
+                        x.hold();
+                    }
+                });
                 this.send(this.params.answerCall(this.sessid, callId, this.getLogin(), phoneNumber, sdp));
                 const c = this.calls.find(x => x.callId === callId);
                 if (c) {
