@@ -78,7 +78,7 @@ export class RTCPeerConnectionFactory {
           r.srcObject = stream;
           onRes(rtcPeerConnection);
           return;
-        });;
+        });
       };
 
 
