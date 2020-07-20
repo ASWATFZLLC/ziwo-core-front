@@ -1514,20 +1514,27 @@
             return new Promise((ok, err) => {
                 let streamDone = false;
                 let deviceDone = false;
+                let listDone = false;
                 navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                     this.getStream(stream);
                     streamDone = true;
-                    if (deviceDone) {
+                    if (deviceDone && listDone) {
                         ok();
                     }
                 }).then((devices) => {
                     this.getDevices(devices);
                     deviceDone = true;
-                    if (streamDone) {
+                    if (streamDone && listDone) {
                         ok();
                     }
                 }).catch();
-                navigator.mediaDevices.enumerateDevices().then((devices) => this.getDevices(devices)).catch(e => err(e));
+                navigator.mediaDevices.enumerateDevices().then((devices) => {
+                    this.getDevices(devices);
+                    listDone = true;
+                    if (streamDone && deviceDone) {
+                        ok();
+                    }
+                }).catch(e => err(e));
             });
         }
         getStream(stream) {
