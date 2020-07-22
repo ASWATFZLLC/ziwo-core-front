@@ -107,6 +107,10 @@ export class ZiwoClient {
     });
   }
 
+  public restartSocket(): void {
+    return this.verto.restartSocket();
+  }
+
   /**
    * Add a callback function for all events
    * Can be used instead of `addEventListener`

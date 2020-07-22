@@ -1270,6 +1270,13 @@
             var _a;
             (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
         }
+        restartSocket() {
+            if (this.socket) {
+                this.socket.close();
+                delete this.socket;
+            }
+            this.openSocket(this.connectedAgent.webRtc.socket);
+        }
         /**
          * Purge a specific call
          */
@@ -1617,6 +1624,9 @@
                     ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
                 }));
             });
+        }
+        restartSocket() {
+            return this.verto.restartSocket();
         }
         /**
          * Add a callback function for all events

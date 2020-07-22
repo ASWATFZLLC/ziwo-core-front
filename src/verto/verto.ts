@@ -181,6 +181,14 @@ export class Verto {
     this.socket?.close();
   }
 
+  public restartSocket(): void {
+    if (this.socket) {
+      this.socket.close();
+      delete this.socket;
+    }
+    this.openSocket((this.connectedAgent as any).webRtc.socket);
+  }
+
   /**
    * Purge a specific call
    */
