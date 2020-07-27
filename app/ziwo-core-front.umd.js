@@ -697,7 +697,7 @@
          * Mute user's microphone
          */
         mute() {
-            this.toggleSelfStream(true);
+            this.toggleSelfStream(false);
             // Because mute is not sent/received over the socket, we throw the event manually
             this.pushState(ZiwoEventType.Mute);
         }
@@ -705,7 +705,7 @@
          * Unmute user's microphone
          */
         unmute() {
-            this.toggleSelfStream(false);
+            this.toggleSelfStream(true);
             this.pushState(ZiwoEventType.Unmute);
             // Because unmute is not sent/received over the socket, we throw the event manually
         }
