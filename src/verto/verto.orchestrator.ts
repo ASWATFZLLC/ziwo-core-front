@@ -62,6 +62,7 @@ export class VertoOrchestrator {
       case VertoMethod.Bye:
         if (this.ensureCallIsExisting(call)) {
           (call as Call).pushState(ZiwoEventType.Hangup);
+          this.verto.purgeAndDestroyCall((call as Call).callId);
         }
     }
     return undefined;

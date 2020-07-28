@@ -973,6 +973,7 @@
                 case VertoMethod.Bye:
                     if (this.ensureCallIsExisting(call)) {
                         call.pushState(ZiwoEventType.Hangup);
+                        this.verto.purgeAndDestroyCall(call.callId);
                     }
             }
             return undefined;
