@@ -1113,22 +1113,21 @@
             if (this.debug) ;
         }
         destroyCall(call) {
-            if (call.channel.stream) {
-                // tslint:disable-next-line: triple-equals
-                if (typeof call.channel.stream.stop == 'function') {
-                    call.channel.stream.stop();
-                }
-                else {
-                    if (call.channel.stream.active) {
-                        const tracks = call.channel.stream.getTracks();
-                        tracks.forEach((tr) => tr.stop());
-                    }
-                }
-            }
-            // tslint:disable-next-line: triple-equals
-            if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
-                call.channel.remoteStream.stop();
-            }
+            // if (call.channel.stream) {
+            //   // tslint:disable-next-line: triple-equals
+            //   if (typeof call.channel.stream.stop == 'function') {
+            //     call.channel.stream.stop();
+            //   } else {
+            //     if (call.channel.stream.active) {
+            //       const tracks = call.channel.stream.getTracks();
+            //       tracks.forEach((tr:any) => tr.stop());
+            //     }
+            //   }
+            // }
+            // // tslint:disable-next-line: triple-equals
+            // if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
+            //   call.channel.remoteStream.stop();
+            // }
             HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
         }
         purge(calls) {
