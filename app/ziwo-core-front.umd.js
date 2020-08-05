@@ -1267,8 +1267,9 @@
             this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
         }
         disconnect() {
-            var _a;
-            (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+            if (this.socket) {
+                this.socket.close();
+            }
         }
         restartSocket() {
             if (this.socket) {
@@ -1599,6 +1600,15 @@
                 this.connect().then(r => {
                 }).catch(err => { throw err; });
             }
+        }
+        restart(options) {
+            // Drop all
+            this.verto.disconnect();
+            this.options = options;
+            this.debug = options.debug || false;
+            this.apiService = new ApiService(options.contactCenterName);
+            this.io = new IOService();
+            this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
         }
         /**
          * connect authenticate the user over Ziwo & our communication socket

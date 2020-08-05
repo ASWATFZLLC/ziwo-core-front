@@ -59,13 +59,13 @@ export class ZiwoClient {
    */
   public connectedAgent?:AgentInfo;
 
-  public readonly options:ZiwoClientOptions;
+  public options:ZiwoClientOptions;
 
-  public readonly io:IOService;
-  private readonly calls:Call[] = [];
+  public io:IOService;
+  private calls:Call[] = [];
   private apiService:ApiService;
   private verto:Verto;
-  private readonly debug:boolean;
+  private debug:boolean;
 
   constructor(options:ZiwoClientOptions) {
     this.options = options;
@@ -78,6 +78,16 @@ export class ZiwoClient {
       this.connect().then(r => {
       }).catch(err => { throw err; });
     }
+  }
+
+  public restart(options:ZiwoClientOptions): void {
+    // Drop all
+    this.verto.disconnect();
+    this.options = options;
+    this.debug = options.debug || false;
+    this.apiService = new ApiService(options.contactCenterName);
+    this.io = new IOService();
+    this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
   }
 
   /**

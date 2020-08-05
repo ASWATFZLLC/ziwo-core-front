@@ -178,7 +178,9 @@ export class Verto {
   }
 
   public disconnect():void {
-    this.socket?.close();
+    if (this.socket) {
+      this.socket.close();
+    }
   }
 
   public restartSocket(): void {
