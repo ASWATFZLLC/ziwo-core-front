@@ -90,6 +90,12 @@ export class Call {
    * Unhold the call
    */
   public unhold():void {
+    // we hold other calls
+    this.verto.calls.forEach(c => {
+      if (c.callId !== this.callId) {
+        c.hold();
+      }
+    });
     this.verto.unholdCall(this.callId, this.phoneNumber);
   }
 
