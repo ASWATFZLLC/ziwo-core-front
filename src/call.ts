@@ -73,6 +73,13 @@ export class Call {
   }
 
   /**
+   * Recover the call currently in recovering state
+   */
+  public recover():void {
+    this.verto.attach(this.callId, this.phoneNumber, this.rtcPeerConnection.localDescription?.sdp as string);
+  }
+
+  /**
    * Use to send a digit
    */
   public dtfm(char:string):void {

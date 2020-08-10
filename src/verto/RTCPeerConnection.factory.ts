@@ -61,7 +61,9 @@ export class RTCPeerConnectionFactory {
   public static inbound(verto:Verto, inboudParams:any):Promise<RTCPeerConnection> {
     return new Promise<RTCPeerConnection>((onRes, onErr) => {
 
-      const rtcPeerConnection = new RTCPeerConnection();
+      const rtcPeerConnection = new RTCPeerConnection({
+        iceServers: [{urls: this.STUN_ICE_SERVER}],
+      });
       rtcPeerConnection.ontrack = (tr:any) => {
         const track = tr.track;
         if (track.kind !== 'audio') {
@@ -103,7 +105,7 @@ export class RTCPeerConnectionFactory {
     });
   }
 
-  public static recovering(verto:Verto, params:any):Promise<RTCPeerConnection> {
+  public static recovering(verto:Verto, params:any, direction:'inbound'|'outbound'):Promise<RTCPeerConnection> {
     return this.inbound(verto, params);
   }
 

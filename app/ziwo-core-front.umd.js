@@ -552,6 +552,13 @@
                 sessid: sessionId,
             });
         }
+        attach(sessionId, callId, login, phoneNumber, sdp) {
+            return this.wrap(VertoMethod.Attach, {
+                sdp: sdp,
+                sessid: sessionId,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+            });
+        }
         answerCall(sessionId, callId, login, phoneNumber, sdp) {
             return this.wrap(VertoMethod.Answer, {
                 sdp: sdp,
@@ -674,6 +681,13 @@
             this.pushState(ZiwoEventType.Hangup);
             this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
                 : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
+        }
+        /**
+         * Recover the call currently in recovering state
+         */
+        recover() {
+            var _a;
+            this.verto.attach(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
         }
         /**
          * Use to send a digit
@@ -887,7 +901,9 @@
          */
         static inbound(verto, inboudParams) {
             return new Promise((onRes, onErr) => {
-                const rtcPeerConnection = new RTCPeerConnection();
+                const rtcPeerConnection = new RTCPeerConnection({
+                    iceServers: [{ urls: this.STUN_ICE_SERVER }],
+                });
                 rtcPeerConnection.ontrack = (tr) => {
                     const track = tr.track;
                     if (track.kind !== 'audio') {
@@ -922,7 +938,7 @@
                 onRes(rtcPeerConnection);
             });
         }
-        static recovering(verto, params) {
+        static recovering(verto, params, direction) {
             return this.inbound(verto, params);
         }
     }
@@ -1057,12 +1073,11 @@
         }
         /** Recovering call */
         onAttach(message) {
-            RTCPeerConnectionFactory.recovering(this.verto, message.params)
+            RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
                 .then(pc => {
                 const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Recovering);
-                call.pushState(ZiwoEventType.Active);
             });
         }
         /**
@@ -1228,6 +1243,21 @@
             catch (e) {
                 ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
                 console.warn('failed to created call', e);
+            }
+        }
+        /**
+         * Perform an attach query
+         */
+        attach(callId, phoneNumber, sdp) {
+            try {
+                this.send(this.params.attach(this.sessid, callId, this.getLogin(), phoneNumber, sdp));
+                const c = this.calls.find(x => x.callId === callId);
+                if (c) {
+                    c.pushState(ZiwoEventType.Active);
+                }
+            }
+            catch (e) {
+                ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
             }
         }
         /**

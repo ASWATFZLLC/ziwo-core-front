@@ -85,6 +85,14 @@ export class VertoParams {
     });
   }
 
+  public attach(sessionId:string, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
+    return this.wrap(VertoMethod.Attach, {
+      sdp: sdp,
+      sessid: sessionId,
+      dialogParams: this.dialogParams(callId, login, phoneNumber),
+    });
+  }
+
   public answerCall(sessionId:string|undefined, callId:string, login:string, phoneNumber:string, sdp:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Answer, {
         sdp: sdp,

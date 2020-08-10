@@ -132,6 +132,21 @@ export class Verto {
   }
 
   /**
+   * Perform an attach query
+   */
+  public attach(callId:string, phoneNumber:string, sdp:string): void {
+    try {
+      this.send(this.params.attach(this.sessid as string, callId, this.getLogin(), phoneNumber, sdp));
+      const c = this.calls.find(x => x.callId === callId);
+      if (c) {
+        c.pushState(ZiwoEventType.Active);
+      }
+    } catch (e) {
+      ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
+    }
+  }
+
+  /**
    * Answer a call
    */
   public answerCall(callId:string, phoneNumber:string, sdp:string):void {
