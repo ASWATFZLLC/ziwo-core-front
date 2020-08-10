@@ -1077,7 +1077,8 @@
                 .then(pc => {
                 const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
-                call.pushState(ZiwoEventType.Recovering);
+                // so SDP has time to build
+                window.setTimeout(() => call.pushState(ZiwoEventType.Recovering), 500);
             });
         }
         /**
