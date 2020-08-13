@@ -28,18 +28,32 @@ export class IOService {
 
   constructor() {
     this.load().then(e => {
-      this.useInput(this.inputs[0]);
-      this.useOutput(this.outputs[0]);
+      this.useDefaultInput();
+      this.useDefaultOutput();
     });
   }
 
-  public useInput(device:Device): void {
-    this.input = device;
-    navigator.mediaDevices.getUserMedia({
-      audio: {deviceId: device.deviceId}
-    }).then((stream) => {
-      this.channel = new MediaChannel(stream);
-    }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+  public useDefaultInput(): void {
+    this.useInput(this.inputs[0], false);
+  }
+
+  public useDefaultOutput(): void {
+    this.useOutput(this.outputs[0]);
+  }
+
+  public useInput(device:Device, withRetryIfFailed = true): void {
+    try {
+      this.input = device;
+      navigator.mediaDevices.getUserMedia({
+        audio: {deviceId: device.deviceId}
+      }).then((stream) => {
+        this.channel = new MediaChannel(stream);
+      }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+    } catch {
+      if (withRetryIfFailed) {
+        this.useDefaultInput();
+      }
+    }
   }
 
   public useOutput(device:Device): void {
