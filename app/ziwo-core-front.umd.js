@@ -1534,6 +1534,7 @@
                 else {
                     ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, e);
                 }
+                this.emitDevicesUpdatedListeners(true, true);
             }).catch(e => {
                 ZiwoEvent.error(ZiwoErrorCode.DevicesError, e);
             });
@@ -1617,10 +1618,47 @@
                 }).catch(e => err(e));
             });
         }
+        emitDevicesUpdatedListeners(inputChanged, outputChanged) {
+            this.onDevicesUpdatedListeners.forEach(f => f(inputChanged, outputChanged));
+        }
         listenForDevicesUpdate() {
             navigator.mediaDevices.ondevicechange = () => {
-                this.load().then(() => this.onDevicesUpdatedListeners.forEach(f => f()));
+                this.load().then(() => {
+                    this.emitDevicesUpdatedListeners(this.onInputListUpdated(), this.onOutputlistUpdated());
+                });
             };
+        }
+        onInputListUpdated() {
+            if (this.inputs.length === 0) {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, 'no input available');
+                return false;
+            }
+            if (!this.input) {
+                this.useDefaultInput();
+                return true;
+            }
+            if (this.inputs.findIndex(i => { var _a; return i.deviceId === ((_a = this.input) === null || _a === void 0 ? void 0 : _a.deviceId); }) === -1) {
+                // currently used device is not available anymore -
+                this.useDefaultInput();
+                return true;
+            }
+            return false;
+        }
+        onOutputlistUpdated() {
+            if (this.outputs.length === 0) {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, 'no output available');
+                return false;
+            }
+            if (!this.output) {
+                this.useDefaultOutput();
+                return true;
+            }
+            if (this.outputs.findIndex(o => { var _a; return o.deviceId === ((_a = this.output) === null || _a === void 0 ? void 0 : _a.deviceId); }) === -1) {
+                // currently used device is not available anymore -
+                this.useDefaultOutput();
+                return true;
+            }
+            return false;
         }
         getStream(stream) {
             this.stream = stream;
