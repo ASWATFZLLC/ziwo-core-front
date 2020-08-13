@@ -422,6 +422,8 @@
         ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
         ZiwoErrorCode[ZiwoErrorCode["CannotCreateCall"] = 1004] = "CannotCreateCall";
         ZiwoErrorCode[ZiwoErrorCode["DevicesError"] = 1005] = "DevicesError";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesErrorNoInput"] = 10051] = "DevicesErrorNoInput";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesErrorNoOutout"] = 10052] = "DevicesErrorNoOutout";
     })(ZiwoErrorCode || (ZiwoErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -1518,18 +1520,51 @@
             this.volume = 100;
             this.inputs = [];
             this.outputs = [];
+            this.onDevicesUpdatedListeners = [];
             this.load().then(e => {
-                this.useInput(this.inputs[0]);
-                this.useOutput(this.outputs[0]);
+                if (this.inputs.length > 0) {
+                    this.useDefaultInput();
+                }
+                else {
+                    ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, e);
+                }
+                if (this.outputs.length > 0) {
+                    this.useDefaultOutput();
+                }
+                else {
+                    ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, e);
+                }
+            }).catch(e => {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesError, e);
             });
+            this.listenForDevicesUpdate();
         }
-        useInput(device) {
-            this.input = device;
-            navigator.mediaDevices.getUserMedia({
-                audio: { deviceId: device.deviceId }
-            }).then((stream) => {
-                this.channel = new MediaChannel(stream);
-            }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+        onDevicesUpdated(fn) {
+            this.onDevicesUpdatedListeners.push(fn);
+        }
+        meetsRequirement() {
+            return this.inputs.length > 0 && this.outputs.length > 0;
+        }
+        useDefaultInput() {
+            this.useInput(this.inputs[0], false);
+        }
+        useDefaultOutput() {
+            this.useOutput(this.outputs[0]);
+        }
+        useInput(device, withRetryIfFailed = true) {
+            try {
+                this.input = device;
+                navigator.mediaDevices.getUserMedia({
+                    audio: { deviceId: device.deviceId }
+                }).then((stream) => {
+                    this.channel = new MediaChannel(stream);
+                }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+            }
+            catch (_a) {
+                if (withRetryIfFailed) {
+                    this.useDefaultInput();
+                }
+            }
         }
         useOutput(device) {
             this.output = device;
@@ -1581,6 +1616,11 @@
                     }
                 }).catch(e => err(e));
             });
+        }
+        listenForDevicesUpdate() {
+            navigator.mediaDevices.ondevicechange = () => {
+                this.load().then(() => this.onDevicesUpdatedListeners.forEach(f => f()));
+            };
         }
         getStream(stream) {
             this.stream = stream;
