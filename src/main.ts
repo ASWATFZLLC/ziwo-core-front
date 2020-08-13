@@ -113,7 +113,7 @@ export class ZiwoClient {
       AuthenticationService.logout(this.apiService).then(((r:any) => {
         this.verto.disconnect();
         ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
-      }));
+      })).catch(c => {/* no need to catch error here*/});
     });
   }
 

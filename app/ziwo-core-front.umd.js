@@ -1747,7 +1747,7 @@
                 AuthenticationService.logout(this.apiService).then(((r) => {
                     this.verto.disconnect();
                     ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
-                }));
+                })).catch(c => { });
             });
         }
         restartSocket() {
