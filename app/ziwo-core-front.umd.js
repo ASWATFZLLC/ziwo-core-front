@@ -887,10 +887,27 @@
                 rtcPeerConnection.addTrack(track);
             });
             // We wait for candidate to be null to make sure all candidates have been processed
+            // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
+            //   so we use a timeout to cancel process with if collecting takes too long
+            let collectingDone = false;
+            let collectTimeout;
             rtcPeerConnection.onicecandidate = (candidate) => {
                 var _a;
+                if (collectTimeout) {
+                    window.clearTimeout(collectTimeout);
+                }
+                if (collectingDone) {
+                    return;
+                }
                 if (!candidate.candidate) {
                     verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                }
+                else {
+                    collectTimeout = window.setTimeout(() => {
+                        var _a;
+                        collectingDone = true;
+                        verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                    }, 1000);
                 }
             };
             rtcPeerConnection.createOffer().then((offer) => {

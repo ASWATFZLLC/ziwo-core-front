@@ -38,7 +38,17 @@ export class RTCPeerConnectionFactory {
       rtcPeerConnection.addTrack(track);
     });
     // We wait for candidate to be null to make sure all candidates have been processed
+    // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
+    //   so we use a timeout to cancel process with if collecting takes too long
+    let collectingDone = false;
+    let collectTimeout:any;
     rtcPeerConnection.onicecandidate = (candidate:any) => {
+      if (collectTimeout) {
+        window.clearTimeout(collectTimeout);
+      }
+      if (collectingDone) {
+        return;
+      }
       if (!candidate.candidate) {
         verto.send(verto.params.startCall(
           verto.sessid,
@@ -47,6 +57,17 @@ export class RTCPeerConnectionFactory {
           phoneNumber,
           rtcPeerConnection.localDescription?.sdp as string)
         );
+      } else {
+        collectTimeout = window.setTimeout(() => {
+          collectingDone = true;
+          verto.send(verto.params.startCall(
+            verto.sessid,
+            callId,
+            login,
+            phoneNumber,
+            rtcPeerConnection.localDescription?.sdp as string)
+          );
+        }, 1000);
       }
     };
     rtcPeerConnection.createOffer().then((offer:any) => {
