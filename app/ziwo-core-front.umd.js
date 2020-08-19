@@ -422,6 +422,8 @@
         ZiwoErrorCode[ZiwoErrorCode["MissingCall"] = 1003] = "MissingCall";
         ZiwoErrorCode[ZiwoErrorCode["CannotCreateCall"] = 1004] = "CannotCreateCall";
         ZiwoErrorCode[ZiwoErrorCode["DevicesError"] = 1005] = "DevicesError";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesErrorNoInput"] = 10051] = "DevicesErrorNoInput";
+        ZiwoErrorCode[ZiwoErrorCode["DevicesErrorNoOutout"] = 10052] = "DevicesErrorNoOutout";
     })(ZiwoErrorCode || (ZiwoErrorCode = {}));
     var ZiwoEventType;
     (function (ZiwoEventType) {
@@ -552,6 +554,13 @@
                 sessid: sessionId,
             });
         }
+        attach(sessionId, callId, login, phoneNumber, sdp) {
+            return this.wrap(VertoMethod.Attach, {
+                sdp: sdp,
+                sessid: sessionId,
+                dialogParams: this.dialogParams(callId, login, phoneNumber),
+            });
+        }
         answerCall(sessionId, callId, login, phoneNumber, sdp) {
             return this.wrap(VertoMethod.Answer, {
                 sdp: sdp,
@@ -676,6 +685,13 @@
                 : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
         }
         /**
+         * Recover the call currently in recovering state
+         */
+        recover() {
+            var _a;
+            this.verto.attach(this.callId, this.phoneNumber, (_a = this.rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp);
+        }
+        /**
          * Use to send a digit
          */
         dtfm(char) {
@@ -691,13 +707,19 @@
          * Unhold the call
          */
         unhold() {
+            // we hold other calls
+            this.verto.calls.forEach(c => {
+                if (c.callId !== this.callId) {
+                    c.hold();
+                }
+            });
             this.verto.unholdCall(this.callId, this.phoneNumber);
         }
         /**
          * Mute user's microphone
          */
         mute() {
-            this.toggleSelfStream(true);
+            this.toggleSelfStream(false);
             // Because mute is not sent/received over the socket, we throw the event manually
             this.pushState(ZiwoEventType.Mute);
         }
@@ -705,7 +727,7 @@
          * Unmute user's microphone
          */
         unmute() {
-            this.toggleSelfStream(false);
+            this.toggleSelfStream(true);
             this.pushState(ZiwoEventType.Unmute);
             // Because unmute is not sent/received over the socket, we throw the event manually
         }
@@ -770,19 +792,56 @@
         }
     }
 
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */
+
+    function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
     class HTMLMediaElementFactory {
         static push(io, parent, callId, type) {
-            var _a;
-            const t = document.createElement('video');
-            t.id = `media-${type}-${callId}`;
-            t.setAttribute('playsinline', '');
-            t.setAttribute('autoplay', '');
-            t.dataset.callId = callId;
-            t.dataset.type = type;
-            t.volume = io.volume / 100;
-            this.attachSinkId(t, (_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId);
-            parent.appendChild(t);
-            return t;
+            return __awaiter(this, void 0, void 0, function* () {
+                const t = document.createElement('video');
+                t.id = `media-${type}-${callId}`;
+                t.setAttribute('playsinline', '');
+                t.setAttribute('autoplay', '');
+                t.dataset.callId = callId;
+                t.dataset.type = type;
+                t.volume = io.volume / 100;
+                parent.appendChild(t);
+                t.setSinkId(io.output.deviceId)
+                    .then(() => {
+                    var _a;
+                    console.log(`Success, audio output device attached: ${(_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId}`);
+                })
+                    .catch((error) => {
+                    let errorMessage = error;
+                    if (error.name === 'SecurityError') {
+                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+                    }
+                    console.error(errorMessage);
+                });
+                return t;
+            });
         }
         static delete(parent, callId) {
             const toRemove = [];
@@ -793,24 +852,6 @@
                 }
             }
             toRemove.forEach(e => e.remove());
-        }
-        static attachSinkId(element, destinationId) {
-            if (typeof element.sinkId !== 'undefined') {
-                element.setSinkId(destinationId)
-                    .then(() => {
-                    console.log(`Success, audio output device attached: ${destinationId}`);
-                })
-                    .catch((error) => {
-                    let errorMessage = error;
-                    if (error.name === 'SecurityError') {
-                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
-                    }
-                    console.error(errorMessage);
-                });
-            }
-            else {
-                console.warn('Browser does not support output device selection.');
-            }
         }
     }
 
@@ -833,7 +874,10 @@
                     return;
                 }
                 verto.io.channel.remoteStream = stream;
-                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
+                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
+                    e.srcObject = stream;
+                    return rtcPeerConnection;
+                });
             };
             if (!verto.io.channel) {
                 return rtcPeerConnection;
@@ -843,10 +887,27 @@
                 rtcPeerConnection.addTrack(track);
             });
             // We wait for candidate to be null to make sure all candidates have been processed
+            // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
+            //   so we use a timeout to cancel process with if collecting takes too long
+            let collectingDone = false;
+            let collectTimeout;
             rtcPeerConnection.onicecandidate = (candidate) => {
                 var _a;
+                if (collectTimeout) {
+                    window.clearTimeout(collectTimeout);
+                }
+                if (collectingDone) {
+                    return;
+                }
                 if (!candidate.candidate) {
                     verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                }
+                else {
+                    collectTimeout = window.setTimeout(() => {
+                        var _a;
+                        collectingDone = true;
+                        verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                    }, 1000);
                 }
             };
             rtcPeerConnection.createOffer().then((offer) => {
@@ -859,7 +920,9 @@
          */
         static inbound(verto, inboudParams) {
             return new Promise((onRes, onErr) => {
-                const rtcPeerConnection = new RTCPeerConnection();
+                const rtcPeerConnection = new RTCPeerConnection({
+                    iceServers: [{ urls: this.STUN_ICE_SERVER }],
+                });
                 rtcPeerConnection.ontrack = (tr) => {
                     const track = tr.track;
                     if (track.kind !== 'audio') {
@@ -871,7 +934,11 @@
                         return;
                     }
                     verto.io.channel.remoteStream = stream;
-                    HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
+                    HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
+                        r.srcObject = stream;
+                        onRes(rtcPeerConnection);
+                        return;
+                    });
                 };
                 if (!verto.io.channel) {
                     onRes(rtcPeerConnection);
@@ -890,7 +957,7 @@
                 onRes(rtcPeerConnection);
             });
         }
-        static recovering(verto, params) {
+        static recovering(verto, params, direction) {
             return this.inbound(verto, params);
         }
     }
@@ -947,6 +1014,7 @@
                 case VertoMethod.Bye:
                     if (this.ensureCallIsExisting(call)) {
                         call.pushState(ZiwoEventType.Hangup);
+                        this.verto.purgeAndDestroyCall(call.callId);
                     }
             }
             return undefined;
@@ -1024,12 +1092,12 @@
         }
         /** Recovering call */
         onAttach(message) {
-            RTCPeerConnectionFactory.recovering(this.verto, message.params)
+            RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
                 .then(pc => {
                 const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
-                call.pushState(ZiwoEventType.Recovering);
-                call.pushState(ZiwoEventType.Active);
+                // so SDP has time to build
+                window.setTimeout(() => call.pushState(ZiwoEventType.Recovering), 500);
             });
         }
         /**
@@ -1086,22 +1154,21 @@
             if (this.debug) ;
         }
         destroyCall(call) {
-            if (call.channel.stream) {
-                // tslint:disable-next-line: triple-equals
-                if (typeof call.channel.stream.stop == 'function') {
-                    call.channel.stream.stop();
-                }
-                else {
-                    if (call.channel.stream.active) {
-                        const tracks = call.channel.stream.getTracks();
-                        tracks.forEach((tr) => tr.stop());
-                    }
-                }
-            }
-            // tslint:disable-next-line: triple-equals
-            if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
-                call.channel.remoteStream.stop();
-            }
+            // if (call.channel.stream) {
+            //   // tslint:disable-next-line: triple-equals
+            //   if (typeof call.channel.stream.stop == 'function') {
+            //     call.channel.stream.stop();
+            //   } else {
+            //     if (call.channel.stream.active) {
+            //       const tracks = call.channel.stream.getTracks();
+            //       tracks.forEach((tr:any) => tr.stop());
+            //     }
+            //   }
+            // }
+            // // tslint:disable-next-line: triple-equals
+            // if (call.channel.remoteStream && call.channel.remoteStream == 'function') {
+            //   call.channel.remoteStream.stop();
+            // }
             HTMLMediaElementFactory.delete(this.verto.tag, call.callId);
         }
         purge(calls) {
@@ -1195,7 +1262,22 @@
             }
             catch (e) {
                 ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
-                return undefined;
+                console.warn('failed to created call', e);
+            }
+        }
+        /**
+         * Perform an attach query
+         */
+        attach(callId, phoneNumber, sdp) {
+            try {
+                this.send(this.params.attach(this.sessid, callId, this.getLogin(), phoneNumber, sdp));
+                const c = this.calls.find(x => x.callId === callId);
+                if (c) {
+                    c.pushState(ZiwoEventType.Active);
+                }
+            }
+            catch (e) {
+                ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
             }
         }
         /**
@@ -1241,8 +1323,16 @@
             this.send(this.params.transfer(this.sessid, callId, this.getLogin(), phoneNumber, transferTo));
         }
         disconnect() {
-            var _a;
-            (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+            if (this.socket) {
+                this.socket.close();
+            }
+        }
+        restartSocket() {
+            if (this.socket) {
+                this.socket.close();
+                delete this.socket;
+            }
+            this.openSocket(this.connectedAgent.webRtc.socket);
         }
         /**
          * Purge a specific call
@@ -1311,8 +1401,9 @@
             return new Promise((onRes, onErr) => {
                 this.socket = new WebSocket(socketUrl);
                 this.socket.onclose = () => {
+                    ZiwoEvent.emit(ZiwoEventType.Disconnected, { message: 'Socket closed' });
                     if (this.debug) {
-                        console.log('Socket closed');
+                        console.log('Socket closed. now disconnected');
                     }
                 };
                 this.socket.onerror = (e) => {
@@ -1446,18 +1537,52 @@
             this.volume = 100;
             this.inputs = [];
             this.outputs = [];
+            this.onDevicesUpdatedListeners = [];
             this.load().then(e => {
-                this.useInput(this.inputs[0]);
-                this.useOutput(this.outputs[0]);
+                if (this.inputs.length > 0) {
+                    this.useDefaultInput();
+                }
+                else {
+                    ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, e);
+                }
+                if (this.outputs.length > 0) {
+                    this.useDefaultOutput();
+                }
+                else {
+                    ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, e);
+                }
+                this.emitDevicesUpdatedListeners(true, true);
+            }).catch(e => {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesError, e);
             });
+            this.listenForDevicesUpdate();
         }
-        useInput(device) {
-            this.input = device;
-            navigator.mediaDevices.getUserMedia({
-                audio: { deviceId: device.deviceId }
-            }).then((stream) => {
-                this.channel = new MediaChannel(stream);
-            }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+        onDevicesUpdated(fn) {
+            this.onDevicesUpdatedListeners.push(fn);
+        }
+        meetsRequirement() {
+            return this.inputs.length > 0 && this.outputs.length > 0;
+        }
+        useDefaultInput() {
+            this.useInput(this.inputs[0], false);
+        }
+        useDefaultOutput() {
+            this.useOutput(this.outputs[0]);
+        }
+        useInput(device, withRetryIfFailed = true) {
+            try {
+                this.input = device;
+                navigator.mediaDevices.getUserMedia({
+                    audio: { deviceId: device.deviceId }
+                }).then((stream) => {
+                    this.channel = new MediaChannel(stream);
+                }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+            }
+            catch (_a) {
+                if (withRetryIfFailed) {
+                    this.useDefaultInput();
+                }
+            }
         }
         useOutput(device) {
             this.output = device;
@@ -1487,21 +1612,73 @@
             return new Promise((ok, err) => {
                 let streamDone = false;
                 let deviceDone = false;
+                let listDone = false;
                 navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
                     this.getStream(stream);
                     streamDone = true;
-                    if (deviceDone) {
+                    if (deviceDone && listDone) {
                         ok();
                     }
                 }).then((devices) => {
                     this.getDevices(devices);
                     deviceDone = true;
-                    if (streamDone) {
+                    if (streamDone && listDone) {
                         ok();
                     }
                 }).catch();
-                navigator.mediaDevices.enumerateDevices().then((devices) => this.getDevices(devices)).catch(e => err(e));
+                navigator.mediaDevices.enumerateDevices().then((devices) => {
+                    this.getDevices(devices);
+                    listDone = true;
+                    if (streamDone && deviceDone) {
+                        ok();
+                    }
+                }).catch(e => err(e));
             });
+        }
+        emitDevicesUpdatedListeners(inputChanged, outputChanged) {
+            this.onDevicesUpdatedListeners.forEach(f => f(inputChanged, outputChanged));
+        }
+        listenForDevicesUpdate() {
+            if (!navigator || !navigator.mediaDevices) {
+                return;
+            }
+            navigator.mediaDevices.ondevicechange = () => {
+                this.load().then(() => {
+                    this.emitDevicesUpdatedListeners(this.onInputListUpdated(), this.onOutputlistUpdated());
+                });
+            };
+        }
+        onInputListUpdated() {
+            if (this.inputs.length === 0) {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, 'no input available');
+                return false;
+            }
+            if (!this.input) {
+                this.useDefaultInput();
+                return true;
+            }
+            if (this.inputs.findIndex(i => { var _a; return i.deviceId === ((_a = this.input) === null || _a === void 0 ? void 0 : _a.deviceId); }) === -1) {
+                // currently used device is not available anymore -
+                this.useDefaultInput();
+                return true;
+            }
+            return false;
+        }
+        onOutputlistUpdated() {
+            if (this.outputs.length === 0) {
+                ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, 'no output available');
+                return false;
+            }
+            if (!this.output) {
+                this.useDefaultOutput();
+                return true;
+            }
+            if (this.outputs.findIndex(o => { var _a; return o.deviceId === ((_a = this.output) === null || _a === void 0 ? void 0 : _a.deviceId); }) === -1) {
+                // currently used device is not available anymore -
+                this.useDefaultOutput();
+                return true;
+            }
+            return false;
         }
         getStream(stream) {
             this.stream = stream;
@@ -1559,6 +1736,15 @@
                 }).catch(err => { throw err; });
             }
         }
+        restart(options) {
+            // Drop all
+            this.verto.disconnect();
+            this.options = options;
+            this.debug = options.debug || false;
+            this.apiService = new ApiService(options.contactCenterName);
+            this.io = new IOService();
+            this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
+        }
         /**
          * connect authenticate the user over Ziwo & our communication socket
          * This function is required before proceeding with calls
@@ -1580,9 +1766,11 @@
             return new Promise((onRes, onErr) => {
                 AuthenticationService.logout(this.apiService).then(((r) => {
                     this.verto.disconnect();
-                    ZiwoEvent.emit(ZiwoEventType.Disconnected, {});
-                }));
+                })).catch(c => { });
             });
+        }
+        restartSocket() {
+            return this.verto.restartSocket();
         }
         /**
          * Add a callback function for all events

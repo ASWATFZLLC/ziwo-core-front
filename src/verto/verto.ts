@@ -127,7 +127,22 @@ export class Verto {
       return call;
     } catch (e) {
       ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
-      return undefined;
+      console.warn('failed to created call', e);
+    }
+  }
+
+  /**
+   * Perform an attach query
+   */
+  public attach(callId:string, phoneNumber:string, sdp:string): void {
+    try {
+      this.send(this.params.attach(this.sessid as string, callId, this.getLogin(), phoneNumber, sdp));
+      const c = this.calls.find(x => x.callId === callId);
+      if (c) {
+        c.pushState(ZiwoEventType.Active);
+      }
+    } catch (e) {
+      ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
     }
   }
 
@@ -178,7 +193,17 @@ export class Verto {
   }
 
   public disconnect():void {
-    this.socket?.close();
+    if (this.socket) {
+      this.socket.close();
+    }
+  }
+
+  public restartSocket(): void {
+    if (this.socket) {
+      this.socket.close();
+      delete this.socket;
+    }
+    this.openSocket((this.connectedAgent as any).webRtc.socket);
   }
 
   /**
@@ -254,8 +279,9 @@ export class Verto {
     return new Promise<void>((onRes, onErr) => {
       this.socket = new WebSocket(socketUrl);
       this.socket.onclose = () => {
+        ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Socket closed'});
         if (this.debug) {
-          console.log('Socket closed');
+          console.log('Socket closed. now disconnected');
         }
       };
       this.socket.onerror = (e) => {

@@ -14,7 +14,6 @@ export class RTCPeerConnectionFactory {
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: [{urls: this.STUN_ICE_SERVER}],
     });
-
     rtcPeerConnection.ontrack = (tr:any) => {
       const track = tr.track;
       if (track.kind !== 'audio') {
@@ -26,20 +25,30 @@ export class RTCPeerConnectionFactory {
         return;
       }
       verto.io.channel.remoteStream = stream;
-      HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').srcObject = stream;
+      HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
+        e.srcObject = stream;
+        return rtcPeerConnection;
+      });
     };
-
     if (!verto.io.channel) {
       return rtcPeerConnection;
     }
-
     // Attach our media stream to the call's PeerConnection
     verto.io.channel.stream.getTracks().forEach((track:any) => {
       rtcPeerConnection.addTrack(track);
     });
-
     // We wait for candidate to be null to make sure all candidates have been processed
+    // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
+    //   so we use a timeout to cancel process with if collecting takes too long
+    let collectingDone = false;
+    let collectTimeout:any;
     rtcPeerConnection.onicecandidate = (candidate:any) => {
+      if (collectTimeout) {
+        window.clearTimeout(collectTimeout);
+      }
+      if (collectingDone) {
+        return;
+      }
       if (!candidate.candidate) {
         verto.send(verto.params.startCall(
           verto.sessid,
@@ -48,9 +57,19 @@ export class RTCPeerConnectionFactory {
           phoneNumber,
           rtcPeerConnection.localDescription?.sdp as string)
         );
+      } else {
+        collectTimeout = window.setTimeout(() => {
+          collectingDone = true;
+          verto.send(verto.params.startCall(
+            verto.sessid,
+            callId,
+            login,
+            phoneNumber,
+            rtcPeerConnection.localDescription?.sdp as string)
+          );
+        }, 1000);
       }
     };
-
     rtcPeerConnection.createOffer().then((offer:any) => {
       rtcPeerConnection.setLocalDescription(offer).then(() => {});
     });
@@ -63,7 +82,9 @@ export class RTCPeerConnectionFactory {
   public static inbound(verto:Verto, inboudParams:any):Promise<RTCPeerConnection> {
     return new Promise<RTCPeerConnection>((onRes, onErr) => {
 
-      const rtcPeerConnection = new RTCPeerConnection();
+      const rtcPeerConnection = new RTCPeerConnection({
+        iceServers: [{urls: this.STUN_ICE_SERVER}],
+      });
       rtcPeerConnection.ontrack = (tr:any) => {
         const track = tr.track;
         if (track.kind !== 'audio') {
@@ -76,7 +97,11 @@ export class RTCPeerConnectionFactory {
           return;
         }
         verto.io.channel.remoteStream = stream;
-        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').srcObject = stream;
+        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
+          r.srcObject = stream;
+          onRes(rtcPeerConnection);
+          return;
+        });
       };
 
 
@@ -101,7 +126,7 @@ export class RTCPeerConnectionFactory {
     });
   }
 
-  public static recovering(verto:Verto, params:any):Promise<RTCPeerConnection> {
+  public static recovering(verto:Verto, params:any, direction:'inbound'|'outbound'):Promise<RTCPeerConnection> {
     return this.inbound(verto, params);
   }
 

@@ -73,6 +73,13 @@ export class Call {
   }
 
   /**
+   * Recover the call currently in recovering state
+   */
+  public recover():void {
+    this.verto.attach(this.callId, this.phoneNumber, this.rtcPeerConnection.localDescription?.sdp as string);
+  }
+
+  /**
    * Use to send a digit
    */
   public dtfm(char:string):void {
@@ -90,6 +97,12 @@ export class Call {
    * Unhold the call
    */
   public unhold():void {
+    // we hold other calls
+    this.verto.calls.forEach(c => {
+      if (c.callId !== this.callId) {
+        c.hold();
+      }
+    });
     this.verto.unholdCall(this.callId, this.phoneNumber);
   }
 
@@ -97,7 +110,7 @@ export class Call {
    * Mute user's microphone
    */
   public mute():void {
-    this.toggleSelfStream(true);
+    this.toggleSelfStream(false);
     // Because mute is not sent/received over the socket, we throw the event manually
     this.pushState(ZiwoEventType.Mute);
   }
@@ -106,7 +119,7 @@ export class Call {
    * Unmute user's microphone
    */
   public unmute():void {
-    this.toggleSelfStream(false);
+    this.toggleSelfStream(true);
     this.pushState(ZiwoEventType.Unmute);
     // Because unmute is not sent/received over the socket, we throw the event manually
   }

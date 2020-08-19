@@ -2,7 +2,7 @@ import { IOService } from '../io';
 
 export class HTMLMediaElementFactory {
 
-  public static push(io:IOService, parent:HTMLDivElement, callId:string, type:'peer'|'self'): HTMLMediaElement {
+  public static async push(io:IOService, parent:HTMLDivElement, callId:string, type:'peer'|'self'): Promise<HTMLMediaElement> {
     const t = document.createElement('video') as HTMLVideoElement;
     t.id = `media-${type}-${callId}`;
     t.setAttribute('playsinline', '');
@@ -10,9 +10,21 @@ export class HTMLMediaElementFactory {
     t.dataset.callId = callId;
     t.dataset.type = type;
     t.volume = io.volume / 100;
-    this.attachSinkId(t, io.output?.deviceId as string);
 
     parent.appendChild(t);
+
+    (t as any).setSinkId((io.output as any).deviceId)
+      .then(() => {
+        console.log(`Success, audio output device attached: ${io.output?.deviceId}`);
+      })
+      .catch((error:any) => {
+        let errorMessage = error;
+        if (error.name === 'SecurityError') {
+          errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+        }
+        console.error(errorMessage);
+      });
+
     return t;
   }
 
@@ -25,24 +37,6 @@ export class HTMLMediaElementFactory {
       }
     }
     toRemove.forEach(e => e.remove());
-  }
-
-  private static attachSinkId(element:any, destinationId:string): void {
-    if (typeof element.sinkId !== 'undefined') {
-      element.setSinkId(destinationId)
-          .then(() => {
-            console.log(`Success, audio output device attached: ${destinationId}`);
-          })
-          .catch((error:any) => {
-            let errorMessage = error;
-            if (error.name === 'SecurityError') {
-              errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
-            }
-            console.error(errorMessage);
-          });
-    } else {
-      console.warn('Browser does not support output device selection.');
-    }
   }
 
 }

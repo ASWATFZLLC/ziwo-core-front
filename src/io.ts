@@ -1,5 +1,6 @@
 import { MediaInfo, MediaChannel } from './media-channel';
 import { Verto } from './verto/verto';
+import { ZiwoEvent, ZiwoEventType, ZiwoErrorCode } from './events';
 
 interface Device {
   deviceId:string;
@@ -25,21 +26,56 @@ export class IOService {
   private stream:any;
   private inputs:Device[] = [];
   private outputs:Device[] = [];
+  public onDevicesUpdatedListeners:Function[] = [];
 
   constructor() {
     this.load().then(e => {
-      this.useInput(this.inputs[0]);
-      this.useOutput(this.outputs[0]);
+      if (this.inputs.length > 0) {
+        this.useDefaultInput();
+      } else {
+        ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, e);
+      }
+      if (this.outputs.length > 0) {
+        this.useDefaultOutput();
+      } else {
+        ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, e);
+      }
+      this.emitDevicesUpdatedListeners(true, true);
+    }).catch(e => {
+      ZiwoEvent.error(ZiwoErrorCode.DevicesError, e);
     });
+    this.listenForDevicesUpdate();
   }
 
-  public useInput(device:Device): void {
-    this.input = device;
-    navigator.mediaDevices.getUserMedia({
-      audio: {deviceId: device.deviceId}
-    }).then((stream) => {
-      this.channel = new MediaChannel(stream);
-    }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+  public onDevicesUpdated(fn:Function): void {
+    this.onDevicesUpdatedListeners.push(fn);
+  }
+
+  public meetsRequirement(): boolean {
+    return this.inputs.length > 0 && this.outputs.length > 0;
+  }
+
+  public useDefaultInput(): void {
+    this.useInput(this.inputs[0], false);
+  }
+
+  public useDefaultOutput(): void {
+    this.useOutput(this.outputs[0]);
+  }
+
+  public useInput(device:Device, withRetryIfFailed = true): void {
+    try {
+      this.input = device;
+      navigator.mediaDevices.getUserMedia({
+        audio: {deviceId: device.deviceId}
+      }).then((stream) => {
+        this.channel = new MediaChannel(stream);
+      }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+    } catch {
+      if (withRetryIfFailed) {
+        this.useDefaultInput();
+      }
+    }
   }
 
   public useOutput(device:Device): void {
@@ -74,11 +110,12 @@ export class IOService {
     return new Promise<void>((ok, err) => {
       let streamDone = false;
       let deviceDone = false;
+      let listDone = false;
       navigator.mediaDevices.getUserMedia({audio: true}).then(
         (stream) => {
           this.getStream(stream);
           streamDone = true;
-          if (deviceDone) {
+          if (deviceDone && listDone) {
             ok();
           }
         },
@@ -86,15 +123,69 @@ export class IOService {
         (devices) => {
           this.getDevices(devices);
           deviceDone = true;
-          if (streamDone) {
+          if (streamDone && listDone) {
             ok();
           }
         },
       ).catch();
       navigator.mediaDevices.enumerateDevices().then(
-        (devices) => this.getDevices(devices),
-      ).catch(e => err(e));
+        (devices) => {
+          this.getDevices(devices);
+          listDone = true;
+          if (streamDone && deviceDone) {
+            ok();
+          }
+        }).catch(e => err(e));
     });
+  }
+
+  private emitDevicesUpdatedListeners(inputChanged:boolean, outputChanged:boolean): void {
+    this.onDevicesUpdatedListeners.forEach(f => f(inputChanged, outputChanged));
+  }
+
+  private listenForDevicesUpdate(): void {
+    if (!navigator || !navigator.mediaDevices) {
+      return;
+    }
+    navigator.mediaDevices.ondevicechange = () => {
+      this.load().then(() => {
+        this.emitDevicesUpdatedListeners(this.onInputListUpdated(), this.onOutputlistUpdated());
+      });
+    };
+  }
+
+  private onInputListUpdated(): boolean {
+    if (this.inputs.length === 0) {
+      ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoInput, 'no input available');
+      return false;
+    }
+    if (!this.input) {
+      this.useDefaultInput();
+      return true;
+    }
+    if (this.inputs.findIndex(i => i.deviceId === this.input?.deviceId) === -1) {
+      // currently used device is not available anymore -
+      this.useDefaultInput();
+      return true;
+    }
+    return false;
+  }
+
+  private onOutputlistUpdated(): boolean {
+    if (this.outputs.length === 0) {
+      ZiwoEvent.error(ZiwoErrorCode.DevicesErrorNoOutout, 'no output available');
+      return false;
+    }
+    if (!this.output) {
+      this.useDefaultOutput();
+      return true;
+    }
+    if (this.outputs.findIndex(o => o.deviceId === this.output?.deviceId) === -1) {
+      // currently used device is not available anymore -
+      this.useDefaultOutput();
+      return true;
+    }
+    return false;
   }
 
   private getStream(stream:any): void {

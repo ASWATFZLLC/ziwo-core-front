@@ -30,6 +30,8 @@ export enum ZiwoErrorCode {
   MissingCall = 1003,
   CannotCreateCall = 1004,
   DevicesError = 1005,
+  DevicesErrorNoInput = 10051,
+  DevicesErrorNoOutout = 10052,
 }
 
 export enum ZiwoEventType {
