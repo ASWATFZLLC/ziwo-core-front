@@ -144,6 +144,9 @@ export class IOService {
   }
 
   private listenForDevicesUpdate(): void {
+    if (!navigator || !navigator.mediaDevices) {
+      return;
+    }
     navigator.mediaDevices.ondevicechange = () => {
       this.load().then(() => {
         this.emitDevicesUpdatedListeners(this.onInputListUpdated(), this.onOutputlistUpdated());

@@ -1639,6 +1639,9 @@
             this.onDevicesUpdatedListeners.forEach(f => f(inputChanged, outputChanged));
         }
         listenForDevicesUpdate() {
+            if (!navigator || !navigator.mediaDevices) {
+                return;
+            }
             navigator.mediaDevices.ondevicechange = () => {
                 this.load().then(() => {
                     this.emitDevicesUpdatedListeners(this.onInputListUpdated(), this.onOutputlistUpdated());
