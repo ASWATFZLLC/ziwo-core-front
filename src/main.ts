@@ -143,4 +143,16 @@ export class ZiwoClient {
       return call;
   }
 
+  /**
+   * Start a call using click2call
+   * return the call ID if the call is successful or undefined if an issue occured
+   */
+  public startClick2Call(phoneNumber:string, roaming = false):Promise<string|undefined> {
+    return new Promise<string|undefined>((onRes, onErr) => {
+      this.apiService.post(`${this.apiService.endpoints.click2Call}/${encodeURIComponent(phoneNumber)}`, {
+        roamingOnly: roaming,
+      }).then(ok => onRes((ok.content as any).callID)).catch(e => onErr(e));
+    });
+  }
+
 }
