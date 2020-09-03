@@ -83,7 +83,7 @@ export class Call {
    * Use to send a digit
    */
   public dtfm(char:string):void {
-    this.verto.dtfm(this.callId, char);
+    this.verto.dtfm(this.callId, this.phoneNumber, char);
   }
 
   /**
