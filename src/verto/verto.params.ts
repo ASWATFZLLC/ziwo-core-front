@@ -118,10 +118,10 @@ export class VertoParams {
     });
   }
 
-  public dtfm(sessionId:string, callId:string, login:string, phoneNumber:string, char:string):VertoMessage<any> {
+  public dtmf(sessionId:string, callId:string, login:string, phoneNumber:string, char:string):VertoMessage<any> {
     return this.wrap(VertoMethod.Info, {
       sessid: sessionId,
-      dtfm: char,
+      dtmf: char,
       dialogParams: this.dialogParams(callId, login, phoneNumber)
     });
   }

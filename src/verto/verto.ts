@@ -240,8 +240,8 @@ export class Verto {
   /**
    * DTFM send a char to current call
    */
-  public dtfm(callId:string, phoneNumber:string, char:string):void {
-    this.send(this.params.dtfm(this.sessid as string, callId, this.getLogin(), phoneNumber, char));
+  public dtmf(callId:string, phoneNumber:string, char:string):void {
+    this.send(this.params.dtmf(this.sessid as string, callId, this.getLogin(), phoneNumber, char));
   }
 
   /**
