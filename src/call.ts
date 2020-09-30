@@ -67,9 +67,14 @@ export class Call {
    */
   public hangup():void {
     this.pushState(ZiwoEventType.Hangup);
-    this.verto.hangupCall(this.callId, this.phoneNumber,
-      this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
-        : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
+    let reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING;
+    if (this.direction === 'inbound' && this.states.findIndex(x => x.state === ZiwoEventType.Active) === -1) {
+      reason = VertoByeReason.CALL_REJECTED;
+    }
+    if (this.direction === 'outbound' && this.states.findIndex(x => x.state === ZiwoEventType.Answering) === -1) {
+      reason = VertoByeReason.ORIGINATOR_CANCEL;
+    }
+    this.verto.hangupCall(this.callId, this.phoneNumber, reason);
   }
 
   /**
@@ -82,8 +87,8 @@ export class Call {
   /**
    * Use to send a digit
    */
-  public dtfm(char:string):void {
-    this.verto.dtfm(this.callId, char);
+  public dtmf(char:string):void {
+    this.verto.dtmf(this.callId, this.phoneNumber, char);
   }
 
   /**

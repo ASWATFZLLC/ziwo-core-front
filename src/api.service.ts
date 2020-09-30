@@ -33,6 +33,7 @@ export class ApiService {
       authenticate: `/auth/login`,
       profile: '/profile',
       autologin: '/agents/autoLogin',
+      click2Call: '/integrations/cti/agents/call',
     };
   }
 

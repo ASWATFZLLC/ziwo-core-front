@@ -28,3 +28,7 @@
  * Update all dependencies to latest version
  * More logs and stability
  * Include agent details in the connected event
+
+## V1.0
+
+ * All required features work as expected

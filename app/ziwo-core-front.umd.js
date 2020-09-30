@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = global || self, factory(global.ziwoCoreFront = {}));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.ziwoCoreFront = {}));
 }(this, (function (exports) { 'use strict';
 
     var Md5 = /** @class */ (function () {
@@ -340,6 +340,7 @@
                 authenticate: `/auth/login`,
                 profile: '/profile',
                 autologin: '/agents/autoLogin',
+                click2Call: '/integrations/cti/agents/call',
             };
         }
         /**
@@ -583,14 +584,11 @@
                 sessid: sessionId,
             });
         }
-        dtfm(sessionId, callId, login, char) {
+        dtmf(sessionId, callId, login, phoneNumber, char) {
             return this.wrap(VertoMethod.Info, {
                 sessid: sessionId,
-                dialogParams: {
-                    callID: callId,
-                    login: login,
-                    dtfm: char,
-                }
+                dtmf: char,
+                dialogParams: this.dialogParams(callId, login, phoneNumber)
             });
         }
         getUuid() {
@@ -681,8 +679,14 @@
          */
         hangup() {
             this.pushState(ZiwoEventType.Hangup);
-            this.verto.hangupCall(this.callId, this.phoneNumber, this.states.findIndex(x => x.state === ZiwoEventType.Answering) >= 0 ? VertoByeReason.NORMAL_CLEARING
-                : (this.direction === 'inbound' ? VertoByeReason.CALL_REJECTED : VertoByeReason.ORIGINATOR_CANCEL));
+            let reason = VertoByeReason.NORMAL_CLEARING;
+            if (this.direction === 'inbound' && this.states.findIndex(x => x.state === ZiwoEventType.Active) === -1) {
+                reason = VertoByeReason.CALL_REJECTED;
+            }
+            if (this.direction === 'outbound' && this.states.findIndex(x => x.state === ZiwoEventType.Answering) === -1) {
+                reason = VertoByeReason.ORIGINATOR_CANCEL;
+            }
+            this.verto.hangupCall(this.callId, this.phoneNumber, reason);
         }
         /**
          * Recover the call currently in recovering state
@@ -694,8 +698,8 @@
         /**
          * Use to send a digit
          */
-        dtfm(char) {
-            this.verto.dtfm(this.callId, char);
+        dtmf(char) {
+            this.verto.dtmf(this.callId, this.phoneNumber, char);
         }
         /**
          * Set the call on hold
@@ -793,18 +797,18 @@
     }
 
     /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
+    Copyright (c) Microsoft Corporation.
 
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
 
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
 
     function __awaiter(thisArg, _arguments, P, generator) {
@@ -1365,8 +1369,8 @@
         /**
          * DTFM send a char to current call
          */
-        dtfm(callId, char) {
-            this.send(this.params.dtfm(this.sessid, callId, this.getLogin(), char));
+        dtmf(callId, phoneNumber, char) {
+            this.send(this.params.dtmf(this.sessid, callId, this.getLogin(), phoneNumber, char));
         }
         /**
          * Send data to socket and log in case of debug
@@ -1792,6 +1796,17 @@
             }
             this.calls.push(call);
             return call;
+        }
+        /**
+         * Start a call using click2call
+         * return the call ID if the call is successful or undefined if an issue occured
+         */
+        startClick2Call(phoneNumber, roaming = false) {
+            return new Promise((onRes, onErr) => {
+                this.apiService.post(`${this.apiService.endpoints.click2Call}/${encodeURIComponent(phoneNumber)}`, {
+                    roamingOnly: roaming,
+                }).then(ok => onRes(ok.content.callID)).catch(e => onErr(e));
+            });
         }
     }
 
