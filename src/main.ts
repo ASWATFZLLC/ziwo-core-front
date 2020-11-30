@@ -5,6 +5,7 @@ import {MediaInfo} from './media-channel';
 import {Call} from './call';
 import {Verto} from './verto/verto';
 import { IOService } from './io';
+import { RTCPeerConnectionFactory } from './verto/RTCPeerConnection.factory';
 
 export interface ZiwoClientOptions {
   /**
@@ -153,6 +154,14 @@ export class ZiwoClient {
         roamingOnly: roaming,
       }).then(ok => onRes((ok.content as any).callID)).catch(e => onErr(e));
     });
+  }
+
+  /**
+   * Opt out of Google Stun
+   */
+  public optOutGoogleStunServer(): void {
+    // this.verto.
+    RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
   }
 
 }
