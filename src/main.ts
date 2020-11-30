@@ -160,7 +160,6 @@ export class ZiwoClient {
    * Opt out of Google Stun
    */
   public optOutGoogleStunServer(): void {
-    // this.verto.
     RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
   }
 
