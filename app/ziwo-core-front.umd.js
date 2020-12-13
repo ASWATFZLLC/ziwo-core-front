@@ -1082,7 +1082,7 @@
             RTCPeerConnectionFactory
                 .inbound(this.verto, message.params)
                 .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.caller_id_number, this.verto.getLogin(), pc, 'inbound', message.params);
+                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number, this.verto.getLogin(), pc, 'inbound', message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
             });
@@ -1812,7 +1812,6 @@
          * Opt out of Google Stun
          */
         optOutGoogleStunServer() {
-            // this.verto.
             RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
         }
     }
