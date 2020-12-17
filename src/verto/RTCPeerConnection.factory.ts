@@ -4,8 +4,7 @@ import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 export class RTCPeerConnectionFactory {
 
-
-  private static readonly STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
+  public static STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
 
   /**
    * We initiate the call

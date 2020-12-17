@@ -20,6 +20,7 @@ function start() {
         debug: true,
     }
   );
+  ziwoClient.optOutGoogleStunServer();
 
   ziwoClient.addListener((type, data) => {
     console.log(`[Ziwo Event] ${type}`, data);
