@@ -1629,7 +1629,7 @@
                     if (streamDone && listDone) {
                         ok();
                     }
-                }).catch();
+                }).catch(e => err(e));
                 navigator.mediaDevices.enumerateDevices().then((devices) => {
                     this.getDevices(devices);
                     listDone = true;
