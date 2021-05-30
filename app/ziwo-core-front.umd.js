@@ -4,6 +4,31 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.ziwoCoreFront = {}));
 }(this, (function (exports) { 'use strict';
 
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+
+    function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
     var Md5 = /** @class */ (function () {
         function Md5() {
         }
@@ -444,6 +469,8 @@
         ZiwoEventType["Purge"] = "purge";
         ZiwoEventType["Destroy"] = "destroy";
         ZiwoEventType["Recovering"] = "recovering";
+        ZiwoEventType["OutputChanged"] = "output-changed";
+        ZiwoEventType["InputChanged"] = "input-changed";
     })(ZiwoEventType || (ZiwoEventType = {}));
     /**
      * All phone call (outbound & inbound) will throw events during their lifetime.
@@ -653,19 +680,22 @@
      * @initialPayload : complete payload received/sent to start the call
      */
     class Call {
-        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
+        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, channel, direction, initialPayload) {
             this.states = [];
             this.verto = verto;
             this.callId = callId;
+            this.channel = channel;
             this.verto = verto;
             this.rtcPeerConnection = rtcPeerConnection;
-            this.channel = verto.io.channel;
             this.phoneNumber = phoneNumber;
             this.direction = direction;
             this.initialPayload = initialPayload;
             if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
                 this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
             }
+            // list for device updates and handle new input/output properly
+            // window.addEventListener('ziwo-output-changed', (ev:any) => this.useOutput(ev.detail.device));
+            // window.addEventListener('ziwo-input-changed', (ev:any) => this.useInput(ev.detail.device))
         }
         /**
          * Use when current state is `ringing` to switch the call to `active`
@@ -701,6 +731,31 @@
         dtmf(char) {
             this.verto.dtmf(this.callId, this.phoneNumber, char);
         }
+        // /*
+        //  * Update the used output
+        //  */
+        // public useOutput(device:Device): void {
+        //   console.log(`call ${this.callId} shoud use output > `, device);
+        //   // const el = document.getElementById(`media-peer-${this.callId}`);
+        //   // if (el) {
+        //     // (el as HTMLVideoElement).srcObject = this.verto.io.channel?.stream;
+        //   // }
+        // }
+        // /*
+        //  * Update the used input
+        //  */
+        // public useInput(device:Device): void {
+        //   console.log(`call ${this.callId} should use input > `, device);
+        //   const peer = this.rtcPeerConnection.getSenders().find(s => {
+        //     if (!s || !s.track) {
+        //       return false;
+        //     }
+        //     return s.track.kind === 'audioinput';
+        //   });
+        //   if (peer) {
+        //     peer.replaceTrack(this.verto.io.channel?.stream);
+        //   }
+        // }
         /**
          * Set the call on hold
          */
@@ -741,13 +796,15 @@
          * Use `proceedAttendedTransfer` to confirm the transfer
          */
         attendedTransfer(destination) {
-            this.hold();
-            const call = this.verto.startCall(destination);
-            if (!call) {
-                return undefined;
-            }
-            this.verto.calls.push(call);
-            return call;
+            return __awaiter(this, void 0, void 0, function* () {
+                this.hold();
+                const call = yield this.verto.startCall(destination);
+                if (!call) {
+                    return undefined;
+                }
+                this.verto.calls.push(call);
+                return call;
+            });
         }
         /**
          * Confirm an attended transfer.
@@ -796,31 +853,6 @@
         }
     }
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-
-    function __awaiter(thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    }
-
     class HTMLMediaElementFactory {
         static push(io, parent, callId, type) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -832,18 +864,20 @@
                 t.dataset.type = type;
                 t.volume = io.volume / 100;
                 parent.appendChild(t);
-                t.setSinkId(io.output.deviceId)
-                    .then(() => {
-                    var _a;
-                    console.log(`Success, audio output device attached: ${(_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId}`);
-                })
-                    .catch((error) => {
-                    let errorMessage = error;
-                    if (error.name === 'SecurityError') {
-                        errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
-                    }
-                    console.error(errorMessage);
-                });
+                window.setTimeout(() => {
+                    t.setSinkId(io.output.deviceId)
+                        .then(() => {
+                        var _a;
+                        console.log(`Success, audio output device attached: ${(_a = io.output) === null || _a === void 0 ? void 0 : _a.deviceId}`);
+                    })
+                        .catch((error) => {
+                        let errorMessage = error;
+                        if (error.name === 'SecurityError') {
+                            errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+                        }
+                        console.error(errorMessage);
+                    });
+                }, 200);
                 return t;
             });
         }
@@ -864,68 +898,76 @@
          * We initiate the call
          */
         static outbound(verto, callId, login, phoneNumber) {
-            const rtcPeerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: this.STUN_ICE_SERVER }],
-            });
-            rtcPeerConnection.ontrack = (tr) => {
-                const track = tr.track;
-                if (track.kind !== 'audio') {
-                    return;
-                }
-                const stream = new MediaStream();
-                stream.addTrack(track);
-                if (!verto.io.channel) {
-                    return;
-                }
-                verto.io.channel.remoteStream = stream;
-                HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
-                    e.srcObject = stream;
-                    return rtcPeerConnection;
+            return __awaiter(this, void 0, void 0, function* () {
+                const rtcPeerConnection = new RTCPeerConnection({
+                    iceServers: this.STUN_ICE_SERVER.map(x => {
+                        return { urls: x };
+                    })
                 });
-            };
-            if (!verto.io.channel) {
-                return rtcPeerConnection;
-            }
-            // Attach our media stream to the call's PeerConnection
-            verto.io.channel.stream.getTracks().forEach((track) => {
-                rtcPeerConnection.addTrack(track);
-            });
-            // We wait for candidate to be null to make sure all candidates have been processed
-            // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
-            //   so we use a timeout to cancel process with if collecting takes too long
-            let collectingDone = false;
-            let collectTimeout;
-            rtcPeerConnection.onicecandidate = (candidate) => {
-                var _a;
-                if (collectTimeout) {
-                    window.clearTimeout(collectTimeout);
+                const channel = yield verto.io.getChannel();
+                console.log('channel', channel);
+                if (!channel) {
+                    throw new Error('could not retrieve microphone');
                 }
-                if (collectingDone) {
-                    return;
-                }
-                if (!candidate.candidate) {
-                    verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
-                }
-                else {
-                    collectTimeout = window.setTimeout(() => {
-                        var _a;
-                        collectingDone = true;
+                rtcPeerConnection.ontrack = (tr) => {
+                    const track = tr.track;
+                    if (track.kind !== 'audio') {
+                        return;
+                    }
+                    const stream = new MediaStream();
+                    stream.addTrack(track);
+                    if (channel) {
+                        channel.remoteStream = stream;
+                    }
+                    HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
+                        e.srcObject = stream;
+                        return rtcPeerConnection;
+                    });
+                };
+                // Attach our media stream to the call's PeerConnection
+                channel.stream.getTracks().forEach((track) => {
+                    rtcPeerConnection.addTrack(track);
+                });
+                // We wait for candidate to be null to make sure all candidates have been processed
+                // ! for unknown reason, gathering ice candidates on chrome while using a VPN is taking too long (up to 1 min)
+                //   so we use a timeout to cancel process with if collecting takes too long
+                let collectingDone = false;
+                let collectTimeout;
+                rtcPeerConnection.onicecandidate = (candidate) => {
+                    var _a;
+                    if (collectTimeout) {
+                        window.clearTimeout(collectTimeout);
+                    }
+                    if (collectingDone) {
+                        return;
+                    }
+                    if (!candidate.candidate) {
                         verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
-                    }, 1000);
-                }
-            };
-            rtcPeerConnection.createOffer().then((offer) => {
-                rtcPeerConnection.setLocalDescription(offer).then(() => { });
+                    }
+                    else {
+                        collectTimeout = window.setTimeout(() => {
+                            var _a;
+                            collectingDone = true;
+                            verto.send(verto.params.startCall(verto.sessid, callId, login, phoneNumber, (_a = rtcPeerConnection.localDescription) === null || _a === void 0 ? void 0 : _a.sdp));
+                        }, 1000);
+                    }
+                };
+                rtcPeerConnection.createOffer().then((offer) => {
+                    rtcPeerConnection.setLocalDescription(offer).then(() => { });
+                });
+                return [rtcPeerConnection, channel];
             });
-            return rtcPeerConnection;
         }
         /**
          * We receive the call
          */
         static inbound(verto, inboudParams) {
-            return new Promise((onRes, onErr) => {
+            return __awaiter(this, void 0, void 0, function* () {
+                const channel = yield verto.io.getChannel();
                 const rtcPeerConnection = new RTCPeerConnection({
-                    iceServers: [{ urls: this.STUN_ICE_SERVER }],
+                    iceServers: this.STUN_ICE_SERVER.map(x => {
+                        return { urls: x };
+                    })
                 });
                 rtcPeerConnection.ontrack = (tr) => {
                     const track = tr.track;
@@ -934,22 +976,20 @@
                     }
                     const stream = new MediaStream();
                     stream.addTrack(track);
-                    if (!verto.io.channel) {
+                    if (!channel) {
                         return;
                     }
-                    verto.io.channel.remoteStream = stream;
+                    channel.remoteStream = stream;
                     HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
                         r.srcObject = stream;
-                        onRes(rtcPeerConnection);
-                        return;
+                        return rtcPeerConnection;
                     });
                 };
-                if (!verto.io.channel) {
-                    onRes(rtcPeerConnection);
-                    return;
+                if (!channel) {
+                    throw new Error('could not retrieve microphone');
                 }
                 // Attach our media stream to the call's PeerConnection
-                verto.io.channel.stream.getTracks().forEach((track) => {
+                channel.stream.getTracks().forEach((track) => {
                     rtcPeerConnection.addTrack(track);
                 });
                 rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: inboudParams.sdp }))
@@ -958,14 +998,15 @@
                         rtcPeerConnection.setLocalDescription(d);
                     });
                 });
-                onRes(rtcPeerConnection);
+                return [rtcPeerConnection, channel];
             });
         }
-        static recovering(verto, params, direction) {
+        static recovering(verto, params, _direction) {
+            // recovering is processed as an incoming call regardless of the initial direction
             return this.inbound(verto, params);
         }
     }
-    RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
+    RTCPeerConnectionFactory.STUN_ICE_SERVER = ['stun:stun.l.google.com:19302'];
 
     /**
      * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -1081,8 +1122,10 @@
         onInvite(message) {
             RTCPeerConnectionFactory
                 .inbound(this.verto, message.params)
-                .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number, this.verto.getLogin(), pc, 'inbound', message.params);
+                .then(res => {
+                const pc = res[0];
+                const channel = res[1];
+                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number, this.verto.getLogin(), pc, channel, 'inbound', message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
             });
@@ -1097,8 +1140,10 @@
         /** Recovering call */
         onAttach(message) {
             RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
-                .then(pc => {
-                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+                .then(res => {
+                const pc = res[0];
+                const channel = res[1];
+                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, channel, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
                 // so SDP has time to build
                 window.setTimeout(() => call.pushState(ZiwoEventType.Recovering), 500);
@@ -1252,22 +1297,22 @@
          * send a start call request
          */
         startCall(phoneNumber) {
-            if (!this.io.channel || !this.io.channel.stream) {
-                // TODO : throw Ziwo Error Event
-                throw new Error('Error in User Media');
-            }
-            try {
-                const callId = this.params.getUuid();
-                const pc = RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
-                const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
-                call.pushState(ZiwoEventType.Requesting, true);
-                call.pushState(ZiwoEventType.Trying, true);
-                return call;
-            }
-            catch (e) {
-                ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
-                console.warn('failed to created call', e);
-            }
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    const callId = this.params.getUuid();
+                    const res = yield RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
+                    const pc = res[0];
+                    const channel = res[1];
+                    const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, channel, 'outbound');
+                    call.pushState(ZiwoEventType.Requesting, true);
+                    call.pushState(ZiwoEventType.Trying, true);
+                    return call;
+                }
+                catch (e) {
+                    ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);
+                    console.warn('failed to created call', e);
+                }
+            });
         }
         /**
          * Perform an attach query
@@ -1460,11 +1505,14 @@
             return `${(_a = this.position) === null || _a === void 0 ? void 0 : _a.name}@${(_b = this.position) === null || _b === void 0 ? void 0 : _b.hostname}`;
         }
         ensureMediaChannelIsValid() {
-            if (!this.io.channel || !this.io.channel.stream) {
-                ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
-                return false;
-            }
-            return true;
+            return __awaiter(this, void 0, void 0, function* () {
+                const channel = yield this.io.getChannel();
+                if (!channel || !channel.stream) {
+                    ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
+                    return false;
+                }
+                return true;
+            });
         }
         /**
          * Validate the JSON RPC headersx
@@ -1481,10 +1529,11 @@
             this.stream = stream;
             this.audioContext = this.getAudioContext();
         }
-        static getUserMediaAsChannel(mediaRequested) {
+        static getUserMediaAsChannel(io) {
             return new Promise((onRes, onErr) => {
                 try {
-                    navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+                    const constraints = io.input ? { audio: { deviceId: io.input.deviceId } } : { audio: true };
+                    navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
                         onRes(new MediaChannel(stream));
                     }).catch(e => {
                         ZiwoEvent.error(ZiwoErrorCode.DevicesError, 'No devices available');
@@ -1537,11 +1586,13 @@
      * IO Service allow your to quickly manager your inputs and outputs
      */
     class IOService {
-        constructor() {
+        constructor(calls) {
             this.volume = 100;
+            // public channel?:MediaChannel;
             this.inputs = [];
             this.outputs = [];
             this.onDevicesUpdatedListeners = [];
+            this.calls = calls;
             this.load().then(e => {
                 if (this.inputs.length > 0) {
                     this.useDefaultInput();
@@ -1573,23 +1624,76 @@
         useDefaultOutput() {
             this.useOutput(this.outputs[0]);
         }
+        getChannel() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return new Promise((onRes, onErr) => {
+                    if (!this.input) {
+                        if (this.inputs && this.inputs.length > 0) {
+                            this.useDefaultInput();
+                        }
+                        else {
+                            onRes(undefined);
+                        }
+                    }
+                    navigator.mediaDevices.getUserMedia({
+                        audio: { deviceId: this.input.deviceId }
+                    }).then((stream) => {
+                        onRes(new MediaChannel(stream));
+                    }).then().catch(() => {
+                        onRes(undefined);
+                    });
+                });
+            });
+        }
         useInput(device, withRetryIfFailed = true) {
-            try {
+            return __awaiter(this, void 0, void 0, function* () {
                 this.input = device;
-                navigator.mediaDevices.getUserMedia({
-                    audio: { deviceId: device.deviceId }
-                }).then((stream) => {
-                    this.channel = new MediaChannel(stream);
-                }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
-            }
-            catch (_a) {
-                if (withRetryIfFailed) {
-                    this.useDefaultInput();
-                }
-            }
+                ZiwoEvent.emit(ZiwoEventType.InputChanged, { device: device });
+                const channel = yield this.getChannel();
+                this.calls.forEach(c => {
+                    try {
+                        c.rtcPeerConnection.getSenders().forEach(sender => {
+                            if (sender.track && sender.track.kind === 'audio') {
+                                sender.replaceTrack(channel === null || channel === void 0 ? void 0 : channel.stream.getAudioTracks()[0]);
+                            }
+                        });
+                        if (channel) {
+                            c.channel = channel;
+                        }
+                    }
+                    catch (_a) {
+                        console.warn(`fail to input rebind for ${c.callId}`);
+                    }
+                });
+            });
         }
         useOutput(device) {
-            this.output = device;
+            return __awaiter(this, void 0, void 0, function* () {
+                this.output = device;
+                ZiwoEvent.emit(ZiwoEventType.OutputChanged, { device: device });
+                window.setTimeout(() => {
+                    this.calls.forEach(c => {
+                        try {
+                            const t = document.getElementById(`media-peer-${c.callId}`);
+                            t.setSinkId(this.output.deviceId)
+                                .then(() => {
+                                var _a;
+                                console.log(`Success, audio output device attached: ${(_a = this.output) === null || _a === void 0 ? void 0 : _a.deviceId}`);
+                            })
+                                .catch((error) => {
+                                let errorMessage = error;
+                                if (error.name === 'SecurityError') {
+                                    errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+                                }
+                                console.error(errorMessage);
+                            });
+                        }
+                        catch (_a) {
+                            console.warn(`fail to output rebind for ${c.callId}`);
+                        }
+                    });
+                });
+            });
         }
         /**
          * return all the available input medias
@@ -1614,28 +1718,9 @@
         }
         load() {
             return new Promise((ok, err) => {
-                let streamDone = false;
-                let deviceDone = false;
-                let listDone = false;
-                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-                    this.getStream(stream);
-                    streamDone = true;
-                    if (deviceDone && listDone) {
-                        ok();
-                    }
-                }).then((devices) => {
-                    this.getDevices(devices);
-                    deviceDone = true;
-                    if (streamDone && listDone) {
-                        ok();
-                    }
-                }).catch();
                 navigator.mediaDevices.enumerateDevices().then((devices) => {
                     this.getDevices(devices);
-                    listDone = true;
-                    if (streamDone && deviceDone) {
-                        ok();
-                    }
+                    ok();
                 }).catch(e => err(e));
             });
         }
@@ -1684,9 +1769,6 @@
             }
             return false;
         }
-        getStream(stream) {
-            this.stream = stream;
-        }
         getDevices(devices) {
             if (!devices) {
                 return;
@@ -1732,8 +1814,13 @@
             this.calls = [];
             this.options = options;
             this.debug = options.debug || false;
+            if (options.useGoogleStun !== true) {
+                this.optOutGoogleStunServer()
+                    .then(ss => console.log('using stuns > ', ss))
+                    .catch(err => console.log('using default Google Stuns'));
+            }
             this.apiService = new ApiService(options.contactCenterName);
-            this.io = new IOService();
+            this.io = new IOService(this.calls);
             this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
             if (options.autoConnect) {
                 this.connect().then(r => {
@@ -1746,7 +1833,7 @@
             this.options = options;
             this.debug = options.debug || false;
             this.apiService = new ApiService(options.contactCenterName);
-            this.io = new IOService();
+            this.io = new IOService(this.calls);
             this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
         }
         /**
@@ -1790,12 +1877,14 @@
          * Note: the call's instance will also be provided in all the events
          */
         startCall(phoneNumber) {
-            const call = this.verto.startCall(phoneNumber);
-            if (!call) {
-                return undefined;
-            }
-            this.calls.push(call);
-            return call;
+            return __awaiter(this, void 0, void 0, function* () {
+                const call = yield this.verto.startCall(phoneNumber);
+                if (!call) {
+                    return undefined;
+                }
+                this.calls.push(call);
+                return call;
+            });
         }
         /**
          * Start a call using click2call
@@ -1812,7 +1901,24 @@
          * Opt out of Google Stun
          */
         optOutGoogleStunServer() {
-            RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
+            return new Promise((onRes, onErr) => {
+                window.fetch('https://stun.ziwo.io', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(stunsRaw => {
+                    stunsRaw.json().then(data => {
+                        try {
+                            RTCPeerConnectionFactory.STUN_ICE_SERVER = data.stun.map((x) => `stun:${x}`);
+                            onRes(RTCPeerConnectionFactory.STUN_ICE_SERVER);
+                        }
+                        catch (_a) {
+                            onErr();
+                        }
+                    }).catch(_e => onErr());
+                }).catch(_e => onErr());
+            });
         }
     }
 

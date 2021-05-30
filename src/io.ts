@@ -1,8 +1,9 @@
 import { MediaInfo, MediaChannel } from './media-channel';
 import { Verto } from './verto/verto';
 import { ZiwoEvent, ZiwoEventType, ZiwoErrorCode } from './events';
+import { Call } from './call';
 
-interface Device {
+export interface Device {
   deviceId:string;
   groupId:string;
   label:string;
@@ -21,14 +22,15 @@ export class IOService {
 
   public input?:Device;
   public output?:Device;
-  public channel?:MediaChannel;
   public volume = 100;
-  private stream:any;
+  // public channel?:MediaChannel;
   private inputs:Device[] = [];
   private outputs:Device[] = [];
+  private calls:Call[];
   public onDevicesUpdatedListeners:Function[] = [];
 
-  constructor() {
+  constructor(calls:Call[]) {
+    this.calls = calls;
     this.load().then(e => {
       if (this.inputs.length > 0) {
         this.useDefaultInput();
@@ -63,23 +65,68 @@ export class IOService {
     this.useOutput(this.outputs[0]);
   }
 
-  public useInput(device:Device, withRetryIfFailed = true): void {
-    try {
-      this.input = device;
-      navigator.mediaDevices.getUserMedia({
-        audio: {deviceId: device.deviceId}
-      }).then((stream) => {
-        this.channel = new MediaChannel(stream);
-      }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
-    } catch {
-      if (withRetryIfFailed) {
-        this.useDefaultInput();
+  public async getChannel(): Promise<MediaChannel|undefined> {
+    return new Promise<MediaChannel|undefined>((onRes, onErr) => {
+      if (!this.input) {
+        if (this.inputs && this.inputs.length > 0) {
+          this.useDefaultInput();
+        } else {
+          onRes(undefined);
+        }
       }
-    }
+      navigator.mediaDevices.getUserMedia({
+        audio: {deviceId: (this.input as any).deviceId}
+      }).then((stream) => {
+        onRes(new MediaChannel(stream));
+      }).then().catch(() => {
+        onRes(undefined);
+      });
+    });
   }
 
-  public useOutput(device:Device): void {
+  public async useInput(device:Device, withRetryIfFailed = true): Promise<void> {
+    this.input = device;
+    ZiwoEvent.emit(ZiwoEventType.InputChanged, {device: device});
+    const channel = await this.getChannel();
+    this.calls.forEach(c => {
+      try {
+        c.rtcPeerConnection.getSenders().forEach(sender => {
+          if (sender.track && sender.track.kind === 'audio') {
+            sender.replaceTrack(channel?.stream.getAudioTracks()[0]);
+          }
+        });
+        if (channel) {
+          c.channel = channel;
+        }
+      } catch {
+        console.warn(`fail to input rebind for ${c.callId}`);
+      }
+    });
+  }
+
+  public async useOutput(device:Device): Promise<void> {
     this.output = device;
+    ZiwoEvent.emit(ZiwoEventType.OutputChanged, {device: device});
+    window.setTimeout(() => {
+      this.calls.forEach(c => {
+        try {
+          const t = document.getElementById(`media-peer-${c.callId}`);
+          (t as any).setSinkId((this.output as any).deviceId)
+          .then(() => {
+            console.log(`Success, audio output device attached: ${this.output?.deviceId}`);
+          })
+          .catch((error:any) => {
+            let errorMessage = error;
+            if (error.name === 'SecurityError') {
+              errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+            }
+            console.error(errorMessage);
+          });
+        } catch {
+          console.warn(`fail to output rebind for ${c.callId}`);
+        }
+      });
+    });
   }
 
   /**
@@ -108,33 +155,10 @@ export class IOService {
 
   public load(): Promise<void> {
     return new Promise<void>((ok, err) => {
-      let streamDone = false;
-      let deviceDone = false;
-      let listDone = false;
-      navigator.mediaDevices.getUserMedia({audio: true}).then(
-        (stream) => {
-          this.getStream(stream);
-          streamDone = true;
-          if (deviceDone && listDone) {
-            ok();
-          }
-        },
-      ).then(
-        (devices) => {
-          this.getDevices(devices);
-          deviceDone = true;
-          if (streamDone && listDone) {
-            ok();
-          }
-        },
-      ).catch();
       navigator.mediaDevices.enumerateDevices().then(
         (devices) => {
           this.getDevices(devices);
-          listDone = true;
-          if (streamDone && deviceDone) {
-            ok();
-          }
+          ok();
         }).catch(e => err(e));
     });
   }
@@ -186,10 +210,6 @@ export class IOService {
       return true;
     }
     return false;
-  }
-
-  private getStream(stream:any): void {
-    this.stream = stream;
   }
 
   private getDevices(devices:any): void {
