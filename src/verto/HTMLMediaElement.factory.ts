@@ -12,8 +12,8 @@ export class HTMLMediaElementFactory {
     t.volume = io.volume / 100;
 
     parent.appendChild(t);
-
-    (t as any).setSinkId((io.output as any).deviceId)
+    window.setTimeout(() => {
+      (t as any).setSinkId((io.output as any).deviceId)
       .then(() => {
         console.log(`Success, audio output device attached: ${io.output?.deviceId}`);
       })
@@ -24,7 +24,7 @@ export class HTMLMediaElementFactory {
         }
         console.error(errorMessage);
       });
-
+    }, 200);
     return t;
   }
 

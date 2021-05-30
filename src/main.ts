@@ -37,6 +37,11 @@ export interface ZiwoClientOptions {
   mediaTag:HTMLDivElement;
 
   /**
+   * @useGoogleStun will force Google STUNS ONLY
+   */
+  useGoogleStun?:boolean;
+
+  /**
    * @debug display log info if set to true
    */
   debug?:boolean;
@@ -71,10 +76,14 @@ export class ZiwoClient {
   constructor(options:ZiwoClientOptions) {
     this.options = options;
     this.debug = options.debug || false;
+    if (options.useGoogleStun !== true) {
+      this.optOutGoogleStunServer()
+        .then(ss => console.log('using stuns > ', ss))
+        .catch(err => console.log('using default Google Stuns'));
+    }
     this.apiService = new ApiService(options.contactCenterName);
-    this.io = new IOService();
+    this.io = new IOService(this.calls);
     this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
-
     if (options.autoConnect) {
       this.connect().then(r => {
       }).catch(err => { throw err; });
@@ -135,8 +144,8 @@ export class ZiwoClient {
    * Start a phone call with the external phone number provided and return an instance of the Call
    * Note: the call's instance will also be provided in all the events
    */
-  public startCall(phoneNumber:string):Call|undefined {
-      const call = this.verto.startCall(phoneNumber);
+  public async startCall(phoneNumber:string):Promise<Call|undefined> {
+      const call = await this.verto.startCall(phoneNumber);
       if (!call) {
         return undefined;
       }
@@ -159,8 +168,24 @@ export class ZiwoClient {
   /**
    * Opt out of Google Stun
    */
-  public optOutGoogleStunServer(): void {
-    RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
+  public optOutGoogleStunServer(): Promise<string[]> {
+    return new Promise<any>((onRes, onErr) => {
+      window.fetch('https://stun.ziwo.io', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }).then(stunsRaw => {
+        stunsRaw.json().then(data => {
+          try {
+            RTCPeerConnectionFactory.STUN_ICE_SERVER = data.stun.map((x:string) => `stun:${x}`);
+            onRes(RTCPeerConnectionFactory.STUN_ICE_SERVER);
+          } catch {
+            onErr();
+          }
+        }).catch(_e => onErr());
+      }).catch(_e => onErr());
+    });
   }
 
 }

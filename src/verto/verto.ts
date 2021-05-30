@@ -113,14 +113,10 @@ export class Verto {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string):Call|undefined {
-    if (!this.io.channel || !this.io.channel.stream) {
-      // TODO : throw Ziwo Error Event
-      throw new Error('Error in User Media');
-    }
+  public async startCall(phoneNumber:string):Promise<Call|undefined> {
     try {
       const callId = this.params.getUuid();
-      const pc = RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
+      const pc = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
       const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
       call.pushState(ZiwoEventType.Requesting, true);
       call.pushState(ZiwoEventType.Trying, true);
@@ -332,8 +328,9 @@ export class Verto {
     return `${this.position?.name}@${this.position?.hostname}`;
   }
 
-  protected ensureMediaChannelIsValid():boolean {
-    if (!this.io.channel || !this.io.channel.stream) {
+  protected async ensureMediaChannelIsValid():Promise<boolean> {
+    const channel = await this.io.getChannel();
+    if (!channel || !channel.stream) {
       ZiwoEvent.error(ZiwoErrorCode.MediaError, MESSAGES.MEDIA_ERROR);
       return false;
     }

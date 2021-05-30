@@ -444,6 +444,8 @@
         ZiwoEventType["Purge"] = "purge";
         ZiwoEventType["Destroy"] = "destroy";
         ZiwoEventType["Recovering"] = "recovering";
+        ZiwoEventType["OutputChanged"] = "output-changed";
+        ZiwoEventType["InputChanged"] = "input-changed";
     })(ZiwoEventType || (ZiwoEventType = {}));
     /**
      * All phone call (outbound & inbound) will throw events during their lifetime.
@@ -666,6 +668,8 @@
             if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
                 this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
             }
+            // list for device updates and handle new input/output properly
+            window.addEventListener('ziwo-output-changed', (ev) => this.useOutput(ev.detail.device));
         }
         /**
          * Use when current state is `ringing` to switch the call to `active`
@@ -700,6 +704,12 @@
          */
         dtmf(char) {
             this.verto.dtmf(this.callId, this.phoneNumber, char);
+        }
+        /*
+         * Update the used output
+         */
+        useOutput(device) {
+            console.log(`call ${this.callId} shoud us device > `, device);
         }
         /**
          * Set the call on hold
@@ -865,7 +875,9 @@
          */
         static outbound(verto, callId, login, phoneNumber) {
             const rtcPeerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: this.STUN_ICE_SERVER }],
+                iceServers: this.STUN_ICE_SERVER.map(x => {
+                    return { urls: x };
+                })
             });
             rtcPeerConnection.ontrack = (tr) => {
                 const track = tr.track;
@@ -925,7 +937,9 @@
         static inbound(verto, inboudParams) {
             return new Promise((onRes, onErr) => {
                 const rtcPeerConnection = new RTCPeerConnection({
-                    iceServers: [{ urls: this.STUN_ICE_SERVER }],
+                    iceServers: this.STUN_ICE_SERVER.map(x => {
+                        return { urls: x };
+                    })
                 });
                 rtcPeerConnection.ontrack = (tr) => {
                     const track = tr.track;
@@ -965,7 +979,7 @@
             return this.inbound(verto, params);
         }
     }
-    RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
+    RTCPeerConnectionFactory.STUN_ICE_SERVER = ['stun:stun.l.google.com:19302'];
 
     /**
      * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -1580,6 +1594,7 @@
                     audio: { deviceId: device.deviceId }
                 }).then((stream) => {
                     this.channel = new MediaChannel(stream);
+                    ZiwoEvent.emit(ZiwoEventType.InputChanged, { device: device });
                 }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
             }
             catch (_a) {
@@ -1590,6 +1605,7 @@
         }
         useOutput(device) {
             this.output = device;
+            ZiwoEvent.emit(ZiwoEventType.OutputChanged, { device: device });
         }
         /**
          * return all the available input medias
@@ -1732,6 +1748,11 @@
             this.calls = [];
             this.options = options;
             this.debug = options.debug || false;
+            if (options.useGoogleStun !== true) {
+                this.optOutGoogleStunServer()
+                    .then(ss => console.log('using stuns > ', ss))
+                    .catch(err => console.log('using default Google Stuns'));
+            }
             this.apiService = new ApiService(options.contactCenterName);
             this.io = new IOService();
             this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
@@ -1812,7 +1833,24 @@
          * Opt out of Google Stun
          */
         optOutGoogleStunServer() {
-            RTCPeerConnectionFactory.STUN_ICE_SERVER = 'stun:185.92.131.193:13478';
+            return new Promise((onRes, onErr) => {
+                window.fetch('https://stun.ziwo.io', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(stunsRaw => {
+                    stunsRaw.json().then(data => {
+                        try {
+                            RTCPeerConnectionFactory.STUN_ICE_SERVER = data.stun.map((x) => `stun:${x}`);
+                            onRes(RTCPeerConnectionFactory.STUN_ICE_SERVER);
+                        }
+                        catch (_a) {
+                            onErr();
+                        }
+                    }).catch(_e => onErr());
+                }).catch(_e => onErr());
+            });
         }
     }
 

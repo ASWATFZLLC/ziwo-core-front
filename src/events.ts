@@ -51,6 +51,8 @@ export enum ZiwoEventType {
   Purge = 'purge',
   Destroy = 'destroy',
   Recovering = 'recovering',
+  OutputChanged = 'output-changed',
+  InputChanged = 'input-changed',
 }
 
 

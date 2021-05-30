@@ -2,6 +2,7 @@ import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
 import {ZiwoEventType, ZiwoEvent} from './events';
 import {VertoByeReason} from './verto/verto.params';
+import {Device} from './io';
 
 export enum CallStatus {
   Stopped = 'stopped',
@@ -34,7 +35,6 @@ export class Call {
   public readonly callId:string;
   public readonly primaryCallId?:string;
   public readonly rtcPeerConnection:RTCPeerConnection;
-  public readonly channel:MediaChannel;
   public readonly verto:Verto;
   public readonly phoneNumber:string;
   public readonly direction:'outbound'|'inbound'|'internal'|'service';
@@ -46,13 +46,15 @@ export class Call {
     this.callId = callId;
     this.verto = verto;
     this.rtcPeerConnection = rtcPeerConnection;
-    this.channel = verto.io.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
     this.initialPayload = initialPayload;
     if (this.initialPayload && this.initialPayload.verto_h_primaryCallID) {
       this.primaryCallId = this.initialPayload.verto_h_primaryCallID;
     }
+    // list for device updates and handle new input/output properly
+    window.addEventListener('ziwo-output-changed', (ev:any) => this.useOutput(ev.detail.device));
+    window.addEventListener('ziwo-input-changed', (ev:any) => this.useInput(ev.detail.device))
   }
 
   /**
@@ -89,6 +91,33 @@ export class Call {
    */
   public dtmf(char:string):void {
     this.verto.dtmf(this.callId, this.phoneNumber, char);
+  }
+
+  /*
+   * Update the used output
+   */
+  public useOutput(device:Device): void {
+    console.log(`call ${this.callId} shoud use output > `, device);
+    // const el = document.getElementById(`media-peer-${this.callId}`);
+    // if (el) {
+      // (el as HTMLVideoElement).srcObject = this.verto.io.channel?.stream;
+    // }
+  }
+
+  /*
+   * Update the used input
+   */
+  public useInput(device:Device): void {
+    console.log(`call ${this.callId} should use input > `, device);
+    const peer = this.rtcPeerConnection.getSenders().find(s => {
+      if (!s || !s.track) {
+        return false;
+      }
+      return s.track.kind === 'audioinput';
+    });
+    if (peer) {
+      peer.replaceTrack(this.verto.io.channel?.stream);
+    }
   }
 
   /**
@@ -188,9 +217,9 @@ export class Call {
   }
 
   private toggleSelfStream(enabled:boolean):void {
-    this.channel.stream.getAudioTracks().forEach((tr:any) => {
-      tr.enabled = enabled;
-    });
+    // this.channel.stream.getAudioTracks().forEach((tr:any) => {
+    //   tr.enabled = enabled;
+    // });
   }
 
 }
