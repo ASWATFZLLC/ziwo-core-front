@@ -680,10 +680,11 @@
      * @initialPayload : complete payload received/sent to start the call
      */
     class Call {
-        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, direction, initialPayload) {
+        constructor(callId, verto, phoneNumber, login, rtcPeerConnection, channel, direction, initialPayload) {
             this.states = [];
             this.verto = verto;
             this.callId = callId;
+            this.channel = channel;
             this.verto = verto;
             this.rtcPeerConnection = rtcPeerConnection;
             this.phoneNumber = phoneNumber;
@@ -846,9 +847,9 @@
             }
         }
         toggleSelfStream(enabled) {
-            // this.channel.stream.getAudioTracks().forEach((tr:any) => {
-            //   tr.enabled = enabled;
-            // });
+            this.channel.stream.getAudioTracks().forEach((tr) => {
+                tr.enabled = enabled;
+            });
         }
     }
 
@@ -1124,7 +1125,7 @@
                 .then(res => {
                 const pc = res[0];
                 const channel = res[1];
-                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number, this.verto.getLogin(), pc, 'inbound', message.params);
+                const call = new Call(message.params.callID, this.verto, message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number, this.verto.getLogin(), pc, channel, 'inbound', message.params);
                 this.verto.calls.push(call);
                 call.pushState(ZiwoEventType.Ringing);
             });
@@ -1141,7 +1142,8 @@
             RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
                 .then(res => {
                 const pc = res[0];
-                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, message.params.display_direction, message.params);
+                const channel = res[1];
+                const call = new Call(message.params.callID, this.verto, message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number, this.verto.getLogin(), pc, channel, message.params.display_direction, message.params);
                 this.verto.calls.push(call);
                 // so SDP has time to build
                 window.setTimeout(() => call.pushState(ZiwoEventType.Recovering), 500);
@@ -1301,7 +1303,7 @@
                     const res = yield RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
                     const pc = res[0];
                     const channel = res[1];
-                    const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
+                    const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, channel, 'outbound');
                     call.pushState(ZiwoEventType.Requesting, true);
                     call.pushState(ZiwoEventType.Trying, true);
                     return call;
@@ -1652,10 +1654,12 @@
                     try {
                         c.rtcPeerConnection.getSenders().forEach(sender => {
                             if (sender.track && sender.track.kind === 'audio') {
-                                console.log('stream', channel === null || channel === void 0 ? void 0 : channel.stream);
                                 sender.replaceTrack(channel === null || channel === void 0 ? void 0 : channel.stream.getAudioTracks()[0]);
                             }
                         });
+                        if (channel) {
+                            c.channel = channel;
+                        }
                     }
                     catch (_a) {
                         console.warn(`fail to input rebind for ${c.callId}`);

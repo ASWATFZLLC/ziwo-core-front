@@ -39,11 +39,13 @@ export class Call {
   public readonly phoneNumber:string;
   public readonly direction:'outbound'|'inbound'|'internal'|'service';
   public readonly states:CallState[] = [];
+  public channel:MediaChannel;
   private readonly initialPayload?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', initialPayload?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, channel:MediaChannel, direction:'outbound'|'inbound', initialPayload?:any) {
     this.verto = verto;
     this.callId = callId;
+    this.channel = channel;
     this.verto = verto;
     this.rtcPeerConnection = rtcPeerConnection;
     this.phoneNumber = phoneNumber;
@@ -217,9 +219,9 @@ export class Call {
   }
 
   private toggleSelfStream(enabled:boolean):void {
-    // this.channel.stream.getAudioTracks().forEach((tr:any) => {
-    //   tr.enabled = enabled;
-    // });
+    this.channel.stream.getAudioTracks().forEach((tr:any) => {
+       tr.enabled = enabled;
+    });
   }
 
 }

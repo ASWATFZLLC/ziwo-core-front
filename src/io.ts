@@ -92,10 +92,12 @@ export class IOService {
       try {
         c.rtcPeerConnection.getSenders().forEach(sender => {
           if (sender.track && sender.track.kind === 'audio') {
-            console.log('stream', channel?.stream);
             sender.replaceTrack(channel?.stream.getAudioTracks()[0]);
           }
         });
+        if (channel) {
+          c.channel = channel;
+        }
       } catch {
         console.warn(`fail to input rebind for ${c.callId}`);
       }

@@ -119,7 +119,7 @@ export class Verto {
       const res = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
       const pc = res[0];
       const channel = res[1];
-      const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
+      const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, channel, 'outbound');
       call.pushState(ZiwoEventType.Requesting, true);
       call.pushState(ZiwoEventType.Trying, true);
       return call;
