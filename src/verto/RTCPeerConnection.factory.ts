@@ -9,13 +9,17 @@ export class RTCPeerConnectionFactory {
   /**
    * We initiate the call
    */
-  public static async outbound(verto:Verto, callId:string, login:string, phoneNumber:string):Promise<RTCPeerConnection> {
+  public static async outbound(verto:Verto, callId:string, login:string, phoneNumber:string):Promise<[RTCPeerConnection, MediaChannel]> {
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.STUN_ICE_SERVER.map(x => {
         return {urls: x}
       })
     });
     const channel = await verto.io.getChannel();
+    console.log('channel', channel);
+    if (!channel) {
+      throw new Error('could not retrieve microphone');
+    }
     rtcPeerConnection.ontrack = (tr:any) => {
       const track = tr.track;
       if (track.kind !== 'audio') {
@@ -31,9 +35,7 @@ export class RTCPeerConnectionFactory {
         return rtcPeerConnection;
       });
     };
-    if (!channel) {
-      return rtcPeerConnection;
-    }
+
     // Attach our media stream to the call's PeerConnection
     channel.stream.getTracks().forEach((track:any) => {
       rtcPeerConnection.addTrack(track);
@@ -74,13 +76,13 @@ export class RTCPeerConnectionFactory {
     rtcPeerConnection.createOffer().then((offer:any) => {
       rtcPeerConnection.setLocalDescription(offer).then(() => {});
     });
-    return rtcPeerConnection;
+    return [rtcPeerConnection, channel];
   }
 
   /**
    * We receive the call
    */
-  public static async inbound(verto:Verto, inboudParams:any):Promise<RTCPeerConnection> {
+  public static async inbound(verto:Verto, inboudParams:any):Promise<[RTCPeerConnection, MediaChannel]> {
     const channel = await verto.io.getChannel();
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.STUN_ICE_SERVER.map(x => {
@@ -105,7 +107,7 @@ export class RTCPeerConnectionFactory {
     };
 
     if (!channel) {
-      return rtcPeerConnection;
+      throw new Error('could not retrieve microphone');
     }
 
     // Attach our media stream to the call's PeerConnection
@@ -120,10 +122,10 @@ export class RTCPeerConnectionFactory {
         });
       });
 
-    return rtcPeerConnection;
+    return [rtcPeerConnection, channel];
   }
 
-  public static recovering(verto:Verto, params:any, _direction:'inbound'|'outbound'):Promise<RTCPeerConnection> {
+  public static recovering(verto:Verto, params:any, _direction:'inbound'|'outbound'):Promise<[RTCPeerConnection, MediaChannel]> {
     // recovering is processed as an incoming call regardless of the initial direction
     return this.inbound(verto, params);
   }

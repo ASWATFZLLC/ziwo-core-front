@@ -96,7 +96,7 @@ export class ZiwoClient {
     this.options = options;
     this.debug = options.debug || false;
     this.apiService = new ApiService(options.contactCenterName);
-    this.io = new IOService();
+    this.io = new IOService(this.calls);
     this.verto = new Verto(this.calls, this.debug, options.mediaTag, this.io);
   }
 

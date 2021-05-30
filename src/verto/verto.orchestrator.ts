@@ -130,7 +130,9 @@ export class VertoOrchestrator {
   private onInvite(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory
       .inbound(this.verto, message.params)
-      .then(pc => {
+      .then(res => {
+        const pc = res[0];
+        const channel = res[1];
         const call = new Call(
           message.params.callID,
           this.verto,
@@ -156,7 +158,8 @@ export class VertoOrchestrator {
   /** Recovering call */
   private onAttach(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
-    .then(pc => {
+    .then(res => {
+      const pc = res[0];
       const call = new Call(
         message.params.callID,
         this.verto,

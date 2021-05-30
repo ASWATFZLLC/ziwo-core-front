@@ -116,7 +116,9 @@ export class Verto {
   public async startCall(phoneNumber:string):Promise<Call|undefined> {
     try {
       const callId = this.params.getUuid();
-      const pc = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
+      const res = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
+      const pc = res[0];
+      const channel = res[1];
       const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
       call.pushState(ZiwoEventType.Requesting, true);
       call.pushState(ZiwoEventType.Trying, true);

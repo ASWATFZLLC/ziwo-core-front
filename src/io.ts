@@ -66,14 +66,22 @@ export class IOService {
   }
 
   public async getChannel(): Promise<MediaChannel|undefined> {
-    if (!this.input) {
-      return undefined;
-    }
-    navigator.mediaDevices.getUserMedia({
-      audio: {deviceId: this.input.deviceId}
-    }).then((stream) => {
-      return new MediaChannel(stream);
-    }).then().catch(() => console.warn('ERROR WHILE SETTING UP MIC.'));
+    return new Promise<MediaChannel|undefined>((onRes, onErr) => {
+      if (!this.input) {
+        if (this.inputs && this.inputs.length > 0) {
+          this.useDefaultInput();
+        } else {
+          onRes(undefined);
+        }
+      }
+      navigator.mediaDevices.getUserMedia({
+        audio: {deviceId: (this.input as any).deviceId}
+      }).then((stream) => {
+        onRes(new MediaChannel(stream));
+      }).then().catch(() => {
+        onRes(undefined);
+      });
+    });
   }
 
   public async useInput(device:Device, withRetryIfFailed = true): Promise<void> {
@@ -84,7 +92,8 @@ export class IOService {
       try {
         c.rtcPeerConnection.getSenders().forEach(sender => {
           if (sender.track && sender.track.kind === 'audio') {
-            sender.replaceTrack(channel?.stream);
+            console.log('stream', channel?.stream);
+            sender.replaceTrack(channel?.stream.getAudioTracks()[0]);
           }
         });
       } catch {
