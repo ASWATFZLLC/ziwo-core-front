@@ -64,6 +64,7 @@ export class VertoOrchestrator {
           (call as Call).pushState(ZiwoEventType.Hangup);
           this.verto.purgeAndDestroyCall((call as Call).callId);
         }
+        break;
       case VertoMethod.Dial:
         this.verto.startCall(message.params.number, message.params.uuid);
         break;
