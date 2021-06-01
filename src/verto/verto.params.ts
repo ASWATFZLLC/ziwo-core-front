@@ -10,6 +10,7 @@ export enum VertoMethod {
   Display = 'verto.display',
   Bye = 'verto.bye',
   Pickup = 'verto.pickup',
+  Dial = 'verto.dial',
 }
 
 export enum VertoByeReason {

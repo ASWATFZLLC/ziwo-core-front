@@ -113,13 +113,13 @@ export class Verto {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string):Call|undefined {
+  public startCall(phoneNumber:string, uuid:string|undefined):Call|undefined {
     if (!this.io.channel || !this.io.channel.stream) {
       // TODO : throw Ziwo Error Event
       throw new Error('Error in User Media');
     }
     try {
-      const callId = this.params.getUuid();
+      const callId = uuid || this.params.getUuid();
       const pc = RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
       const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, 'outbound');
       call.pushState(ZiwoEventType.Requesting, true);
