@@ -113,7 +113,7 @@ export class Verto {
   /**
    * send a start call request
    */
-  public startCall(phoneNumber:string, uuid:string|undefined):Call|undefined {
+  public startCall(phoneNumber:string, uuid?:string):Call|undefined {
     if (!this.io.channel || !this.io.channel.stream) {
       // TODO : throw Ziwo Error Event
       throw new Error('Error in User Media');
