@@ -2,6 +2,7 @@ import {MediaChannel} from './media-channel';
 import {Verto} from './verto/verto';
 import {ZiwoEventType, ZiwoEvent} from './events';
 import {VertoByeReason} from './verto/verto.params';
+import {Device} from './io';
 
 export enum CallStatus {
   Stopped = 'stopped',
@@ -34,19 +35,20 @@ export class Call {
   public readonly callId:string;
   public readonly primaryCallId?:string;
   public readonly rtcPeerConnection:RTCPeerConnection;
-  public readonly channel:MediaChannel;
   public readonly verto:Verto;
   public readonly phoneNumber:string;
   public readonly direction:'outbound'|'inbound'|'internal'|'service';
   public readonly states:CallState[] = [];
+  public channel:MediaChannel;
   private readonly initialPayload?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, direction:'outbound'|'inbound', initialPayload?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection,
+      channel:MediaChannel, direction:'outbound'|'inbound', initialPayload?:any) {
     this.verto = verto;
     this.callId = callId;
+    this.channel = channel;
     this.verto = verto;
     this.rtcPeerConnection = rtcPeerConnection;
-    this.channel = verto.io.channel as MediaChannel;
     this.phoneNumber = phoneNumber;
     this.direction = direction;
     this.initialPayload = initialPayload;
@@ -134,9 +136,9 @@ export class Call {
    * Attended transfer set the current call on hold and call @destination
    * Use `proceedAttendedTransfer` to confirm the transfer
    */
-  public attendedTransfer(destination:string):Call|undefined {
+  public async attendedTransfer(destination:string):Promise<Call|undefined> {
     this.hold();
-    const call = this.verto.startCall(destination);
+    const call = await this.verto.startCall(destination);
     if (!call) {
       return undefined;
     }
@@ -189,7 +191,7 @@ export class Call {
 
   private toggleSelfStream(enabled:boolean):void {
     this.channel.stream.getAudioTracks().forEach((tr:any) => {
-      tr.enabled = enabled;
+       tr.enabled = enabled;
     });
   }
 

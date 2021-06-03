@@ -1,18 +1,25 @@
-import {MediaChannel, MediaInfo} from '../media-channel';
+import {MediaChannel} from '../media-channel';
 import {Verto} from './verto';
 import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
 
 export class RTCPeerConnectionFactory {
 
-  public static STUN_ICE_SERVER = 'stun:stun.l.google.com:19302';
+  public static STUN_ICE_SERVER = ['stun:stun.l.google.com:19302'];
 
   /**
    * We initiate the call
    */
-  public static outbound(verto:Verto, callId:string, login:string, phoneNumber:string):RTCPeerConnection {
+  public static async outbound(verto:Verto, callId:string, login:string, phoneNumber:string):Promise<[RTCPeerConnection, MediaChannel]> {
     const rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{urls: this.STUN_ICE_SERVER}],
+      iceServers: this.STUN_ICE_SERVER.map(x => {
+        return {urls: x};
+      })
     });
+    const channel = await verto.io.getChannel();
+    console.log('channel', channel);
+    if (!channel) {
+      throw new Error('could not retrieve microphone');
+    }
     rtcPeerConnection.ontrack = (tr:any) => {
       const track = tr.track;
       if (track.kind !== 'audio') {
@@ -20,20 +27,17 @@ export class RTCPeerConnectionFactory {
       }
       const stream = new MediaStream();
       stream.addTrack(track);
-      if (!verto.io.channel) {
-        return;
+      if (channel) {
+        channel.remoteStream = stream;
       }
-      verto.io.channel.remoteStream = stream;
       HTMLMediaElementFactory.push(verto.io, verto.tag, callId, 'peer').then(e => {
         e.srcObject = stream;
         return rtcPeerConnection;
       });
     };
-    if (!verto.io.channel) {
-      return rtcPeerConnection;
-    }
+
     // Attach our media stream to the call's PeerConnection
-    verto.io.channel.stream.getTracks().forEach((track:any) => {
+    channel.stream.getTracks().forEach((track:any) => {
       rtcPeerConnection.addTrack(track);
     });
     // We wait for candidate to be null to make sure all candidates have been processed
@@ -72,60 +76,57 @@ export class RTCPeerConnectionFactory {
     rtcPeerConnection.createOffer().then((offer:any) => {
       rtcPeerConnection.setLocalDescription(offer).then(() => {});
     });
-    return rtcPeerConnection;
+    return [rtcPeerConnection, channel];
   }
 
   /**
    * We receive the call
    */
-  public static inbound(verto:Verto, inboudParams:any):Promise<RTCPeerConnection> {
-    return new Promise<RTCPeerConnection>((onRes, onErr) => {
-
-      const rtcPeerConnection = new RTCPeerConnection({
-        iceServers: [{urls: this.STUN_ICE_SERVER}],
-      });
-      rtcPeerConnection.ontrack = (tr:any) => {
-        const track = tr.track;
-        if (track.kind !== 'audio') {
-          return;
-        }
-        const stream = new MediaStream();
-
-        stream.addTrack(track);
-        if (!verto.io.channel) {
-          return;
-        }
-        verto.io.channel.remoteStream = stream;
-        HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
-          r.srcObject = stream;
-          onRes(rtcPeerConnection);
-          return;
-        });
-      };
-
-
-      if (!verto.io.channel) {
-        onRes(rtcPeerConnection);
+  public static async inbound(verto:Verto, inboudParams:any):Promise<[RTCPeerConnection, MediaChannel]> {
+    const channel = await verto.io.getChannel();
+    const rtcPeerConnection = new RTCPeerConnection({
+      iceServers: this.STUN_ICE_SERVER.map(x => {
+        return {urls: x};
+      })
+    });
+    rtcPeerConnection.ontrack = (tr:any) => {
+      const track = tr.track;
+      if (track.kind !== 'audio') {
         return;
       }
+      const stream = new MediaStream();
+      stream.addTrack(track);
+      if (!channel) {
+        return;
+      }
+      channel.remoteStream = stream;
+      HTMLMediaElementFactory.push(verto.io, verto.tag, inboudParams.callID, 'peer').then(r => {
+        r.srcObject = stream;
+        return rtcPeerConnection;
+      });
+    };
 
-      // Attach our media stream to the call's PeerConnection
-      verto.io.channel.stream.getTracks().forEach((track:any) => {
-        rtcPeerConnection.addTrack(track);
+    if (!channel) {
+      throw new Error('could not retrieve microphone');
+    }
+
+    // Attach our media stream to the call's PeerConnection
+    channel.stream.getTracks().forEach((track:any) => {
+      rtcPeerConnection.addTrack(track);
+    });
+
+    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'offer', sdp: inboudParams.sdp}))
+      .then(() => {
+        rtcPeerConnection.createAnswer().then(d => {
+          rtcPeerConnection.setLocalDescription(d);
+        });
       });
 
-      rtcPeerConnection.setRemoteDescription(new RTCSessionDescription({type: 'offer', sdp: inboudParams.sdp}))
-        .then(() => {
-          rtcPeerConnection.createAnswer().then(d => {
-            rtcPeerConnection.setLocalDescription(d);
-          });
-        });
-
-      onRes(rtcPeerConnection);
-    });
+    return [rtcPeerConnection, channel];
   }
 
-  public static recovering(verto:Verto, params:any, direction:'inbound'|'outbound'):Promise<RTCPeerConnection> {
+  public static recovering(verto:Verto, params:any, _direction:'inbound'|'outbound'):Promise<[RTCPeerConnection, MediaChannel]> {
+    // recovering is processed as an incoming call regardless of the initial direction
     return this.inbound(verto, params);
   }
 
