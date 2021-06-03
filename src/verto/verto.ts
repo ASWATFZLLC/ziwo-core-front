@@ -113,7 +113,7 @@ export class Verto {
   /**
    * send a start call request
    */
-  public async startCall(phoneNumber:string):Promise<Call|undefined> {
+  public async startCall(phoneNumber:string, uuid?:string):Promise<Call|undefined> {
     try {
       const callId = uuid || this.params.getUuid();
       const res = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
