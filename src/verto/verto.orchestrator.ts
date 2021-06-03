@@ -130,13 +130,16 @@ export class VertoOrchestrator {
   private onInvite(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory
       .inbound(this.verto, message.params)
-      .then(pc => {
+      .then(res => {
+        const pc = res[0];
+        const channel = res[1];
         const call = new Call(
           message.params.callID,
           this.verto,
           message.params.verto_h_originalCallerIdNumber ? message.params.verto_h_originalCallerIdNumber : message.params.caller_id_number,
           this.verto.getLogin(),
           pc,
+          channel,
           'inbound',
           message.params,
         );
@@ -156,13 +159,16 @@ export class VertoOrchestrator {
   /** Recovering call */
   private onAttach(message:VertoMessage<any>):void {
     RTCPeerConnectionFactory.recovering(this.verto, message.params, message.params.display_direction)
-    .then(pc => {
+    .then(res => {
+      const pc = res[0];
+      const channel = res[1];
       const call = new Call(
         message.params.callID,
         this.verto,
         message.params.display_direction === 'inbound' ? message.params.callee_id_number : message.params.caller_id_number,
         this.verto.getLogin(),
         pc,
+        channel,
         message.params.display_direction,
         message.params
       );

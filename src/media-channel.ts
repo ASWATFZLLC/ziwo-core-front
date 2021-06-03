@@ -1,4 +1,5 @@
 import { ZiwoEvent, ZiwoErrorCode } from './events';
+import { IOService } from './io';
 
 interface MicrophoneData {
   filterNode:BiquadFilterNode;
@@ -25,10 +26,11 @@ export class MediaChannel {
     this.audioContext = this.getAudioContext();
   }
 
-  public static getUserMediaAsChannel(mediaRequested:any):Promise<MediaChannel> {
+  public static getUserMediaAsChannel(io:IOService):Promise<MediaChannel> {
     return new Promise<MediaChannel>((onRes, onErr) => {
       try {
-        navigator.mediaDevices.getUserMedia(mediaRequested).then((stream) => {
+        const constraints = io.input ? {audio: {deviceId: io.input.deviceId}} : {audio: true};
+        navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
           onRes(new MediaChannel(stream));
         }).catch(e => {
           ZiwoEvent.error(ZiwoErrorCode.DevicesError, 'No devices available');

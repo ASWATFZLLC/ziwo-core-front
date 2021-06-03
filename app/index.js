@@ -33,6 +33,8 @@ function start() {
     }
   })
 
+  window.ZIWO = ziwoClient;
+
 }
 
 function startCall() {
