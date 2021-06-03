@@ -12,7 +12,7 @@ export class RTCPeerConnectionFactory {
   public static async outbound(verto:Verto, callId:string, login:string, phoneNumber:string):Promise<[RTCPeerConnection, MediaChannel]> {
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.STUN_ICE_SERVER.map(x => {
-        return {urls: x}
+        return {urls: x};
       })
     });
     const channel = await verto.io.getChannel();
@@ -86,7 +86,7 @@ export class RTCPeerConnectionFactory {
     const channel = await verto.io.getChannel();
     const rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.STUN_ICE_SERVER.map(x => {
-        return {urls: x}
+        return {urls: x};
       })
     });
     rtcPeerConnection.ontrack = (tr:any) => {

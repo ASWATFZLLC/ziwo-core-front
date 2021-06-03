@@ -42,7 +42,8 @@ export class Call {
   public channel:MediaChannel;
   private readonly initialPayload?:any;
 
-  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection, channel:MediaChannel, direction:'outbound'|'inbound', initialPayload?:any) {
+  constructor(callId:string, verto:Verto, phoneNumber:string, login:string, rtcPeerConnection:RTCPeerConnection,
+      channel:MediaChannel, direction:'outbound'|'inbound', initialPayload?:any) {
     this.verto = verto;
     this.callId = callId;
     this.channel = channel;
