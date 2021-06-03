@@ -113,9 +113,9 @@ export class Verto {
   /**
    * send a start call request
    */
-  public async startCall(phoneNumber:string):Promise<Call|undefined> {
+  public async startCall(phoneNumber:string, uuid?:string):Promise<Call|undefined> {
     try {
-      const callId = this.params.getUuid();
+      const callId = uuid || this.params.getUuid();
       const res = await RTCPeerConnectionFactory.outbound(this, callId, this.getLogin(), phoneNumber);
       const pc = res[0];
       const channel = res[1];
