@@ -1,6 +1,7 @@
 export enum VertoMethod {
   Login = 'login',
   ClientReady = 'verto.clientReady',
+  Send = 'verto.send',
   Attach = 'verto.attach',
   Media = 'verto.media',
   Invite = 'verto.invite',
