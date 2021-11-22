@@ -53,6 +53,7 @@ export enum ZiwoEventType {
   Recovering = 'recovering',
   OutputChanged = 'output-changed',
   InputChanged = 'input-changed',
+  VertoSend = 'verto-send',
 }
 
 
