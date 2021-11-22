@@ -2,16 +2,16 @@
 
 Provides a Ziwo Client to perform call
 
-Online documentation: http://core-front.ziwo.io/
+Online documentation: http://doc-core-front.ziwo.tech/
 
 ## Get started
 
 Take time to read the following links:
   1. `Usage` section of this file
   2. `Events` section of this file
-  3. Ziwo Client class http://core-front.ziwo.io/classes/ziwoclient.html
-  4. Call class http://core-front.ziwo.io/classes/call.html
-  5. Event's details: http://core-front.ziwo.io/classes/ziwoevent.html)
+  3. Ziwo Client class http://doc-core-front.ziwo.tech/classes/ziwoclient.html
+  4. Call class http://doc-core-front.ziwo.tech/classes/call.html
+  5. Event's details: http://doc-core-front.ziwo.tech/classes/ziwoevent.html)
 
 ### Usage
 
@@ -82,7 +82,7 @@ window.addEventListener('ziwo-ringing', (ev) => {
 });
 ```
 
-Read http://core-front.ziwo.io/classes/ziwoevent.html) for more details
+Read http://doc-core-front.ziwo.tech/classes/ziwoevent.html) for more details
 
 ## Commands
 

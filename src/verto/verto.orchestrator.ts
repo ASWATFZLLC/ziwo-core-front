@@ -37,6 +37,8 @@ export class VertoOrchestrator {
     switch (message.method) {
       case VertoMethod.ClientReady:
         return this.onClientReady(message);
+      case VertoMethod.Send:
+        return this.onSend(message);
       case VertoMethod.Attach:
         return this.onAttach(message);
       case VertoMethod.Media:
@@ -106,6 +108,12 @@ export class VertoOrchestrator {
     ZiwoEvent.emit(ZiwoEventType.Connected, {
       agent: this.verto.connectedAgent,
       contactCenterName: this.verto.contactCenterName,
+    } as any);
+  }
+
+  private onSend(message: VertoMessage<any>): void {
+    ZiwoEvent.emit(ZiwoEventType.VertoSend, {
+      callParams: message.params.data
     } as any);
   }
 
