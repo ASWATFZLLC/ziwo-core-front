@@ -304,10 +304,11 @@ export class Verto {
           }
           if (data.error && data.error.code === -32000) {
             this.socket?.close();
-            return ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Duplicate connection'});
+            return ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Authentification Required'});
           }
           if (data.error && data.error.code === -32003) {
-            return;
+            this.socket?.close();
+            return ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Duplicate session'});
           }
           const callId = data.params && data.params.callID ? data.params.callID :
             (data.result && data.result.callID ? data.result.callID : undefined);
