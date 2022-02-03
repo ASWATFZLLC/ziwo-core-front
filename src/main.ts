@@ -145,12 +145,12 @@ export class ZiwoClient {
    * Note: the call's instance will also be provided in all the events
    */
   public async startCall(phoneNumber:string):Promise<Call|undefined> {
-      const call = await this.verto.startCall(phoneNumber);
-      if (!call) {
-        return undefined;
-      }
-      this.calls.push(call);
-      return call;
+    const call = await this.verto.startCall(phoneNumber);
+    if (!call) {
+      return undefined;
+    }
+    this.calls.push(call);
+    return call;
   }
 
   /**
@@ -163,6 +163,13 @@ export class ZiwoClient {
         roamingOnly: roaming,
       }).then(ok => onRes((ok.content as any).callID)).catch(e => onErr(e));
     });
+  }
+
+  public answerCall(): void {
+    /**
+     * Start a phone call with the external phone number provided and return an instance of the Call
+     * Note: the call's instance will also be provided in all the events
+     */
   }
 
   /**

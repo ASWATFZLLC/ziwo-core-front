@@ -45,6 +45,8 @@ export enum ZiwoEventType {
   Answering = 'answering',
   Active = 'active',
   Held = 'held',
+  Unheld = 'unheld',
+  MediaConnected = 'media-connected',
   Hangup = 'hangup',
   Mute = 'mute',
   Unmute = 'unmute',

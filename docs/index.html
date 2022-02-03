@@ -238,7 +238,8 @@
 </code></pre>
 			<p><em>If you disabled the auto connect in the option, make sure to call <code>connect()</code> before anything else.</em></p>
 			<p>Now, you can use the only function available in the Ziwo Client : startCall</p>
-			<pre><code class="language-ts">ziwoClient.startCall(<span class="hljs-string">&#x27;+3364208xxxx&#x27;</span>);</code></pre>
+			<pre><code class="language-ts">ziwoClient.startCall(<span class="hljs-string">&#x27;+3364208xxxx&#x27;</span>);
+</code></pre>
 			<p>Everything else is managed through the events.</p>
 			<a href="#events" id="events" style="color: inherit; text-decoration: none;">
 				<h3>Events</h3>
@@ -323,7 +324,8 @@
 <span class="hljs-built_in">window</span>.addEventListener(<span class="hljs-string">&#x27;ziwo-ringing&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">ev</span>) =&gt;</span> {
     <span class="hljs-comment">// ev holds an instance of the Call in its details</span>
     ev.details.call.answer();
-});</code></pre>
+});
+</code></pre>
 			<p>Read <a href="http://doc-core-front.ziwo.tech/classes/ziwoevent.html">http://doc-core-front.ziwo.tech/classes/ziwoevent.html</a>) for more details</p>
 			<a href="#commands" id="commands" style="color: inherit; text-decoration: none;">
 				<h2>Commands</h2>
@@ -549,7 +551,7 @@
 				<div class="tsd-signature tsd-kind-icon">MESSAGE_<wbr>PREFIX<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"[LIB Ziwo-core-front] "</span><span class="tsd-signature-symbol"> = &quot;[LIB Ziwo-core-front] &quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L1">src/messages.ts:1</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L1">src/messages.ts:1</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -562,7 +564,7 @@
 				<div class="tsd-signature tsd-kind-icon">MESSAGES<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L3">src/messages.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L3">src/messages.ts:3</a></li>
 					</ul>
 				</aside>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
@@ -571,7 +573,7 @@
 					<div class="tsd-signature tsd-kind-icon">EMAIL_<wbr>PASSWORD_<wbr>AUTHTOKEN_<wbr>MISSING<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &#x60;${MESSAGE_PREFIX}Email or password are missing and no authentication token were provided.&#x60;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L4">src/messages.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L4">src/messages.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -581,7 +583,7 @@
 					<div class="tsd-signature tsd-kind-icon">MEDIA_<wbr>ERROR<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &#x60;${MESSAGE_PREFIX}User media are not available&#x60;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L7">src/messages.ts:7</a></li>
+							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L7">src/messages.ts:7</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -595,7 +597,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L6">src/messages.ts:6</a></li>
+									<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L6">src/messages.ts:6</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -618,7 +620,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/messages.ts#L5">src/messages.ts:5</a></li>
+									<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/messages.ts#L5">src/messages.ts:5</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -638,7 +640,7 @@
 				<div class="tsd-signature tsd-kind-icon">PATTERNS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/regex.ts#L1">src/regex.ts:1</a></li>
+						<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/regex.ts#L1">src/regex.ts:1</a></li>
 					</ul>
 				</aside>
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
@@ -647,7 +649,7 @@
 					<div class="tsd-signature tsd-kind-icon">phone<wbr>Number<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">RegExp</span><span class="tsd-signature-symbol"> = /^\+?\d+$/</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/c3673cb/src/regex.ts#L2">src/regex.ts:2</a></li>
+							<li>Defined in <a href="https://github.com/ASWATFZLLC/ziwo-core-front/blob/7419e7d/src/regex.ts#L2">src/regex.ts:2</a></li>
 						</ul>
 					</aside>
 				</section>

@@ -53,7 +53,10 @@ export class VertoOrchestrator {
           : this.onAnswer(message, call as Call);
       case VertoMethod.Display:
         if (this.ensureCallIsExisting(call)) {
-          (call as Call).pushState(ZiwoEventType.Active);
+          const c = call as Call;
+          if (c.states && c.states.length > 0 && c.states[c.states.length - 1].state !== ZiwoEventType.Active) {
+            c.pushState(ZiwoEventType.Active);
+          }
         }
         break;
       case VertoMethod.Pickup:
@@ -131,7 +134,7 @@ export class VertoOrchestrator {
         if (this.debug) {
           console.log('Remote media connected');
         }
-        call.pushState(ZiwoEventType.Active);
+        call.pushState(ZiwoEventType.MediaConnected);
       }).catch(() => {
         if (this.debug) {
           console.warn('fail to attach remote media');
@@ -206,7 +209,7 @@ export class VertoOrchestrator {
   }
 
   private onUnhold(call:Call):void {
-    call.pushState(ZiwoEventType.Active);
+    call.pushState(ZiwoEventType.Unheld);
   }
 
   /***
