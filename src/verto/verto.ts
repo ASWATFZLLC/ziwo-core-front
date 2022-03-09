@@ -120,8 +120,8 @@ export class Verto {
       const pc = res[0];
       const channel = res[1];
       const call = new Call(callId, this, phoneNumber, this.getLogin(), pc, channel, 'outbound');
-      call.pushState(ZiwoEventType.Requesting, true);
-      call.pushState(ZiwoEventType.Trying, true);
+      call.pushState(ZiwoEventType.Requesting);
+      call.pushState(ZiwoEventType.Trying);
       return call;
     } catch (e) {
       ZiwoEvent.error(ZiwoErrorCode.CannotCreateCall, e);

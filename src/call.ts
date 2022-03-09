@@ -68,7 +68,7 @@ export class Call {
    * Use when current state is 'ringing' or 'active' to stop the call
    */
   public hangup():void {
-    this.pushState(ZiwoEventType.Hangup);
+    this.pushState(ZiwoEventType.Hangup, { origin: 'agent' });
     let reason:VertoByeReason = VertoByeReason.NORMAL_CLEARING;
     if (this.direction === 'inbound' && this.states.findIndex(x => x.state === ZiwoEventType.Active) === -1) {
       reason = VertoByeReason.CALL_REJECTED;
@@ -169,24 +169,23 @@ export class Call {
   /**
    * Push state add a new state in the stack and throw an event
    */
-  public pushState(type:ZiwoEventType, broadcast = true):void {
+  public pushState(type:ZiwoEventType, payload?: any):void {
     const d = new Date();
     this.states.push({
       state: type,
       date: d,
       dateUNIX: d.getTime() / 1000
     });
-    if (broadcast) {
-      ZiwoEvent.emit(type, {
-        type,
-        currentCall: this,
-        primaryCallID: this.primaryCallId,
-        callID: this.callId,
-        direction: this.direction,
-        stateFlow: this.states,
-        customerNumber: this.phoneNumber,
-      });
-    }
+    ZiwoEvent.emit(type, {
+      ...payload,
+      type,
+      currentCall: this,
+      primaryCallID: this.primaryCallId,
+      callID: this.callId,
+      direction: this.direction,
+      stateFlow: this.states,
+      customerNumber: this.phoneNumber,
+    });
   }
 
   private toggleSelfStream(enabled:boolean):void {
