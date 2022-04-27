@@ -24,7 +24,7 @@ export class ApiService {
   private readonly baseUrl:string;
   private readonly contactCenterName:string;
   private readonly API_PROTOCOL = 'https://';
-  private readonly API_PREFIX = '-api.cust.ziwo.io';
+  private readonly API_PREFIX = '-api.aswat.co';
 
   constructor(contactCenterName:string) {
     this.contactCenterName = contactCenterName;
