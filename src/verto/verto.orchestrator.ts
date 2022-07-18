@@ -1,9 +1,8 @@
-import {VertoMessage, VertoMethod, VertoNotification, VertoState, VertoNotificationMessage} from './verto.params';
-import {ZiwoEvent, ZiwoEventType, ZiwoEventDetails, ZiwoErrorCode} from '../events';
-import {Call} from '../call';
-import {Verto} from './verto';
-import {RTCPeerConnectionFactory} from './RTCPeerConnection.factory';
-import { HTMLMediaElementFactory } from './HTMLMediaElement.factory';
+import { Call } from '../call';
+import { ZiwoErrorCode, ZiwoEvent, ZiwoEventType } from '../events';
+import { RTCPeerConnectionFactory } from './RTCPeerConnection.factory';
+import { Verto } from './verto';
+import { VertoMessage, VertoMethod, VertoNotification, VertoNotificationMessage, VertoState } from './verto.params';
 
 /**
  * Verto Orchestrator can be seen as the core component of our Verto implemented
@@ -73,6 +72,9 @@ export class VertoOrchestrator {
       case VertoMethod.Dial:
         this.verto.startCall(message.params.number, message.params.uuid);
         break;
+      case VertoMethod.SendToAgentOnCall:
+        return this.onSendToAgentOnCall(message);
+        break;
     }
     return undefined;
   }
@@ -116,6 +118,12 @@ export class VertoOrchestrator {
 
   private onSend(message: VertoMessage<any>): void {
     ZiwoEvent.emit(ZiwoEventType.VertoSend, {
+      callParams: message.params.data
+    } as any);
+  }
+
+  private onSendToAgentOnCall(message: VertoMessage<any>): void {
+    ZiwoEvent.emit(ZiwoEventType.VertoSendToAgentOnCall, {
       callParams: message.params.data
     } as any);
   }

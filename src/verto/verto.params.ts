@@ -12,6 +12,7 @@ export enum VertoMethod {
   Bye = 'verto.bye',
   Pickup = 'verto.pickup',
   Dial = 'verto.dial',
+  SendToAgentOnCall = 'verto.sendToAgentOnCall'
 }
 
 export enum VertoByeReason {

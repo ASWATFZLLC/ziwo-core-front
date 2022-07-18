@@ -56,8 +56,8 @@ export enum ZiwoEventType {
   OutputChanged = 'output-changed',
   InputChanged = 'input-changed',
   VertoSend = 'verto-send',
+  VertoSendToAgentOnCall = 'verto-sendToAgentOnCall',
 }
-
 
 /**
  * All phone call (outbound & inbound) will throw events during their lifetime.
