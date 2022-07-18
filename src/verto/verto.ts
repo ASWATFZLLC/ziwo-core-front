@@ -283,6 +283,9 @@ export class Verto {
         }
       };
       this.socket.onerror = (e) => {
+        this.disconnect();
+        this.socket = undefined;
+        ZiwoEvent.emit(ZiwoEventType.Disconnected, {message: 'Socket error'});
         if (this.debug) {
           console.warn('Socket error', e);
         }
